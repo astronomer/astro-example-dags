@@ -20,15 +20,12 @@ jobs:
           version: 20.10.11
       - checkout
       - run:
-          name: "Setup custom environment variables"
+          name: "Build docker image and push to Quay"
           command: |
-            echo export ASTRONOMER_KEY_ID=${ASTRONOMER_KEY_ID} >> $BASH_ENV
-            echo export ASTRONOMER_KEY_SECRET=${ASTRONOMER_KEY_SECRET} >> $BASH_ENV
-      - run:
-          name: "Deploy to Astro"
-          command: |
-            curl -sSL install.astronomer.io | sudo bash -s
-            astro deploy -f
+            docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
+            docker build -t quay.io/astronomer/astro-trial-examples .
+            docker push quay.io/astronomer/astro-trial-examples
+
 
 
 # Invoke jobs with workflows
@@ -39,7 +36,7 @@ workflows:
     jobs:
       - build_image_and_deploy:
           context:
-             - quay-context
+             - astro-example-dags
           # filters:
           #   branches:
           #     only:
