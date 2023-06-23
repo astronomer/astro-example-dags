@@ -40,7 +40,7 @@ workflows:
       - build_image_and_deploy:
           context:
              - quay-context
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
