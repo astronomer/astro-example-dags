@@ -40,7 +40,7 @@ workflows:
       - build_image_and_deploy:
           context:
              - astro-example-dags
-               #          filters:
-               #            branches:
-               #              only:
-               #                - main
+          filters:
+            branches:
+              only:
+                - main
