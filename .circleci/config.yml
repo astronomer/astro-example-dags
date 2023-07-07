@@ -27,7 +27,7 @@ jobs:
             docker build -t ${image_tag} .
             docker push ${image_tag}
             curl -sSL install.astronomer.io | sudo bash -s
-            astro deploy -i ${image_tag} ${ASTRO_DEPLOYMENT_ID}
+            astro deploy -i ${image_tag} ${ASTRO_DEPLOYMENT_ID} -f
 
 
 
