@@ -20,7 +20,7 @@ conn_uri = conn.get_uri()
 os.environ[env_key] = conn_uri
 
 with DAG(
-    dag_id="s3", schedule="@once", start_date=datetime(2023, 1, 1), is_paused_upon_creation=False, catchup=False
+    dag_id="s3", schedule="@once", start_date=datetime(2023, 1, 1), catchup=False
 ) as dag:
     S3FileTransformOperator(
         task_id="s3transform",
