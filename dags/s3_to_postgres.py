@@ -45,7 +45,7 @@ def copy_data():
         source_aws_conn_id='aws_account',
         dest_aws_conn_id='aws_account'
     )
-    print('modified',str(parsed_key["modified_full_path"]))
+
     s3_to_postgres = S3ToSqlOperator(
         task_id="copy_data_from_s3_to_postgres",
         s3_bucket=parsed_key['bucket'],
