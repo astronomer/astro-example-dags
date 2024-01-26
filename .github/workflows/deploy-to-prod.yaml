@@ -1,0 +1,17 @@
+name: Astronomer CI - Deploy code to PROD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy_to_prod:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Deploy to Production Environment
+      uses: astronomer/deploy-action@v0.2
+      with:
+        deployment_id: ${{ secrets.PROD_DEPLOYMENT_ID }}
+        astro_api_token: ${{ env.PROD_ASTRO_API_TOKEN }}

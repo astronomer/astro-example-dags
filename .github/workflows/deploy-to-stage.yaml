@@ -1,13 +1,9 @@
-name: Astronomer CI - Deploy code to stage
+name: Astronomer CI - Deploy code to STAGE
 
 on:
   push:
     branches:
-      - 'stage/*'
-
-env:
-  ASTRO_API_TOKEN: ${{ inputs.apiToken || secrets.ASTRO_API_TOKEN }}
-  DEPLOYMENT_ID: ${{ inputs.deploymentId || vars.DEPLOYMENT_ID }}
+      - stage
 
 jobs:
   deploy_to_stage:
@@ -18,4 +14,4 @@ jobs:
       uses: astronomer/deploy-action@v0.2
       with:
         deployment_id: ${{ secrets.STAGE_DEPLOYMENT_ID }}
-        astro_api_token: ${{ env.ASTRO_API_TOKEN }}
+        astro_api_token: ${{ env.STAGE_ASTRO_API_TOKEN }}
