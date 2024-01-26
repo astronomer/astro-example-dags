@@ -13,5 +13,5 @@ jobs:
     - name: Deploy to Production Environment
       uses: astronomer/deploy-action@v0.2
       with:
-        deployment_id: ${{ secrets.PROD_DEPLOYMENT_ID }}
-        astro_api_token: ${{ env.PROD_ASTRO_API_TOKEN }}
+        deployment_id: ${{ vars.PROD_DEPLOYMENT_ID }}
+        astro_api_token: ${{ secrets.PROD_ASTRO_API_TOKEN }}

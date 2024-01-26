@@ -13,5 +13,5 @@ jobs:
     - name: Deploy to Stage Environment
       uses: astronomer/deploy-action@v0.2
       with:
-        deployment_id: ${{ secrets.STAGE_DEPLOYMENT_ID }}
-        astro_api_token: ${{ env.STAGE_ASTRO_API_TOKEN }}
+        deployment_id: ${{ vars.STAGE_DEPLOYMENT_ID }}
+        astro_api_token: ${{ secrets.STAGE_ASTRO_API_TOKEN }}
