@@ -1,2 +1,6 @@
 project:
   name: astro-example-dags
+webserver:
+  port: 8090
+postgres:
+  port: 5435

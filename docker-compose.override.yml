@@ -1,0 +1,26 @@
+version: "3.1"
+volumes:
+  postgres_data:
+    driver: local
+  datalake_data:
+    driver: local
+  airflow_logs:
+    driver: local
+
+services:
+  datalake:
+    image: docker.io/postgres
+    restart: unless-stopped
+    networks:
+      - airflow
+    labels:
+      io.astronomer.docker: "true"
+      io.astronomer.docker.cli: "true"
+    ports:
+      - "5433:5432"
+    volumes:
+      - datalake_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: datalake

@@ -1,0 +1,6 @@
+vim
+libpq-dev
+g++
+gcc
+default-jre
+default-jdk
