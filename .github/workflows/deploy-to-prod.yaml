@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  ASTRO_API_TOKEN: ${{ secrets.PROD_ASTRO_API_TOKEN }}
+
 jobs:
   deploy_to_prod:
     runs-on: ubuntu-latest
@@ -13,5 +16,5 @@ jobs:
     - name: Deploy to Production Environment
       uses: astronomer/deploy-action@v0.2
       with:
-        deployment_id: ${{ vars.PROD_DEPLOYMENT_ID }}
-        astro_api_token: ${{ secrets.PROD_ASTRO_API_TOKEN }}
+        deployment-id: ${{ vars.PROD_DEPLOYMENT_ID }}
+        parse: true

@@ -5,6 +5,9 @@ on:
     branches:
       - 'stage/**'
 
+env:
+  ASTRO_API_TOKEN: ${{ secrets.STAGE_ASTRO_API_TOKEN }}
+
 jobs:
   deploy_to_stage:
     runs-on: ubuntu-latest
@@ -13,5 +16,5 @@ jobs:
     - name: Deploy to Stage Environment
       uses: astronomer/deploy-action@v0.2
       with:
-        deployment_id: ${{ vars.STAGE_DEPLOYMENT_ID }}
-        astro_api_token: ${{ secrets.STAGE_ASTRO_API_TOKEN }}
+        deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
+        parse: true
