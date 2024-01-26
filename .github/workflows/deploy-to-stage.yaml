@@ -3,7 +3,7 @@ name: Astronomer CI - Deploy code to STAGE
 on:
   push:
     branches:
-      - stage
+      - 'stage/**'
 
 jobs:
   deploy_to_stage:
