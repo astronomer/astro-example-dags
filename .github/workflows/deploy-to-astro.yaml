@@ -20,8 +20,12 @@ env:
   DEPLOYMENT_ID: ${{ inputs.deploymentId || vars.DEPLOYMENT_ID }}
 
 jobs:
-  build:
+  deploy_to_prod:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
-    - name: Deploy to Astro
+    - name: Deploy to Production Environment
       uses: astronomer/deploy-action@v0.2
+      with:
+        deployment_id: ${{ secrets.PROD_DEPLOYMENT_ID }}
+        astro_api_token: ${{ env.ASTRO_API_TOKEN }}

@@ -1,0 +1,16 @@
+name: Astronomer CI - Deploy code to stage
+
+env:
+  ASTRO_API_TOKEN: ${{ inputs.apiToken || secrets.ASTRO_API_TOKEN }}
+  DEPLOYMENT_ID: ${{ inputs.deploymentId || vars.DEPLOYMENT_ID }}
+
+jobs:
+  deploy_to_stage:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/stage')
+    steps:
+    - name: Deploy to Stage Environment
+      uses: astronomer/deploy-action@v0.2
+      with:
+        deployment_id: ${{ secrets.STAGE_DEPLOYMENT_ID }}
+        astro_api_token: ${{ env.ASTRO_API_TOKEN }}
