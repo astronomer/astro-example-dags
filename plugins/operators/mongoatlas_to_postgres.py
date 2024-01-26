@@ -95,6 +95,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
 
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
             with engine.connect() as conn:
+                transaction = conn.begin()
                 try:
                     star_sql = self.render_sql(cols="*", offset="0", limit="100")
                     df = pd.read_sql(star_sql, jdbc_conn)
@@ -123,7 +124,6 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
                     select_df.drop(columns=["_id"], inplace=True)
 
                     self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
-                    transaction = conn.begin()
                     select_df.to_sql(
                         self.table,
                         conn,
