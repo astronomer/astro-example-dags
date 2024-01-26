@@ -1,0 +1,25 @@
+name: Astronomer CI - Deploy code to Preview
+
+on:
+  push:
+    branches:
+      - 'staging/**'
+env:
+  ASTRO_API_TOKEN: ${{ secrets.STAGE_ASTRO_API_TOKEN }}
+
+jobs:
+  deploy_to_staging:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/stage')
+    steps:
+    - name: Create Deployment Preview
+      uses: astronomer/deploy-action@v0.2
+      with:
+        action: create-deployment-preview
+        deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
+    - name: Deploy to Preview Environment
+      uses: astronomer/deploy-action@v0.2
+      with:
+        action: deploy-deployment-preview
+        deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
+        parse: true
