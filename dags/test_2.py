@@ -14,7 +14,7 @@ default_args = {
 
 # Using the 'with' statement for the DAG definition
 with DAG(
-    'dummy_dag',
+    'dummy_dag_2',
     default_args=default_args,
     description='A simple test DAG',
     schedule_interval=timedelta(days=1),
