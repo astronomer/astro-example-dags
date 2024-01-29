@@ -38,8 +38,8 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     :type mongo_jdbc_conn_id: str
     :param postgres_conn_id: postgres connection id
     :type postgres_conn_id: str
-    :param preoperator: sql statement to be executed prior to loading the data. (templated)
-    :type preoperator: Optional[str]
+    :param preoperation: sql statement to be executed prior to loading the data. (templated)
+    :type preoperation: Optional[str]
     :param sql: SQL query to execute against the source database. (templated)
     :type sql: str
     :param table: Destination Table name
@@ -48,10 +48,10 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     :type destination_schema: str
     """
 
-    template_fields = ("sql", "preoperator")
+    template_fields = ("sql", "preoperation")
     template_ext = ".sql"
 
-    template_fields_renderers = {"preoperator": "sql", "sql": "sql"}
+    template_fields_renderers = {"preoperation": "sql", "sql": "sql"}
     ui_color = "#f9c915"
 
     def __init__(
@@ -59,7 +59,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         *,
         mongo_jdbc_conn_id: str = "mongo_jdbc_conn_id",
         postgres_conn_id: str = "postgres_conn_id",
-        preoperator: Optional[str] = None,
+        preoperation: Optional[str] = None,
         sql: str,
         table: str,
         destination_schema: str,
@@ -70,7 +70,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         self.log.info("Initialising MongoAtlasToPostgresViaDataframeOperator")
         self.mongo_jdbc_conn_id = mongo_jdbc_conn_id
         self.postgres_conn_id = postgres_conn_id
-        self.preoperator = preoperator
+        self.preoperation = preoperation
         self.sql = sql
         self.table = table
         self.destination_schema = destination_schema
@@ -80,7 +80,9 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     def execute(self, context):
         try:
 
-            self.log.info("Executing MongoAtlasToPostgresViaDataframeOperator")
+            self.log.info(
+                f"Executing MongoAtlasToPostgresViaDataframeOperator {self.sql}"
+            )
             source_hook = BaseHook.get_hook(self.mongo_jdbc_conn_id)
             self.log.info("source_hook")
             destination_hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -98,6 +100,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
                 transaction = conn.begin()
                 try:
                     star_sql = self.render_sql(cols="*", offset="0", limit="100")
+                    self.log.info(f"post render SQL = {star_sql}")
                     df = pd.read_sql(star_sql, jdbc_conn)
                     # df["id"] = df["_id"].apply(self.objectid_to_string, args=[MongoBsonValue])
                     # df["id"] = df["id"].astype("string")
@@ -143,9 +146,9 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
                     )
 
             # with conn.cursor() as cur:
-            #     if self.preoperator:
-            #         self.log.info("preoperator Detected, running\n\n %s \n\n", self.preoperator)
-            #         cur.execute(self.preoperator)
+            #     if self.preoperation:
+            #         self.log.info("preoperation Detected, running\n\n %s \n\n", self.preoperation)
+            #         cur.execute(self.preoperation)
             #     cur.copy_expert(self.sql, f_dest.name)
             #     conn.commit()
 
