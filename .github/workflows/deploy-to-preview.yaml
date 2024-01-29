@@ -10,10 +10,10 @@ env:
 jobs:
   deploy_to_staging:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/heads/staging')
+    if: startsWith(github.ref, 'refs/heads/staging/')
     steps:
     - name: Create Deployment Preview
       uses: astronomer/deploy-action@v0.4
       with:
-        action: create-deployment-preview
+        action: deploy-deployment-preview
         deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
