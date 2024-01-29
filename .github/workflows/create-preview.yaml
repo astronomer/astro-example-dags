@@ -1,20 +1,21 @@
-name: Astronomer CI - Deploy Prod
+name: Astronomer CI - Create Preview
 
 on:
-  push:
+  create:
     branches:
-      - main
+      - '**'
+      - '!main'
 
 env:
   ASTRO_API_TOKEN: ${{ secrets.ASTRO_API_TOKEN }}
 
 jobs:
-  deploy_to_prod:
+  deploy_to_staging:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-    - name: Deploy to Production Environment
+    - name: Create Deployment Preview
       uses: astronomer/deploy-action@v0.4
       with:
+        action: create-deployment-preview
         deployment-id: ${{ vars.DEPLOYMENT_ID }}
         parse: true
