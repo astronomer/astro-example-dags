@@ -17,8 +17,3 @@ jobs:
       with:
         action: create-deployment-preview
         deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
-    - name: Deploy to Preview Environment
-      uses: astronomer/deploy-action@v0.4
-      with:
-        action: deploy-deployment-preview
-        deployment-id: ${{ vars.STAGE_DEPLOYMENT_ID }}
