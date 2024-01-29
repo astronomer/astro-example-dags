@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  ASTRO_API_TOKEN: ${{ secrets.PROD_ASTRO_API_TOKEN }}
+  ASTRO_API_TOKEN: ${{ secrets.ASTRO_API_TOKEN }}
 
 jobs:
   deploy_to_prod:

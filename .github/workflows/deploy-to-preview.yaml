@@ -5,7 +5,7 @@ on:
     branches:
       - 'staging/**'
 env:
-  ASTRO_API_TOKEN: ${{ secrets.STAGE_ASTRO_API_TOKEN }}
+  ASTRO_API_TOKEN: ${{ secrets.ASTRO_API_TOKEN }}
 
 jobs:
   deploy_to_staging:
