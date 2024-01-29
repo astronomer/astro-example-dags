@@ -14,7 +14,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
     - name: Deploy to Production Environment
-      uses: astronomer/deploy-action@v0.2
+      uses: astronomer/deploy-action@v0.4
       with:
         deployment-id: ${{ vars.PROD_DEPLOYMENT_ID }}
         parse: true
