@@ -13,9 +13,20 @@ jobs:
   deploy_to_staging:
     runs-on: ubuntu-latest
     steps:
+    - name: Create Deployment Preview
+      uses: astronomer/deploy-action@v0.4
+      continue-on-error: true
+      with:
+        action: create-deployment-preview
+        deployment-id: ${{ vars.DEPLOYMENT_ID }}
+        preview-name: staging-${{ github.ref_name }}
+        parse: true
+        pytest: true
     - name: Deploy Deployment Preview
       uses: astronomer/deploy-action@v0.4
       with:
         action: deploy-deployment-preview
         deployment-id: ${{ vars.DEPLOYMENT_ID }}
+        preview-name: staging-${{ github.ref_name }}
         parse: true
+        pytest: true

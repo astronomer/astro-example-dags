@@ -18,4 +18,4 @@ jobs:
       with:
         action: delete-deployment-preview
         deployment-id: ${{ vars.DEPLOYMENT_ID }}
-        parse: true
+        preview-name: staging-${{ github.ref_name }}
