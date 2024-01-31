@@ -9,7 +9,7 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='hello_world',  # Changed dag_id to use underscores instead of spaces
+    dag_id='s3',  # Changed dag_id to use underscores instead of spaces
     description='our first "hello world" DAG!',
     default_args=default_args,
     start_date=days_ago(1),
