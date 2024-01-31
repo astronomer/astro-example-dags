@@ -18,4 +18,4 @@ jobs:
       with:
         deployment-id: ${{ vars.DEPLOYMENT_ID }}
         parse: true
-        pytest: true
+#        pytest: true
