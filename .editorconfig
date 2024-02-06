@@ -1,0 +1,62 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# 4 space indentation
+[*.py]
+# Isort definitions
+multi_line_output=3
+include_trailing_comma=True
+force_grid_wrap=0
+use_parentheses=True
+indent_style = space
+indent_size = 4
+max_line_length = 119
+line_length=119
+indent='    '
+balanced_wrapping=True
+length_sort=1
+known_django_contrib=django.contrib
+known_django_utils=django.utils
+known_django=django, celery, django_countries
+known_rest=rest_framework,drf_writable_nested,rest_framework_jwt
+known_first_party=data_migrations,operators
+known_third_party=airflow
+combine_as_imports = true
+import_heading_future=General libraries
+import_heading_django=Django libraries
+import_heading_rest=Django rest libraries
+import_heading_localfolder=Project libraries
+import_heading_firstparty=Your Local libraries
+import_heading_thirdparty=Third party libraries
+default_section=THIRDPARTY
+no_lines_before=FUTURE,STDLIB,DJANGO_CONTRIB,DJANGO_UTILS
+sections=FUTURE,STDLIB,THIRDPARTY,DJANGO,DJANGO_CONTRIB,DJANGO_UTILS,REST,FIRSTPARTY,LOCALFOLDER
+verbose=False
+
+# The JSON files contain newlines inconsistently
+[*.json]
+indent_size = 2
+insert_final_newline = ignore
+
+# Minified JavaScript files shouldn't be changed
+[**.min.js]
+indent_style = ignore
+insert_final_newline = ignore
+
+# Batch files use tabs for indentation
+[*.bat]
+indent_style = tab
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
