@@ -169,7 +169,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         for col in df.columns:
             # if self.contains_mongo_bson_value(df[col], MongoBsonValue):
             #     continue
-            if self.unwind_prefix:
+            if not self.unwind_prefix == "":
                 if not col.startswith(self.unwind_prefix):
                     continue
             columns.append(col)

@@ -26,6 +26,8 @@ start_task = DummyOperator(task_id="start", dag=dag)
 
 migration_tasks = []
 for config in migrations:
+    unwind = config.get("unwind")
+    unwind_prefix = config.get("unwind_prefix")
     task = MongoAtlasToPostgresViaDataframeOperator(
         task_id=config["task_id"],
         mongo_jdbc_conn_id="mongo_jdbc_conn_id",
@@ -34,6 +36,7 @@ for config in migrations:
         sql=config["sql"],
         preoperation=config["preoperation"],
         table=config["table"],
+        unwind_prefix=f"{unwind}{unwind_prefix}",
         dag=dag,
     )
     migration_tasks.append(task)

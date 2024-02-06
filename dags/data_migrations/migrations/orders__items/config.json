@@ -1,0 +1,5 @@
+{
+  "table": "orders",
+  "unwind": "items",
+  "unwind_prefix": "__"
+}

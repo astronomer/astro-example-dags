@@ -42,8 +42,13 @@ def load_migration_configs(relative_path):
                     config["preoperation"] = load_sql(preop_sql_path)
 
                 # Validate that the 'table' value matches the subdirectory name
-                if config.get("table") != dir_name:
-                    raise AirflowException(f"Table name in config does not match the subdirectory name for {dir_name}")
+                table = config.get("table", "")
+                unwind = config.get("unwind", "")
+                unwind_prefix = config.get("unwind_prefix", "")
+                if f"{table}{unwind_prefix}{unwind}" != dir_name:
+                    raise AirflowException(
+                        f"migration subdirectory name {dir_name} doesn't make sense for config supplied {table}{unwind_prefix}{unwind}"  # noqa
+                    )
 
                 # Dynamically generate the task ID
                 config["task_id"] = f"migrate_{dir_name}_to_postgres"
