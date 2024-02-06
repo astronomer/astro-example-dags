@@ -1,33 +1,15 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
-import json
 import re
 import sys
+import json
 from typing import Iterable, Optional
 
 import pandas as pd
-from airflow.exceptions import AirflowException
-from airflow.hooks.base import BaseHook
-from airflow.models import BaseOperator
 from bson import json_util
 from jpype import JPackage
 from sqlalchemy import create_engine
+from airflow.models import BaseOperator
+from airflow.exceptions import AirflowException
+from airflow.hooks.base import BaseHook
 
 # from jpype.types import *
 
@@ -46,6 +28,8 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     :type table: str
     :param destination_schema: Destination Schema name
     :type destination_schema: str
+    :param unwind_prefix: Whether the operation is unwinding a subtable
+    :type unwind_prefix: str
     """
 
     template_fields = ("sql", "preoperation")
@@ -63,9 +47,9 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         sql: str,
         table: str,
         destination_schema: str,
+        unwind_prefix: Optional[str],
         **kwargs,
     ) -> None:
-
         super().__init__(**kwargs)
         self.log.info("Initialising MongoAtlasToPostgresViaDataframeOperator")
         self.mongo_jdbc_conn_id = mongo_jdbc_conn_id
@@ -74,15 +58,13 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         self.sql = sql
         self.table = table
         self.destination_schema = destination_schema
+        self.unwind_prefix = unwind_prefix
         self.output_encoding = sys.getdefaultencoding()
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
 
     def execute(self, context):
         try:
-
-            self.log.info(
-                f"Executing MongoAtlasToPostgresViaDataframeOperator {self.sql}"
-            )
+            self.log.info(f"Executing MongoAtlasToPostgresViaDataframeOperator {self.sql}")
             source_hook = BaseHook.get_hook(self.mongo_jdbc_conn_id)
             self.log.info("source_hook")
             destination_hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -99,51 +81,45 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
+                    self.log.info(f"Ensuring {self.destination_schema} schema exists")
+                    conn.execute(f"CREATE SCHEMA IF NOT EXISTS {self.destination_schema};")  # noqa
                     star_sql = self.render_sql(cols="*", offset="0", limit="100")
                     self.log.info(f"post render SQL = {star_sql}")
                     df = pd.read_sql(star_sql, jdbc_conn)
-                    # df["id"] = df["_id"].apply(self.objectid_to_string, args=[MongoBsonValue])
-                    # df["id"] = df["id"].astype("string")
-                    columns_to_select = [
-                        col
-                        for col in df.columns
-                        if not self.contains_mongo_bson_value(df[col], MongoBsonValue)
-                    ]
+                    columns_to_select = self.get_select_columns(df)
+                    print(columns_to_select)
+                    offset = 0
+                    limit = 5000  # Set your desired chunk size
+                    while True:
+                        select_sql = self.render_sql(
+                            cols=f"{', '.join(columns_to_select)}",
+                            offset=str(offset),
+                            limit=str(limit),
+                        )
+                        self.log.info("Select SQL: \n%s", select_sql)
 
-                    select_sql = self.render_sql(
-                        cols=f"_id, {', '.join(columns_to_select)}",
-                        offset="0",
-                        limit="5000",
-                    )
-                    self.log.info("select_sql: \n %s", select_sql)
+                        select_df = pd.read_sql(select_sql, jdbc_conn)
+                        if select_df.empty:
+                            break  # Break the loop if no more data is returned
 
-                    select_df = pd.read_sql(select_sql, jdbc_conn)
-                    select_df["id"] = select_df["_id"].apply(
-                        self.objectid_to_string, args=[MongoBsonValue]
-                    )
+                        select_df = self.transform_mongo_data(select_df, MongoBsonValue)
 
-                    # convert _id BSON to id string and drop the _id BSON
-                    select_df["id"] = select_df["id"].astype("string")
-                    select_df.drop(columns=["_id"], inplace=True)
+                        self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
+                        select_df.to_sql(
+                            self.table,
+                            conn,
+                            if_exists="replace",
+                            schema=self.destination_schema,
+                        )
+                        offset += limit
 
-                    self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
-                    select_df.to_sql(
-                        self.table,
-                        conn,
-                        if_exists="replace",
-                        schema=self.destination_schema,
-                    )
-                    conn.execute(
-                        f"ALTER TABLE {self.destination_schema}.{self.table} ADD PRIMARY KEY (id);"
-                    )
+                    conn.execute(f"ALTER TABLE {self.destination_schema}.{self.table} ADD PRIMARY KEY (id);")  # noqa
 
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
                     transaction.rollback()
-                    raise AirflowException(
-                        f"Database operation failed Rolling Back: {e}"
-                    )
+                    raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
             # with conn.cursor() as cur:
             #     if self.preoperation:
@@ -164,9 +140,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         Takes an iterable (pymongo Cursor or Array) containing dictionaries and
         returns a stringified version using python join
         """
-        return joinable.join(
-            [json.dumps(doc, default=json_util.default) for doc in iterable]
-        )
+        return joinable.join([json.dumps(doc, default=json_util.default) for doc in iterable])
 
     # def bsonToString(self, element):
     #     """
@@ -190,6 +164,20 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     def render_sql(self, cols="*", limit="5000", offset="0"):
         return self.sql.format(cols=cols, limit=limit, offset=offset)
 
+    def get_select_columns(self, df):
+        columns = []
+        for col in df.columns:
+            # if self.contains_mongo_bson_value(df[col], MongoBsonValue):
+            #     continue
+            if self.unwind_prefix:
+                if not col.startswith(self.unwind_prefix):
+                    continue
+            columns.append(col)
+
+        columns.append("_id")  # add this one back
+
+        return columns
+
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
         Get an sqlalchemy_engine object.
@@ -202,3 +190,38 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
         conn_uri = hook.get_uri().replace("postgres:/", "postgresql:/")
         conn_uri = re.sub(r"\?.*$", "", conn_uri)
         return create_engine(conn_uri, **engine_kwargs)
+
+    def _handle_bson_value(self, element, MongoBsonValue):
+        """
+        Convert MongoBsonValue $oid to string, if applicable.
+        """
+        if isinstance(element, MongoBsonValue):
+            bson = json.loads(element.toString())
+            if "$oid" in bson:
+                element = bson["$oid"]
+            else:
+                element = bson
+            # oid
+            # array
+            # object
+        return element
+
+    def transform_mongo_data(self, df, MongoBsonValue):
+        # df["id"] = df["_id"].apply(
+        #     self.objectid_to_string, args=[MongoBsonValue]
+        # )
+
+        # convert _id BSON to id string and drop the _id BSON
+        # df["id"] = df["id"].astype("string")
+        # df.drop(columns=["_id"], inplace=True)
+
+        for col in df.columns:
+            if self.contains_mongo_bson_value(df[col], MongoBsonValue):
+                df[col] = df[col].apply(self._handle_bson_value, args=[MongoBsonValue])
+                # speculating df[col] = df[col].astype("json") I made this up
+                # research suggests that the return "type" from _handle_bson_value
+                # is enough to tell pandas what the dtype is.
+
+        df.rename(columns={"_id": "id"})
+
+        return df
