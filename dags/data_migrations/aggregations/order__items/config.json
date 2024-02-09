@@ -1,0 +1,4 @@
+{
+  "source_collection": "orders",
+  "destination_table": "order__items"
+}

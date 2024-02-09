@@ -167,14 +167,17 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
     def get_select_columns(self, df):
         columns = []
         for col in df.columns:
+            self.log.debug(f"Checking if col {col} is eligible for querying")
             # if self.contains_mongo_bson_value(df[col], MongoBsonValue):
             #     continue
             if not self.unwind_prefix == "":
                 if not col.startswith(self.unwind_prefix):
+                    self.log.debug(f"ignoring column {col} because it starts with {self.unwind_prefix}")
                     continue
+            self.log.debug(f"ok adding col {col} for querying")
             columns.append(col)
 
-        columns.append("_id")  # add this one back
+        # columns.append("_id")  # add this one back
 
         return columns
 
@@ -200,7 +203,7 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
             if "$oid" in bson:
                 element = bson["$oid"]
             else:
-                element = bson
+                element = json.dumps(bson)
             # oid
             # array
             # object
@@ -222,6 +225,6 @@ class MongoAtlasToPostgresViaDataframeOperator(BaseOperator):
                 # research suggests that the return "type" from _handle_bson_value
                 # is enough to tell pandas what the dtype is.
 
-        df.rename(columns={"_id": "id"})
+        df.rename(columns={"_id": "id"}, inplace=True)
 
         return df

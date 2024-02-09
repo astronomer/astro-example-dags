@@ -23,11 +23,12 @@ repos:
         exclude: |
           (?x)(
             ^Pipfile\.lock$|
+            select\.json$|
             /fixtures/.*\.json$
           )
       - id: check-executables-have-shebangs
       - id: requirements-txt-fixer
-        args: [requirements-dev.txt]
+        args: [requirements.txt]
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.29.0
     hooks:
