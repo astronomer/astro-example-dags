@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from airflow import DAG
@@ -23,9 +24,14 @@ dag = DAG(
 )
 
 start_task = DummyOperator(task_id="start", dag=dag)
+generated_schemas_path = "../include/generatedSchemas/"
+generated_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), generated_schemas_path)
+
 
 migration_tasks = []
 for config in migrations:
+    schema_path = os.path.join(generated_schemas_abspath, config["jsonschema"])
+
     task = MongoDBToPostgresViaDataframeOperator(
         task_id=config["task_id"],
         mongo_conn_id="mongo_db_conn_id",
@@ -34,8 +40,11 @@ for config in migrations:
         aggregation_query=config["aggregation_query"],
         source_collection=config["source_collection"],
         source_database="harper-production",
+        jsonschema=schema_path,
         destination_schema="transient_data",
         destination_table=config["destination_table"],
+        unwind=config["unwind"],
+        preserve_fields=config["preserve_fields"],
         dag=dag,
     )
     migration_tasks.append(task)

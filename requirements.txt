@@ -4,6 +4,7 @@ apache-airflow-providers-mongo==2
 apache-airflow-providers-postgres==2
 jaydebeapi
 jpype1
+numpy
 pandas
 psycopg2
 pymongo

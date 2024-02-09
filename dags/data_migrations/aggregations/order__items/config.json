@@ -1,4 +1,9 @@
 {
   "source_collection": "orders",
-  "destination_table": "order__items"
+  "destination_table": "order__items",
+  "jsonschema": "IOrder.json",
+  "unwind": "items",
+  "preserve_fields": [
+    "order_id"
+  ]
 }

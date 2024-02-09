@@ -1,7 +1,8 @@
 import re
 import sys
 import json
-from typing import Iterable, Optional
+from pprint import pprint  # noqa
+from typing import List, Iterable, Optional
 
 import bsonjs
 import pandas as pd
@@ -12,6 +13,7 @@ from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
+from utils.json_schema_to_dataframe import json_schema_to_dataframe
 
 
 class MongoDBToPostgresViaDataframeOperator(BaseOperator):
@@ -32,6 +34,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type destination_table: str
     :param destination_schema: Destination Schema name
     :type destination_schema: str
+    :param jsonschema: Source collection JsonSchema name
+    :type jsonschema: str
+    :param unwind: Unwind key
+    :type unwind: str
     """
 
     template_fields = ("aggregation_query", "preoperation")
@@ -49,8 +55,11 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         aggregation_query: str,
         source_collection: str,
         source_database: str,
+        jsonschema: str,
         destination_table: str,
         destination_schema: str,
+        unwind: Optional[str] = None,
+        preserve_fields: Optional[List[str]] = [],
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -61,14 +70,18 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.aggregation_query = aggregation_query
         self.source_collection = source_collection
         self.source_database = source_database
+        self.jsonschema = jsonschema
         self.destination_table = destination_table
         self.destination_schema = destination_schema
+        self.unwind = unwind
+        self.preserve_fields = preserve_fields
         self.output_encoding = sys.getdefaultencoding()
+
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
 
     def execute(self, context):
         try:
-            self.log.info(f"Executing MongoAtlasToPostgresViaDataframeOperator {self.aggregation_query}")
+            self.log.info("Executing MongoAtlasToPostgresViaDataframeOperator")
             mongo_hook = BaseHook.get_hook(self.mongo_conn_id)
             self.log.info("source_hook")
             destination_hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -77,7 +90,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             self.log.info("Extracting data from %s", self.mongo_conn_id)
             self.log.info("Executing: \n %s", self.aggregation_query)
 
-            print(context)
+            self.schema_df = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
+            print("SCHEMA_DF", self.schema_df)
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
             with engine.connect() as conn:
                 transaction = conn.begin()
@@ -85,49 +99,52 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                     self.log.info(f"Ensuring {self.destination_schema} schema exists")
                     conn.execute(f"CREATE SCHEMA IF NOT EXISTS {self.destination_schema};")  # noqa
                     offset = 0
-                    limit = 1  # Set your desired chunk size
+                    limit = 5000  # Set your desired chunk size
+
+                    aggregation_query = json.loads(self.aggregation_query)
 
                     while True:
-                        aggregation_query = self.render_aggregation_query(
-                            context,
-                            offset=offset,
-                            limit=limit,
-                        )
+
+                        aggregation_query[-1] = {"$limit": limit}
+                        aggregation_query[-2] = {"$skip": offset}
                         aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
                         if context["prev_data_interval_start_success"]:
                             aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context[
                                 "prev_data_interval_start_success"
                             ]
                         else:
-                            del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+                            if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
+                                del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
 
                         self.log.info("Select SQL: \n%s", aggregation_query)
-                        print(aggregation_query)
+                        pprint(aggregation_query)
 
                         collection = mongo_hook.get_collection(self.source_collection)
 
                         results = collection.aggregate_raw_batches(pipeline=aggregation_query)
                         documents = [json.loads(bsonjs.dumps(doc)) for doc in results]
-                        print(documents[0])
                         select_df = DataFrame(list(documents))
 
                         if select_df.empty:
                             self.log.info("No More Results, Data Selection is empty")
                             break  # Break the loop if no more data is returned
+                        pprint(documents[0])
 
-                        select_df = select_df.applymap(self.convert_and_prepare)
+                        select_df = select_df.applymap(self.convert_and_prepare_mongo_structures)
 
+                        pprint(select_df.iloc[0])
                         select_df = self.flatten_nested_columns(select_df)
 
+                        pprint(select_df.iloc[0])
                         self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
-                        select_df.to_sql(
+                        insert_df = self.align_to_schema_df(select_df)
+                        insert_df.to_sql(
                             self.destination_table,
                             conn,
                             if_exists="replace",
                             schema=self.destination_schema,
                         )
                         offset += limit
-                        break
 
                     conn.execute(
                         f"ALTER TABLE {self.destination_schema}.{self.destination_table} ADD PRIMARY KEY (id);"  # noqa
@@ -160,7 +177,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         """
         return joinable.join([json.dumps(doc, default=json_util.default) for doc in iterable])
 
-    def convert_and_prepare_mongo_structures(element):
+    def convert_and_prepare_mongo_structures(self, element):
         # Convert ObjectId and Date
         if isinstance(element, dict):
             if "$oid" in element:
@@ -172,6 +189,15 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             return json.dumps(element)
 
         return element
+
+    def align_to_schema_df(self, df):
+        template_df = self.schema_df.copy(deep=True)
+        # insert_df = df.reindex(columns=template_df.columns, fill_value=None)
+        combined_columns = template_df.columns.tolist() + self.preserve_fields
+        print("combined_coloumns", combined_columns)
+        insert_df = df.reindex(columns=combined_columns, fill_value=None)
+
+        return insert_df
 
     def flatten_nested_columns(self, df, column_prefix=""):
         for column in df.columns:
@@ -206,6 +232,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         # Merge the new variables with the existing context to keep Airflow variables accessible
         combined_context = {**context, **new_context}
 
+        from pprint import pprint
+
+        pprint(combined_context)
         # Manually render the template with the combined context
         jinja_template = Template(self.aggregation_query)
         output = jinja_template.render(**combined_context)

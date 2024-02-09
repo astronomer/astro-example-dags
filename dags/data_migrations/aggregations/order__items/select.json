@@ -28,6 +28,6 @@
             "request_detail": 0
         }
     },
-    { "$skip": {{ offset | default(0) }} },
-    { "$limit": {{ limit | default(1) }} }
+    { "$skip": 0 },
+    { "$limit": 5000}
 ]
