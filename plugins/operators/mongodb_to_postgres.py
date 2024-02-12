@@ -9,11 +9,17 @@ import pandas as pd
 from bson import json_util
 from jinja2 import Template
 from pandas import DataFrame, json_normalize
+from dateutil import parser
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from utils.json_schema_to_dataframe import json_schema_to_dataframe
+
+pd.set_option("display.max_rows", None)  # or a large number instead of None
+pd.set_option("display.max_columns", None)  # Display any number of columns
+pd.set_option("display.max_colwidth", None)  # Display full width of each column
+pd.set_option("display.width", None)  # Use maximum width available
 
 
 class MongoDBToPostgresViaDataframeOperator(BaseOperator):
@@ -90,8 +96,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             self.log.info("Extracting data from %s", self.mongo_conn_id)
             self.log.info("Executing: \n %s", self.aggregation_query)
 
-            self.schema_df = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
-            print("SCHEMA_DF", self.schema_df)
+            self.flattened_schema = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
+
+            print("FLATTENED_SCHEMA", self.flattened_schema)
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
             with engine.connect() as conn:
                 transaction = conn.begin()
@@ -141,7 +148,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         insert_df.to_sql(
                             self.destination_table,
                             conn,
-                            if_exists="replace",
+                            if_exists="append",
                             schema=self.destination_schema,
                         )
                         offset += limit
@@ -183,19 +190,32 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             if "$oid" in element:
                 return str(element["$oid"])
             elif "$date" in element:
-                # Assuming $date is an ISO format string
-                return pd.to_datetime(element["$date"]).isoformat()
+                # Parse the date string; dateutil.parser.parse automatically detects timezone
+                parsed_date = parser.parse(element["$date"])
+                # If the parsed date is timezone-aware, return it directly
+                if parsed_date.tzinfo is not None:
+                    return pd.Timestamp(parsed_date)
+                else:
+                    # If it's naive, assume UTC or any other default timezone if required
+                    # Alternatively, return without timezone
+                    # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
+                    # just keep it as a string
+                    if element["$date"] == "":
+                        return None
+                    return element["$date"]
         elif isinstance(element, list):
             return json.dumps(element)
 
         return element
 
     def align_to_schema_df(self, df):
-        template_df = self.schema_df.copy(deep=True)
-        # insert_df = df.reindex(columns=template_df.columns, fill_value=None)
-        combined_columns = template_df.columns.tolist() + self.preserve_fields
-        print("combined_coloumns", combined_columns)
+
+        combined_columns = list(self.flattened_schema.keys()) + self.preserve_fields
+
         insert_df = df.reindex(columns=combined_columns, fill_value=None)
+        for column, (dtype, *rest) in self.flattened_schema.items():
+            if column in insert_df.columns:
+                insert_df[column] = insert_df[column].astype(dtype)
 
         return insert_df
 
