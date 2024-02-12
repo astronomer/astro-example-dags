@@ -1,0 +1,9 @@
+{
+  "source_collection": "transactions",
+  "destination_table": "transaction__try_ons",
+  "jsonschema": "ITransaction.json",
+  "unwind": "try_ons",
+  "preserve_fields": [
+    "transaction_id"
+  ]
+}

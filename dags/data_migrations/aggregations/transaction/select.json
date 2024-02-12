@@ -1,0 +1,32 @@
+[
+    {
+        "$match": {
+            "updatedAt": {
+                "$gte": "{{ prev_data_interval_start_success }}",
+                "$lte": "{{ data_interval_end }}"
+            }
+        }
+    },
+    { "$set": { "id": "$_id"}},
+    {
+        "$project": {
+            "_id": 0,
+            "purchases": 0,
+            "refunds": 0,
+            "deposits": 0,
+            "adjusted_purchases": 0,
+            "adjusted_refunds": 0,
+            "discounts": 0,
+            "old_purchases": 0,
+            "old_refunds": 0,
+            "old_deposits": 0,
+            "old_adjusted_purchases": 0,
+            "old_adjusted_refunds": 0,
+            "old_discounts": 0,
+            "orders": 0,
+            "try_ons": 0
+        }
+    },
+    { "$skip": 0 },
+    { "$limit": 5000}
+]

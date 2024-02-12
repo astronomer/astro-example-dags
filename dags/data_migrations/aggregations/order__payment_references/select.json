@@ -1,0 +1,32 @@
+[
+    {
+        "$match": {
+            "updatedAt": {
+                "$gte": "{{ prev_data_interval_start_success }}",
+                "$lte": "{{ data_interval_end }}"
+            }
+        }
+    },
+    { "$unwind": "$payment_references" },
+    {
+        "$replaceRoot": {
+            "newRoot": {
+                "$mergeObjects": [
+                  {
+                    "order_id": "$_id"
+                  },
+                  "$payment_references"
+                ]
+            }
+        }
+    },
+    { "$set": { "id": "$_id"}},
+    {
+        "$project": {
+            "payment_references": 0,
+            "_id": 0
+        }
+    },
+    { "$skip": 0 },
+    { "$limit": 5000}
+]

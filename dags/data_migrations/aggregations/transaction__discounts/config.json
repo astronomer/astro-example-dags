@@ -1,0 +1,9 @@
+{
+  "source_collection": "transactions",
+  "destination_table": "transaction__discounts",
+  "jsonschema": "ITransaction.json",
+  "unwind": "discounts",
+  "preserve_fields": [
+    "transaction_id"
+  ]
+}

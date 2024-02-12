@@ -1,0 +1,9 @@
+{
+  "source_collection": "transactions",
+  "destination_table": "transaction__refunds",
+  "jsonschema": "ITransaction.json",
+  "unwind": "refunds",
+  "preserve_fields": [
+    "transaction_id"
+  ]
+}

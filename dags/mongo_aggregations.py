@@ -43,8 +43,8 @@ for config in migrations:
         jsonschema=schema_path,
         destination_schema="transient_data",
         destination_table=config["destination_table"],
-        unwind=config["unwind"],
-        preserve_fields=config["preserve_fields"],
+        unwind=config.get("unwind"),
+        preserve_fields=config.get("preserve_fields"),
         dag=dag,
     )
     migration_tasks.append(task)

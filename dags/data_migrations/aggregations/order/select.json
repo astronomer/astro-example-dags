@@ -1,0 +1,29 @@
+[
+    {
+        "$match": {
+            "updatedAt": {
+                "$gte": "{{ prev_data_interval_start_success }}",
+                "$lte": "{{ data_interval_end }}"
+            }
+        }
+    },
+    { "$set": { "id": "$_id"}},
+    {
+        "$project": {
+            "items": 0,
+            "original_items": 0,
+            "items_available": 0,
+            "items_not_available": 0,
+            "items_original_order": 0,
+            "appointments": 0,
+            "deleted_appointments": 0,
+            "zettle_payment_references": 0,
+            "possible_delivery_fees": 0,
+            "notes": 0,
+            "changes_log": 0,
+            "_id": 0
+        }
+    },
+    { "$skip": 0 },
+    { "$limit": 5000}
+]

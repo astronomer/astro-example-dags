@@ -1,0 +1,9 @@
+{
+  "source_collection": "orders",
+  "destination_table": "order__possible_delivery_fees",
+  "jsonschema": "IOrder.json",
+  "unwind": "possible_delivery_fees",
+  "preserve_fields": [
+    "order_id"
+  ]
+}

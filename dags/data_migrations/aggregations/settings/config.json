@@ -1,0 +1,5 @@
+{
+  "source_collection": "settings",
+  "destination_table": "settings",
+  "jsonschema": "ISetting.json"
+}

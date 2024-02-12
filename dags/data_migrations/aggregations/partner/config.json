@@ -1,0 +1,5 @@
+{
+  "source_collection": "partners",
+  "destination_table": "partner",
+  "jsonschema": "IPartner.json"
+}

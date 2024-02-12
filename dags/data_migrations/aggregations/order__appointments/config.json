@@ -1,0 +1,9 @@
+{
+  "source_collection": "orders",
+  "destination_table": "order__appointments",
+  "jsonschema": "IOrder.json",
+  "unwind": "appointments",
+  "preserve_fields": [
+    "order_id"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "source_collection": "transactionitems",
+  "destination_table": "transactionitem",
+  "jsonschema": "ITransactionItem.json"
+}

@@ -1,0 +1,9 @@
+{
+  "source_collection": "orders",
+  "destination_table": "order__changes_log",
+  "jsonschema": "IOrder.json",
+  "unwind": "changes_log",
+  "preserve_fields": [
+    "order_id"
+  ]
+}
