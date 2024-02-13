@@ -4,10 +4,14 @@
             "updatedAt": {
                 "$gte": "{{ prev_data_interval_start_success }}",
                 "$lte": "{{ data_interval_end }}"
+            },
+            "zettle_payment_references": {
+              "$exists": true,
+              "$type": "array"
             }
         }
     },
-    { "$unwind": "$payment_references" },
+    { "$unwind": "$zettle_payment_references" },
     {
         "$replaceRoot": {
             "newRoot": {
@@ -15,7 +19,7 @@
                   {
                     "order_id": "$_id"
                   },
-                  "$payment_references"
+                  "$zettle_payment_references"
                 ]
             }
         }

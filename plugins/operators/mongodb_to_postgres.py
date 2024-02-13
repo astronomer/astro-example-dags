@@ -4,9 +4,8 @@ import json
 from pprint import pprint  # noqa
 from typing import List, Iterable, Optional
 
-import bsonjs
 import pandas as pd
-from bson import json_util
+from bson import json_util, decode_all
 from jinja2 import Template
 from pandas import DataFrame
 from dateutil import parser
@@ -132,9 +131,19 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
                         collection = mongo_hook.get_collection(self.source_collection)
 
-                        results = collection.aggregate_raw_batches(pipeline=aggregation_query)
-                        documents = [json.loads(bsonjs.dumps(doc)) for doc in results]
+                        cursor = collection.aggregate_raw_batches(
+                            pipeline=aggregation_query,
+                        )
+                        documents = []
+                        while True:
+                            try:
+                                documents.extend([x for x in decode_all(cursor.next())])
+                            except StopIteration:
+                                break
+
+                        print("TOTAL docs after", len(documents))
                         select_df = DataFrame(list(documents))
+                        print("TOTAL df", select_df.shape)
 
                         if select_df.empty:
                             self.log.info("No More Results, Data Selection is empty")
@@ -146,24 +155,25 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                             existing_discard_fields = [col for col in self.discard_fields if col in select_df.columns]
                             select_df.drop(existing_discard_fields, axis=1, inplace=True)
 
+                        print("TOTAL AFTER DISCARD df", select_df.shape)
                         pprint(documents[0])
-                        print(
-                            "CUSTOMER_CREATED_AT 1",
-                            documents[0]["customer"],
-                        )
 
                         # pprint(select_df.iloc[0])
                         select_df = self.flatten_dataframe_columns_precisely(select_df, separator="__")
 
-                        print(
-                            "CUSTOMER_CREATED_AT 3",
-                            select_df.iloc[0],
-                        )
-
+                        print("TOTAL AFTER FLATTEN df", select_df.shape)
                         print("FINAL COLUMNS", select_df.columns)
                         self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
                         insert_df = self.align_to_schema_df(select_df)
+                        print("TOTAL AFTER ALIGNMENT df", insert_df.shape)
                         print("ALIGNED COLUMNS", insert_df.columns)
+                        null_id_records = insert_df[insert_df["id"].isnull()]
+                        if not null_id_records.empty:
+                            print("Records with null 'id':")
+                            pprint(null_id_records)
+                        else:
+                            print("No records with null 'id' found.")
+
                         insert_df.to_sql(
                             self.destination_table,
                             conn,
@@ -212,7 +222,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         # first check if the top level dict is oid or date
         if "$oid" in d:
             print("Handling Top level $oid", parent_key, d)
-            items[parent_key] = d["$oid"]
+            items["PARENT_COLUMN"] = d["$oid"]
         elif "$date" in d:
             print("Handling Top level $date", parent_key, d)
             # Convert $date to a formatted string or another desired format
@@ -228,9 +238,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                 # just keep it as a string
                 if d["$date"] != "":
                     date = d["$date"]
-            items[parent_key] = date
+            items["PARENT_COLUMN"] = date
         else:
-
             for k, v in d.items():
                 new_key = f"{parent_key}{separator}{k}" if parent_key else k
                 if isinstance(v, list):
@@ -279,6 +288,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                     if isinstance(item, dict):
                         print("COLUMN item dict", column, item)
                         flattened_item = self.flatten_dict(item, separator=separator)
+                        # if "PARENT_COLUMN" in flattened_item:
+                        #     # we had a top level oid or date
+                        #     flattened_item[column] = flattened_item["PARENT_COLUMN"]
+                        #     del flattened_item["PARENT_COLUMN"]
                         column_data.append(flattened_item)
                     else:
                         # For items that are not dicts (e.g., missing or null values), ensure compatibility
@@ -287,7 +300,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                 column_df = pd.json_normalize(column_data)
                 # Rename columns to ensure they are prefixed correctly
                 column_df.columns = [
-                    f"{column}{separator}{subcol}" if subcol else column for subcol in column_df.columns
+                    f"{column}{separator}{subcol}" if not subcol == "PARENT_COLUMN" else column
+                    for subcol in column_df.columns
                 ]
 
             elif is_list_column:
@@ -332,9 +346,11 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             # We should allow the aggregation query the power to specify the $id
             # but that field won't exist in the jsonschemas
             # for now we'll assume it'll be a string and see how it goes
-
-            self._flattened_schema["id"] = self._flattened_schema["_id"]
-            del self._flattened_schema["_id"]
+            if "_id" in self._flattened_schema:
+                self._flattened_schema["id"] = self._flattened_schema["_id"]
+                del self._flattened_schema["_id"]
+            else:
+                self._flattened_schema["id"] = ("string", None)
 
         print("FLATTENED_SCHEMA", self._flattened_schema)
         # Step 1: Combine and preserve columns ensuring no duplicates
