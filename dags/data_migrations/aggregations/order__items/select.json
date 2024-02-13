@@ -7,13 +7,19 @@
             }
         }
     },
-    { "$unwind": "$items" },
+    {
+        "$unwind": {
+            "path": "$items",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
     {
         "$replaceRoot": {
             "newRoot": {
                 "$mergeObjects": [
                   {
-                    "order_id": "$_id"
+                    "order_id": "$_id",
+                    "arrayIndex": "$arrayIndex"
                   },
                   "$items"
                 ]
@@ -21,7 +27,15 @@
         }
     },
     { "$set": {
-        "id": "$_id",
+        "id": {
+            "$concat": [
+                {"$toString": "$order_id"},
+                "__",
+                {"$toString": "$_id"},
+                "__",
+                {"$toString": "$arrayIndex"}
+            ]
+        },
         "discount": {
                 "$convert": {
                     "input": "$discount",

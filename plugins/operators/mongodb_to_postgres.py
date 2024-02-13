@@ -15,9 +15,9 @@ from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from utils.json_schema_to_dataframe import json_schema_to_dataframe
 
-pd.set_option("display.max_rows", None)  # or a large number instead of None
+pd.set_option("display.max_rows", 10)  # or a large number instead of None
 pd.set_option("display.max_columns", None)  # Display any number of columns
-pd.set_option("display.max_colwidth", None)  # Display full width of each column
+pd.set_option("display.max_colwidth", 80)  # Display full width of each column
 pd.set_option("display.width", None)  # Use maximum width available
 
 
@@ -84,8 +84,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.destination_table = destination_table
         self.destination_schema = destination_schema
         self.unwind = unwind
-        self.preserve_fields = preserve_fields
-        self.discard_fields = discard_fields
+        self.preserve_fields = preserve_fields or []
+        self.discard_fields = discard_fields or []
         self.output_encoding = sys.getdefaultencoding()
 
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
@@ -149,6 +149,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                             self.log.info("No More Results, Data Selection is empty")
                             break  # Break the loop if no more data is returned
 
+                        print(documents[0])
                         if self.discard_fields:
                             # keep this because if we're dropping any problematic fields
                             # from the top level we might want to do this before Flattenning
@@ -169,9 +170,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         null_id_records = insert_df[insert_df["id"].isnull()]
                         if not null_id_records.empty:
                             print("Records with null 'id':")
-                            pprint(null_id_records)
-                        else:
-                            print("No records with null 'id' found.")
+                            print("NULL ID", null_id_records.tolist())
 
                         pprint(insert_df.iloc[0])
                         insert_df.to_sql(
@@ -215,27 +214,35 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
     def flatten_dict(self, d, parent_key="", separator="__"):
         """Recursively flatten nested dictionaries."""
-        print("flatten_dict called on ", parent_key, d)
+        # print("flatten_dict called on ", parent_key, d)
         items = {}
         for k, v in d.items():
             new_key = f"{parent_key}{separator}{k}" if parent_key else k
+            if new_key in self.discard_fields:
+                continue
             if isinstance(v, list):
                 # Convert lists directly to JSON strings
-                print("Handling list", new_key, k, v)
+                # print("Handling list", new_key, k, v)
                 items[new_key] = json_util.dumps(v)
             elif isinstance(v, ObjectId):
-                print("Handling ObjectId", new_key, k, v)
+                # print("Handling ObjectId", new_key, k, v)
                 items[new_key] = str(v)
             elif isinstance(v, datetime):
-                print("Handling datetime", new_key, k, v)
+                # print("Handling datetime", new_key, k, v)
                 items[new_key] = pd.Timestamp(v)
             elif isinstance(v, dict):
-                print("Handling dict", new_key, k, v)
-                items.update(self.flatten_dict(v, parent_key=new_key, separator=separator))
+                # print("Handling dict", new_key, k, v)
+                items.update(
+                    self.flatten_dict(
+                        v,
+                        parent_key=new_key,
+                        separator=separator,
+                    )
+                )
             else:
-                print("Handling preserve", new_key, k, v)
+                # print("Handling preserve", new_key, k, v)
                 items[new_key] = v
-        print("items dict", items)
+        # print("items dict", items)
         return items
 
     def flatten_dataframe_columns_precisely(self, df, separator="__"):
@@ -250,17 +257,20 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
 
             if is_objectid_column:
-                print("Handling ObjectId Top level column")
+                # print("Handling ObjectId Top level column")
                 column_df = df[column].apply(str).to_frame(name=column)
             elif is_date_column:
-                print("Handling datetime Top level column")
+                # print("Handling datetime Top level column")
                 column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
             elif is_dict_column:
                 for item in df[column]:
                     # Process dictionary items
                     if isinstance(item, dict):
-                        print("COLUMN item dict", column, item)
-                        flattened_item = self.flatten_dict(item, separator=separator)
+                        # print("COLUMN item dict", column, item)
+                        flattened_item = self.flatten_dict(
+                            item,
+                            separator=separator,
+                        )
                         column_data.append(flattened_item)
                     else:
                         # For items that are not dicts (e.g., missing or null values), ensure compatibility
@@ -274,10 +284,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                 ]
 
             elif is_list_column:
-                print("COLUMN item list", column)
+                # print("COLUMN item list", column)
                 column_df = df[column].apply(json_util.dumps).to_frame(name=column)
             else:  # Directly append non-dict and non-list items
-                print("COLUMN item preserve", column)
+                # print("COLUMN item preserve", column)
                 column_df = df[column].to_frame()
 
             # Concatenate the new column DataFrame to the flattened_data DataFrame
@@ -310,7 +320,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     #     return element
 
     def _prepare_schema(self):
-        self._flattened_schema = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
+        self._flattened_schema = json_schema_to_dataframe(
+            self.jsonschema, start_key=self.unwind, discard_fields=self.discard_fields
+        )
         if "id" not in self._flattened_schema:
             # We should allow the aggregation query the power to specify the $id
             # but that field won't exist in the jsonschemas
@@ -321,15 +333,15 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             else:
                 self._flattened_schema["id"] = ("string", None)
 
-        print("FLATTENED_SCHEMA", self._flattened_schema)
+        # print("FLATTENED_SCHEMA", self._flattened_schema)
         # Step 1: Combine and preserve columns ensuring no duplicates
         combined_columns = list(self._flattened_schema.keys())
         if self.preserve_fields:
             combined_columns += [field for field in self.preserve_fields if field not in combined_columns]
 
-        # Step 2: Exclude discard fields
-        if self.discard_fields:
-            combined_columns = [column for column in combined_columns if column not in self.discard_fields]
+        # # Step 2: Exclude discard fields
+        # if self.discard_fields:
+        #     combined_columns = [column for column in combined_columns if column not in self.discard_fields]
 
         print("COMBINED_COLUMNS", combined_columns)
         self._combined_columns = combined_columns

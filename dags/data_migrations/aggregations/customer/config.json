@@ -1,5 +1,8 @@
 {
   "source_collection": "customers",
   "destination_table": "customer",
-  "jsonschema": "ICustomer.json"
+  "jsonschema": "ICustomer.json",
+  "discard_fields": [
+    "password"
+  ]
 }

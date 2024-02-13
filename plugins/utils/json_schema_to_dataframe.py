@@ -1,10 +1,13 @@
 import json
 
 
-def flatten_object(obj, parent_key="", sep="__"):
+def flatten_object(obj, parent_key="", sep="__", discard_fields=[]):
     items = {}
     for k, v in obj.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if new_key in discard_fields:
+            print(f"Skipping discarded field ${new_key}")
+            continue
         # print(f"Flattenning {new_key}")
         if isinstance(v, dict):
             # Check if "bsonType" is either "object" directly or if it's a list containing "object"
@@ -19,7 +22,14 @@ def flatten_object(obj, parent_key="", sep="__"):
                 raise ValueError(f"No type defined for ${new_key}")
 
             if vtype == "object":
-                items.update(flatten_object(v.get("properties", {}), new_key, sep=sep))
+                items.update(
+                    flatten_object(
+                        v.get("properties", {}),
+                        new_key,
+                        sep=sep,
+                        discard_fields=discard_fields,
+                    )
+                )
             elif vtype == "array":
                 # Handle arrays specifically, possibly by setting to JSON
                 items[new_key] = ("object", "json")
@@ -57,7 +67,7 @@ def map_json_type_to_dtype(json_type, ts_type=None):
     return knowntypes.get(json_type, "string")
 
 
-def json_schema_to_dataframe(schema_path, start_key=None):
+def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
     """Create an empty DataFrame based on a flattened JSON Schema, setting array columns to store JSON strings."""
 
     with open(schema_path, "r") as file:
@@ -71,7 +81,7 @@ def json_schema_to_dataframe(schema_path, start_key=None):
             schema_to_flatten = schema["properties"][start_key]["items"]["properties"]
         else:
             schema_to_flatten = schema["properties"]
-        flattened_schema = flatten_object(schema_to_flatten)
+        flattened_schema = flatten_object(schema_to_flatten, discard_fields=discard_fields)
     else:
         raise ValueError("Schema does not have a top-level object with properties")
 
