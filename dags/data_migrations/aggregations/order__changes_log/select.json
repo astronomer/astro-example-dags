@@ -7,7 +7,7 @@
             }
         }
     },
-    { "$unwind": "$changes_log" },
+    { "$unwind": "$order_changes_log" },
     {
         "$replaceRoot": {
             "newRoot": {
@@ -15,7 +15,7 @@
                   {
                     "order_id": "$_id"
                   },
-                  "$changes_log"
+                  "$order_changes_log"
                 ]
             }
         }
@@ -23,7 +23,7 @@
     { "$set": { "id": "$_id"}},
     {
         "$project": {
-            "changes_log": 0,
+            "order_changes_log": 0,
             "_id": 0
         }
     },

@@ -8,7 +8,7 @@ import bsonjs
 import pandas as pd
 from bson import json_util
 from jinja2 import Template
-from pandas import DataFrame, json_normalize
+from pandas import DataFrame
 from dateutil import parser
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
@@ -44,6 +44,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type jsonschema: str
     :param unwind: Unwind key
     :type unwind: str
+    :param preserve_fields: Fields that you create during the aggregation stage that you want to keep, but don't exist in the json Schema  # noqa
+    :type preserve_fields: Optional[List[str]]
+    :param discard_fields: Fields that you don't want to keep that despite them existing in the json Schema
+    :type discard_fields: Optional[List[str]]
     """
 
     template_fields = ("aggregation_query", "preoperation")
@@ -66,6 +70,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         destination_schema: str,
         unwind: Optional[str] = None,
         preserve_fields: Optional[List[str]] = [],
+        discard_fields: Optional[List[str]] = [],
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -81,6 +86,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.destination_schema = destination_schema
         self.unwind = unwind
         self.preserve_fields = preserve_fields
+        self.discard_fields = discard_fields
         self.output_encoding = sys.getdefaultencoding()
 
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
@@ -96,9 +102,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             self.log.info("Extracting data from %s", self.mongo_conn_id)
             self.log.info("Executing: \n %s", self.aggregation_query)
 
-            self.flattened_schema = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
-
-            print("FLATTENED_SCHEMA", self.flattened_schema)
+            self._prepare_schema()
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
             with engine.connect() as conn:
                 transaction = conn.begin()
@@ -135,16 +139,31 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         if select_df.empty:
                             self.log.info("No More Results, Data Selection is empty")
                             break  # Break the loop if no more data is returned
+
+                        if self.discard_fields:
+                            # keep this because if we're dropping any problematic fields
+                            # we might want to do this before converting types
+                            existing_discard_fields = [col for col in self.discard_fields if col in select_df.columns]
+                            select_df.drop(existing_discard_fields, axis=1, inplace=True)
+
                         pprint(documents[0])
+                        print(
+                            "CUSTOMER_CREATED_AT 1",
+                            documents[0]["customer"],
+                        )
 
-                        select_df = select_df.applymap(self.convert_and_prepare_mongo_structures)
+                        # pprint(select_df.iloc[0])
+                        select_df = self.flatten_dataframe_columns_precisely(select_df, separator="__")
 
-                        pprint(select_df.iloc[0])
-                        select_df = self.flatten_nested_columns(select_df)
+                        print(
+                            "CUSTOMER_CREATED_AT 3",
+                            select_df.iloc[0],
+                        )
 
-                        pprint(select_df.iloc[0])
+                        print("FINAL COLUMNS", select_df.columns)
                         self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
                         insert_df = self.align_to_schema_df(select_df)
+                        print("ALIGNED COLUMNS", insert_df.columns)
                         insert_df.to_sql(
                             self.destination_table,
                             conn,
@@ -184,49 +203,174 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         """
         return joinable.join([json.dumps(doc, default=json_util.default) for doc in iterable])
 
-    def convert_and_prepare_mongo_structures(self, element):
-        # Convert ObjectId and Date
-        if isinstance(element, dict):
-            if "$oid" in element:
-                return str(element["$oid"])
-            elif "$date" in element:
-                # Parse the date string; dateutil.parser.parse automatically detects timezone
-                parsed_date = parser.parse(element["$date"])
-                # If the parsed date is timezone-aware, return it directly
-                if parsed_date.tzinfo is not None:
-                    return pd.Timestamp(parsed_date)
-                else:
-                    # If it's naive, assume UTC or any other default timezone if required
-                    # Alternatively, return without timezone
-                    # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
-                    # just keep it as a string
-                    if element["$date"] == "":
-                        return None
-                    return element["$date"]
-        elif isinstance(element, list):
-            return json.dumps(element)
+    def flatten_dict(self, d, parent_key="", separator="__"):
+        """Recursively flatten nested dictionaries."""
+        print("flatten_dict called on ", parent_key, d)
+        items = {}
+        # if not isinstance(d, dict):  # Directly return non-dict items
+        # return d
+        # first check if the top level dict is oid or date
+        if "$oid" in d:
+            print("Handling Top level $oid", parent_key, d)
+            items[parent_key] = d["$oid"]
+        elif "$date" in d:
+            print("Handling Top level $date", parent_key, d)
+            # Convert $date to a formatted string or another desired format
+            parsed_date = parser.parse(d["$date"])
+            date = None
+            # If the parsed date is timezone-aware, return it directly
+            if parsed_date.tzinfo is not None:
+                date = pd.Timestamp(parsed_date)
+            else:
+                # If it's naive, assume UTC or any other default timezone if required
+                # Alternatively, return without timezone
+                # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
+                # just keep it as a string
+                if d["$date"] != "":
+                    date = d["$date"]
+            items[parent_key] = date
+        else:
 
-        return element
+            for k, v in d.items():
+                new_key = f"{parent_key}{separator}{k}" if parent_key else k
+                if isinstance(v, list):
+                    # Convert lists directly to JSON strings
+                    print("Handling list", new_key, k, v)
+                    items[new_key] = json.dumps(v)
+                elif isinstance(v, dict) and "$oid" in v:
+                    print("Handling $oid", new_key, k, v)
+                    items[new_key] = v["$oid"]
+                elif isinstance(v, dict) and "$date" in v:
+                    print("Handling $date", new_key, k, v)
+                    # Convert $date to a formatted string or another desired format
+                    parsed_date = parser.parse(v["$date"])
+                    date = None
+                    # If the parsed date is timezone-aware, return it directly
+                    if parsed_date.tzinfo is not None:
+                        date = pd.Timestamp(parsed_date)
+                    else:
+                        # If it's naive, assume UTC or any other default timezone if required
+                        # Alternatively, return without timezone
+                        # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
+                        # just keep it as a string
+                        if v["$date"] != "":
+                            date = v["$date"]
+                    items[new_key] = date
+                elif isinstance(v, dict):
+                    print("Handling dict", new_key, k, v)
+                    items.update(self.flatten_dict(v, parent_key=new_key, separator=separator))
+                else:
+                    print("Handling string", new_key, k, v)
+                    items[new_key] = v
+        print("items dict", items)
+        return items
+
+    def flatten_dataframe_columns_precisely(self, df, separator="__"):
+        """Flatten all dictionary columns in a DataFrame and handle non-dict items."""
+        flattened_data = pd.DataFrame()
+        for column in df.columns:
+            # Initialize a container for processed data
+            column_data = []
+            is_dict_column = df[column].apply(lambda x: isinstance(x, dict)).any()
+            is_list_column = df[column].apply(lambda x: isinstance(x, list)).any()
+            if is_dict_column:
+                for item in df[column]:
+                    # Process dictionary items
+                    if isinstance(item, dict):
+                        print("COLUMN item dict", column, item)
+                        flattened_item = self.flatten_dict(item, separator=separator)
+                        column_data.append(flattened_item)
+                    else:
+                        # For items that are not dicts (e.g., missing or null values), ensure compatibility
+                        column_data.append({})
+                # Normalize the processed column data
+                column_df = pd.json_normalize(column_data)
+                # Rename columns to ensure they are prefixed correctly
+                column_df.columns = [
+                    f"{column}{separator}{subcol}" if subcol else column for subcol in column_df.columns
+                ]
+
+            elif is_list_column:
+                print("COLUMN item list", column)
+                column_df = df[column].apply(json.dumps).to_frame(name=column)
+            else:  # Directly append non-dict and non-list items
+                print("COLUMN item string", column)
+                column_df = df[column].to_frame()
+
+            # Concatenate the new column DataFrame to the flattened_data DataFrame
+            flattened_data = pd.concat([flattened_data, column_df], axis=1)
+
+        return flattened_data
+
+    # def convert_and_prepare_mongo_structures(self, element):
+    #     # Convert ObjectId and Date
+    #     if isinstance(element, dict):
+    #         if "$oid" in element:
+    #             return str(element["$oid"])
+    #         elif "$date" in element:
+    #             # Parse the date string; dateutil.parser.parse automatically detects timezone
+    #             parsed_date = parser.parse(element["$date"])
+    #             # If the parsed date is timezone-aware, return it directly
+    #             if parsed_date.tzinfo is not None:
+    #                 return pd.Timestamp(parsed_date)
+    #             else:
+    #                 # If it's naive, assume UTC or any other default timezone if required
+    #                 # Alternatively, return without timezone
+    #                 # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
+    #                 # just keep it as a string
+    #                 if element["$date"] == "":
+    #                     return None
+    #                 return element["$date"]
+    #     elif isinstance(element, list):
+    #         return json.dumps(element)
+
+    #     return element
+
+    def _prepare_schema(self):
+        self._flattened_schema = json_schema_to_dataframe(self.jsonschema, start_key=self.unwind)
+        if "id" not in self._flattened_schema:
+            # We should allow the aggregation query the power to specify the $id
+            # but that field won't exist in the jsonschemas
+            # for now we'll assume it'll be a string and see how it goes
+
+            self._flattened_schema["id"] = self._flattened_schema["_id"]
+            del self._flattened_schema["_id"]
+
+        print("FLATTENED_SCHEMA", self._flattened_schema)
+        # Step 1: Combine and preserve columns ensuring no duplicates
+        combined_columns = list(self._flattened_schema.keys())
+        if self.preserve_fields:
+            combined_columns += [field for field in self.preserve_fields if field not in combined_columns]
+
+        # Step 2: Exclude discard fields
+        if self.discard_fields:
+            combined_columns = [column for column in combined_columns if column not in self.discard_fields]
+
+        print("COMBINED_COLUMNS", combined_columns)
+        self._combined_columns = combined_columns
 
     def align_to_schema_df(self, df):
 
-        combined_columns = list(self.flattened_schema.keys()) + self.preserve_fields
+        # Step 3: Reindex DataFrame to adjust columns, using 'None' for any new columns' fill value
+        insert_df = df.reindex(columns=self._combined_columns, fill_value=None)
 
-        insert_df = df.reindex(columns=combined_columns, fill_value=None)
-        for column, (dtype, *rest) in self.flattened_schema.items():
+        for column, (dtype, *rest) in self._flattened_schema.items():
             if column in insert_df.columns:
+                print(f"aligning column ${column} as type ${dtype}")
                 insert_df[column] = insert_df[column].astype(dtype)
 
         return insert_df
 
-    def flatten_nested_columns(self, df, column_prefix=""):
-        for column in df.columns:
-            if any(isinstance(x, dict) for x in df[column]):
-                flattened = json_normalize(df[column])
-                flattened.columns = [f"{column_prefix}{column}_{subcol}" for subcol in flattened.columns]
-                df = df.drop(column, axis=1).join(flattened)
-        # df.rename(columns={"_id": "id"}, inplace=True)
-        return df
+    # def flatten_nested_columns(self, df, column_prefix=""):
+    #     for column in df.columns:
+    #         if any(isinstance(x, dict) for x in df[column]):
+    #             flattened = json_normalize(df[column])
+    #             flattened.columns = [
+    #                 f"{column_prefix}{column}_{subcol}" for subcol in flattened.columns
+    #             ]
+    #             df = df.drop(column, axis=1).join(flattened)
+    #     # df.rename(columns={"_id": "id"}, inplace=True)
+    #     return df
 
     def get_json_column_type(self, column):
         for x in column:

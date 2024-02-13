@@ -1,5 +1,22 @@
 {
   "source_collection": "orders",
   "destination_table": "order",
-  "jsonschema": "IOrder.json"
+  "jsonschema": "IOrder.json",
+  "discard_fields": [
+    "items",
+    "original_items",
+    "items_available",
+    "items_not_available",
+    "items_original_order",
+    "appointments",
+    "deleted_appointments",
+    "zettle_payment_references",
+    "possible_delivery_fees",
+    "notes",
+    "request_detail",
+    "request_detail_items",
+    "order_changes_log",
+    "platform_order_creation_response",
+    "_id"
+  ]
 }

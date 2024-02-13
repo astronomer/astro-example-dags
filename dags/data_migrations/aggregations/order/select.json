@@ -7,7 +7,24 @@
             }
         }
     },
-    { "$set": { "id": "$_id"}},
+    {
+        "$set": {
+            "id": "$_id",
+            "subtotal_price": {
+                "$cond": {
+                    "if": { "$in": ["$subtotal_price", ["", " "]] },
+                    "then": null,
+                    "else": {
+                        "$cond": {
+                            "if": { "$eq": [{ "$type": "$subtotal_price" }, "string"] },
+                            "then": { "$toDouble": "$subtotal_price" },
+                            "else": "$subtotal_price"
+                        }
+                    }
+                }
+            }
+        }
+    },
     {
         "$project": {
             "items": 0,
@@ -20,7 +37,10 @@
             "zettle_payment_references": 0,
             "possible_delivery_fees": 0,
             "notes": 0,
-            "changes_log": 0,
+            "request_detail": 0,
+            "request_detail_items": 0,
+            "order_changes_log": 0,
+            "platform_order_creation_response": 0,
             "_id": 0
         }
     },
