@@ -20,7 +20,18 @@
             }
         }
     },
-    { "$set": { "id": "$_id"}},
+    { "$set": {
+        "id": "$_id",
+        "discount": {
+                "$convert": {
+                    "input": "$discount",
+                    "to": "int",
+                    "onError": 0,
+                    "onNull": 0
+                }
+            }
+      }
+    },
     {
         "$project": {
             "items": 0,

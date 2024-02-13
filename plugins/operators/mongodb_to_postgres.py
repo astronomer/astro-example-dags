@@ -3,12 +3,12 @@ import sys
 import json
 from pprint import pprint  # noqa
 from typing import List, Iterable, Optional
+from datetime import datetime
 
 import pandas as pd
-from bson import json_util, decode_all
+from bson import ObjectId, json_util, decode_all
 from jinja2 import Template
 from pandas import DataFrame
-from dateutil import parser
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
@@ -151,14 +151,13 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
                         if self.discard_fields:
                             # keep this because if we're dropping any problematic fields
-                            # we might want to do this before converting types
+                            # from the top level we might want to do this before Flattenning
                             existing_discard_fields = [col for col in self.discard_fields if col in select_df.columns]
                             select_df.drop(existing_discard_fields, axis=1, inplace=True)
 
                         print("TOTAL AFTER DISCARD df", select_df.shape)
                         pprint(documents[0])
 
-                        # pprint(select_df.iloc[0])
                         select_df = self.flatten_dataframe_columns_precisely(select_df, separator="__")
 
                         print("TOTAL AFTER FLATTEN df", select_df.shape)
@@ -174,6 +173,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         else:
                             print("No records with null 'id' found.")
 
+                        pprint(insert_df.iloc[0])
                         insert_df.to_sql(
                             self.destination_table,
                             conn,
@@ -217,60 +217,24 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         """Recursively flatten nested dictionaries."""
         print("flatten_dict called on ", parent_key, d)
         items = {}
-        # if not isinstance(d, dict):  # Directly return non-dict items
-        # return d
-        # first check if the top level dict is oid or date
-        if "$oid" in d:
-            print("Handling Top level $oid", parent_key, d)
-            items["PARENT_COLUMN"] = d["$oid"]
-        elif "$date" in d:
-            print("Handling Top level $date", parent_key, d)
-            # Convert $date to a formatted string or another desired format
-            parsed_date = parser.parse(d["$date"])
-            date = None
-            # If the parsed date is timezone-aware, return it directly
-            if parsed_date.tzinfo is not None:
-                date = pd.Timestamp(parsed_date)
+        for k, v in d.items():
+            new_key = f"{parent_key}{separator}{k}" if parent_key else k
+            if isinstance(v, list):
+                # Convert lists directly to JSON strings
+                print("Handling list", new_key, k, v)
+                items[new_key] = json_util.dumps(v)
+            elif isinstance(v, ObjectId):
+                print("Handling ObjectId", new_key, k, v)
+                items[new_key] = str(v)
+            elif isinstance(v, datetime):
+                print("Handling datetime", new_key, k, v)
+                items[new_key] = pd.Timestamp(v)
+            elif isinstance(v, dict):
+                print("Handling dict", new_key, k, v)
+                items.update(self.flatten_dict(v, parent_key=new_key, separator=separator))
             else:
-                # If it's naive, assume UTC or any other default timezone if required
-                # Alternatively, return without timezone
-                # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
-                # just keep it as a string
-                if d["$date"] != "":
-                    date = d["$date"]
-            items["PARENT_COLUMN"] = date
-        else:
-            for k, v in d.items():
-                new_key = f"{parent_key}{separator}{k}" if parent_key else k
-                if isinstance(v, list):
-                    # Convert lists directly to JSON strings
-                    print("Handling list", new_key, k, v)
-                    items[new_key] = json.dumps(v)
-                elif isinstance(v, dict) and "$oid" in v:
-                    print("Handling $oid", new_key, k, v)
-                    items[new_key] = v["$oid"]
-                elif isinstance(v, dict) and "$date" in v:
-                    print("Handling $date", new_key, k, v)
-                    # Convert $date to a formatted string or another desired format
-                    parsed_date = parser.parse(v["$date"])
-                    date = None
-                    # If the parsed date is timezone-aware, return it directly
-                    if parsed_date.tzinfo is not None:
-                        date = pd.Timestamp(parsed_date)
-                    else:
-                        # If it's naive, assume UTC or any other default timezone if required
-                        # Alternatively, return without timezone
-                        # return pd.Timestamp(parsed_date, tz="UTC")  # or tz=None for naive
-                        # just keep it as a string
-                        if v["$date"] != "":
-                            date = v["$date"]
-                    items[new_key] = date
-                elif isinstance(v, dict):
-                    print("Handling dict", new_key, k, v)
-                    items.update(self.flatten_dict(v, parent_key=new_key, separator=separator))
-                else:
-                    print("Handling string", new_key, k, v)
-                    items[new_key] = v
+                print("Handling preserve", new_key, k, v)
+                items[new_key] = v
         print("items dict", items)
         return items
 
@@ -282,16 +246,21 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             column_data = []
             is_dict_column = df[column].apply(lambda x: isinstance(x, dict)).any()
             is_list_column = df[column].apply(lambda x: isinstance(x, list)).any()
-            if is_dict_column:
+            is_objectid_column = df[column].apply(lambda x: isinstance(x, ObjectId)).any()
+            is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
+
+            if is_objectid_column:
+                print("Handling ObjectId Top level column")
+                column_df = df[column].apply(str).to_frame(name=column)
+            elif is_date_column:
+                print("Handling datetime Top level column")
+                column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
+            elif is_dict_column:
                 for item in df[column]:
                     # Process dictionary items
                     if isinstance(item, dict):
                         print("COLUMN item dict", column, item)
                         flattened_item = self.flatten_dict(item, separator=separator)
-                        # if "PARENT_COLUMN" in flattened_item:
-                        #     # we had a top level oid or date
-                        #     flattened_item[column] = flattened_item["PARENT_COLUMN"]
-                        #     del flattened_item["PARENT_COLUMN"]
                         column_data.append(flattened_item)
                     else:
                         # For items that are not dicts (e.g., missing or null values), ensure compatibility
@@ -306,9 +275,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
             elif is_list_column:
                 print("COLUMN item list", column)
-                column_df = df[column].apply(json.dumps).to_frame(name=column)
+                column_df = df[column].apply(json_util.dumps).to_frame(name=column)
             else:  # Directly append non-dict and non-list items
-                print("COLUMN item string", column)
+                print("COLUMN item preserve", column)
                 column_df = df[column].to_frame()
 
             # Concatenate the new column DataFrame to the flattened_data DataFrame
