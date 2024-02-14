@@ -3,7 +3,9 @@
   "destination_table": "order__deleted_appointments",
   "jsonschema": "IOrder.json",
   "unwind": "deleted_appointments",
+  "unwind_key": "id",
   "preserve_fields": [
-    "order_id"
+    "order_id",
+    "appointment_date"
   ]
 }

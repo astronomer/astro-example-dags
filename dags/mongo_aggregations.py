@@ -44,8 +44,9 @@ for config in migrations:
         destination_schema="transient_data",
         destination_table=config["destination_table"],
         unwind=config.get("unwind"),
-        preserve_fields=config.get("preserve_fields"),
-        discard_fields=config.get("discard_fields"),
+        unwind_key=config.get("unwind_key"),
+        preserve_fields=config.get("preserve_fields", []),
+        discard_fields=config.get("discard_fields", []),
         dag=dag,
     )
     migration_tasks.append(task)

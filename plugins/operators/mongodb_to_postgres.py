@@ -41,8 +41,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type destination_schema: str
     :param jsonschema: Source collection JsonSchema name
     :type jsonschema: str
-    :param unwind: Unwind key
+    :param unwind: Field to Unwind
     :type unwind: str
+    :param unwind_key: Required if the unwind field is an array of values not objects. This key will be used as the column name
+    :type unwind_key: str
     :param preserve_fields: Fields that you create during the aggregation stage that you want to keep, but don't exist in the json Schema  # noqa
     :type preserve_fields: Optional[List[str]]
     :param discard_fields: Fields that you don't want to keep that despite them existing in the json Schema
@@ -68,6 +70,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         destination_table: str,
         destination_schema: str,
         unwind: Optional[str] = None,
+        unwind_key: Optional[str] = None,
         preserve_fields: Optional[List[str]] = [],
         discard_fields: Optional[List[str]] = [],
         **kwargs,
@@ -84,6 +87,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.destination_table = destination_table
         self.destination_schema = destination_schema
         self.unwind = unwind
+        self.unwind_key = unwind_key
         self.preserve_fields = preserve_fields or []
         self.discard_fields = discard_fields or []
         self.output_encoding = sys.getdefaultencoding()
@@ -167,9 +171,12 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         insert_df = self.align_to_schema_df(select_df)
                         print("TOTAL AFTER ALIGNMENT df", insert_df.shape)
                         print("ALIGNED COLUMNS", insert_df.columns)
-                        null_id_records = insert_df[insert_df["id"].isnull()]
+                        primary_key = self.unwind_key if self.unwind_key else "id"
+                        print(f"PRIMARY_KEY=={primary_key}")
+
+                        null_id_records = insert_df[insert_df[primary_key].isnull()]
                         if not null_id_records.empty:
-                            print("Records with null 'id':")
+                            print(f"Records with null primary key field '{primary_key}':")
                             print("NULL ID", null_id_records.tolist())
 
                         pprint(insert_df.iloc[0])
@@ -182,7 +189,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         offset += limit
 
                     conn.execute(
-                        f"ALTER TABLE {self.destination_schema}.{self.destination_table} ADD PRIMARY KEY (id);"  # noqa
+                        f"ALTER TABLE {self.destination_schema}.{self.destination_table} ADD PRIMARY KEY ({primary_key});"  # noqa
                     )  # noqa
 
                     transaction.commit()
@@ -321,7 +328,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
     def _prepare_schema(self):
         self._flattened_schema = json_schema_to_dataframe(
-            self.jsonschema, start_key=self.unwind, discard_fields=self.discard_fields
+            self.jsonschema,
+            start_key=self.unwind,
+            discard_fields=self.discard_fields,
+            unwind_key=self.unwind_key,
         )
         if "id" not in self._flattened_schema:
             # We should allow the aggregation query the power to specify the $id
@@ -330,6 +340,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             if "_id" in self._flattened_schema:
                 self._flattened_schema["id"] = self._flattened_schema["_id"]
                 del self._flattened_schema["_id"]
+            elif self.unwind_key:
+                # We'll use this and it's already been dealt with
+                self._flattened_schema[self.unwind_key] = ("string", None)
             else:
                 self._flattened_schema["id"] = ("string", None)
 
@@ -353,7 +366,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
         for column, (dtype, *rest) in self._flattened_schema.items():
             if column in insert_df.columns:
-                print(f"aligning column ${column} as type ${dtype}")
+                print(f"aligning column {column} as type {dtype}")
                 insert_df[column] = insert_df[column].astype(dtype)
 
         return insert_df

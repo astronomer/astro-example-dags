@@ -7,24 +7,31 @@
             }
         }
     },
-    { "$unwind": "$deleted_appointments" },
     {
-        "$replaceRoot": {
-            "newRoot": {
-                "$mergeObjects": [
-                  {
-                    "order_id": "$_id"
-                  },
-                  "$deleted_appointments"
+        "$unwind": {
+            "path": "$deleted_appointments",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
+    {
+        "$set": {
+            "order_id": "$_id",
+            "appointment_date": "$deleted_appointments",
+            "id": {
+                "$concat": [
+                  {"$toString": "$_id"},
+                  "__",
+                  {"$toString": "$arrayIndex"}
                 ]
             }
         }
     },
-    { "$set": { "id": "$_id"}},
     {
         "$project": {
-            "deleted_appointments": 0,
-            "_id": 0
+            "appointment_date": 1,
+            "order_id": 1,
+            "id":1,
+            "_id":0
         }
     },
     { "$skip": 0 },

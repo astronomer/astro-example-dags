@@ -18,5 +18,10 @@ migration_tasks = []
 for config in migrations:
     print(f"Schema for ${config['destination_table']}")
     schema_path = f"./include/generatedSchemas/{config['jsonschema']}"
-    flattened_schema = json_schema_to_dataframe(schema_path)
+    flattened_schema = json_schema_to_dataframe(
+        schema_path,
+        discard_fields=config.get("discard_fields", []),
+        start_key=config.get("unwind"),
+        unwind_key=config.get("unwind_key"),
+    )
     pprint(flattened_schema)

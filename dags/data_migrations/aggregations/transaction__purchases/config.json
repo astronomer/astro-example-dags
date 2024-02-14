@@ -3,6 +3,7 @@
   "destination_table": "transaction__purchases",
   "jsonschema": "ITransaction.json",
   "unwind": "purchases",
+  "unwind_key": "transactionitem_id",
   "preserve_fields": [
     "transaction_id"
   ]

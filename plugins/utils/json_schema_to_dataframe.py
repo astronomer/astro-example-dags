@@ -67,7 +67,7 @@ def map_json_type_to_dtype(json_type, ts_type=None):
     return knowntypes.get(json_type, "string")
 
 
-def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
+def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[], unwind_key=None):
     """Create an empty DataFrame based on a flattened JSON Schema, setting array columns to store JSON strings."""
 
     with open(schema_path, "r") as file:
@@ -76,9 +76,19 @@ def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
     if schema.get("type") == "object" and "properties" in schema:
         # Check if we should start flattening from a specific key
         if start_key and start_key in schema["properties"]:
+            print(schema.get("properties")[start_key])
             if schema["properties"][start_key]["type"] != "array":
-                raise ValueError(f"Schema at start_key = '{start_key}' is not an array")
-            schema_to_flatten = schema["properties"][start_key]["items"]["properties"]
+                raise ValueError(f"Schema at start_key = '${start_key}' is not an array")
+            if "properties" in schema["properties"][start_key]["items"]:
+                # we have an array of objects
+                schema_to_flatten = schema["properties"][start_key]["items"]["properties"]
+            else:
+                # we have an array of values
+                if not unwind_key:
+                    raise ValueError(
+                        f"Schema at start_key = '${start_key}' is an array of values not objects, therefor you must provide an 'unwind_key' to provide a column name for these values in the database at ${schema_path}"  # noqa
+                    )
+                schema_to_flatten = {f"${unwind_key}": schema["properties"][start_key]["items"]}
         else:
             schema_to_flatten = schema["properties"]
         flattened_schema = flatten_object(schema_to_flatten, discard_fields=discard_fields)

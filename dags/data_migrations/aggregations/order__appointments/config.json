@@ -3,6 +3,7 @@
   "destination_table": "order__appointments",
   "jsonschema": "IOrder.json",
   "unwind": "appointments",
+  "unwind_key": "appointment_id",
   "preserve_fields": [
     "order_id"
   ]
