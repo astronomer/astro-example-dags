@@ -1,0 +1,120 @@
+import re
+from pprint import pprint  # noqa
+
+from sqlalchemy import create_engine
+from airflow.models import BaseOperator
+from airflow.exceptions import AirflowException
+from airflow.hooks.base import BaseHook
+
+
+class CreateMissingPostgresColumnsOperator(BaseOperator):
+    """
+    :param postgres_conn_id: postgres connection id
+    :type postgres_conn_id: str
+    :param source_schema: Source Schema name
+    :type source_schema: str
+    :param source_table: Source Table name
+    :type source_table: str
+    :param destination_schema: Destination Schema name
+    :type destination_schema: str
+    :param destination_table: Destination Table name
+    :type destination_table: str
+    """
+
+    ui_color = "#f9c915"
+
+    def __init__(
+        self,
+        *,
+        postgres_conn_id: str = "postgres_conn_id",
+        source_schema: str,
+        source_table: str,
+        destination_schema: str,
+        destination_table: str,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.log.info("Initialising EnsurePostgresSchemaExistsOperator")
+        self.postgres_conn_id = postgres_conn_id
+        self.source_schema = source_schema
+        self.source_table = source_table
+        self.destination_schema = destination_schema
+        self.destination_table = destination_table
+
+        self.log.info("Initialised EnsurePostgresSchemaExistsOperator")
+        self.template_func = f"""
+CREATE OR REPLACE FUNCTION addMissingColumns(_table TEXT)
+  RETURNS VOID
+AS
+$$
+DECLARE
+  str text;
+  t_curs cursor for
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS c_transient
+    WHERE
+        NOT EXISTS(
+            SELECT * FROM INFORMATION_SCHEMA.COLUMNS c_public
+            WHERE c_public.table_name=_table
+            AND c_public.column_name=c_transient.column_name
+            AND c_public.table_Schema='{self.destination_schema}'
+      )
+      AND c_transient.table_name=_table
+      AND c_transient.table_schema='{self.source_schema}'
+    ;
+
+BEGIN
+  str := '';
+  FOR t_row in t_curs LOOP
+    str := str ||' ADD COLUMN '||t_row.column_name||' '||t_row.data_type||' DEFAULT NULL,';
+    -- raise notice '%', str;
+  end LOOP;
+
+  IF (str = '') THEN
+    raise notice 'No Schema Changes Detected';
+  ELSE
+    str = trim(trailing ',' from str);
+    -- raise notice '%', str;
+    str = 'alter table {self.destination_table}.'||_table||' '||str;
+    raise notice 'Schema Change Detected - %', str;
+    EXECUTE str;
+  END IF;
+end;
+$$
+LANGUAGE plpgsql;
+"""
+
+    def execute(self, context):
+        try:
+            hook = BaseHook.get_hook(self.postgres_conn_id)
+
+            engine = self.get_postgres_sqlalchemy_engine(hook)
+            with engine.connect() as conn:
+                transaction = conn.begin()
+                try:
+                    self.log.info(f"Ensuring {self.schema} schema exists")
+                    self.log.info(f"Executing: CREATE SCHEMA IF NOT EXISTS {self.schema};")
+                    conn.execute(self.template_func)
+                    conn.execute(f"SELECT addmissingcolumns('{self.source_table}');")
+                    transaction.commit()
+                except Exception as e:
+                    self.log.error("Error during database operation: %s", e)
+                    transaction.rollback()
+                    raise AirflowException(f"Database operation failed Rolling Back: {e}")
+
+            return f"{self.schema} Exists"
+        except Exception as e:
+            self.log.error(f"An error occurred: {e}")
+            raise AirflowException(e)
+
+    def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
+        """
+        Get an sqlalchemy_engine object.
+
+        :param engine_kwargs: Kwargs used in :func:`~sqlalchemy.create_engine`.
+        :return: the created engine.
+        """
+        if engine_kwargs is None:
+            engine_kwargs = {}
+        conn_uri = hook.get_uri().replace("postgres:/", "postgresql:/")
+        conn_uri = re.sub(r"\?.*$", "", conn_uri)
+        return create_engine(conn_uri, **engine_kwargs)
