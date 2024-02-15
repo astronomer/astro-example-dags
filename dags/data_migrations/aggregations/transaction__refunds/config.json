@@ -3,8 +3,8 @@
   "destination_table": "transaction__refunds",
   "jsonschema": "ITransaction.json",
   "unwind": "refunds",
-  "unwind_key": "transactionitem_id",
   "preserve_fields": [
-    "transaction_id"
+    "transaction_id",
+    "transactionitem_id"
   ]
 }

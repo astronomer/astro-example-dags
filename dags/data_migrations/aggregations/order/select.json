@@ -10,17 +10,20 @@
     {
         "$set": {
             "id": "$_id",
-            "subtotal_price": {
-                "$cond": {
-                    "if": { "$in": ["$subtotal_price", ["", " "]] },
-                    "then": null,
-                    "else": {
-                        "$cond": {
-                            "if": { "$eq": [{ "$type": "$subtotal_price" }, "string"] },
-                            "then": { "$toDouble": "$subtotal_price" },
-                            "else": "$subtotal_price"
-                        }
-                    }
+            "delivery_fee": {
+                "$convert": {
+                    "input": "$delivery_fee",
+                    "to": "double",
+                    "onError": 0,
+                    "onNull": null
+                }
+            },
+            "total_purchase_price": {
+                "$convert": {
+                    "input": "$total_purchase_price",
+                    "to": "int",
+                    "onError": 0,
+                    "onNull": null
                 }
             }
         }

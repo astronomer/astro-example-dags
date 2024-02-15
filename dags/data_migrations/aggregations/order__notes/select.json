@@ -7,24 +7,44 @@
             }
         }
     },
-    { "$unwind": "$notes" },
+    {
+        "$unwind": {
+            "path": "$notes",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
     {
         "$replaceRoot": {
             "newRoot": {
                 "$mergeObjects": [
                   {
-                    "order_id": "$_id"
+                    "order_id": "$_id",
+                    "arrayIndex": "$arrayIndex"
                   },
                   "$notes"
                 ]
             }
         }
     },
-    { "$set": { "id": "$_id"}},
+    {
+      "$set": {
+        "id": {
+                "$concat": [
+                  {"$toString": "$order_id"},
+                  "__",
+                  {"$toString": "$arrayIndex"},
+                  "__",
+                  {"$toString": "$_id"}
+                ]
+            }
+
+      }
+    },
     {
         "$project": {
             "notes": 0,
-            "_id": 0
+            "_id": 0,
+            "arrayIndex": 0
         }
     },
     { "$skip": 0 },

@@ -3,6 +3,7 @@ import json
 
 def flatten_object(obj, parent_key="", sep="__", discard_fields=[]):
     items = {}
+    print("FLATTEN_OBJECT", obj)
     for k, v in obj.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
         if new_key in discard_fields:
@@ -67,7 +68,7 @@ def map_json_type_to_dtype(json_type, ts_type=None):
     return knowntypes.get(json_type, "string")
 
 
-def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[], unwind_key=None):
+def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
     """Create an empty DataFrame based on a flattened JSON Schema, setting array columns to store JSON strings."""
 
     with open(schema_path, "r") as file:
@@ -83,12 +84,9 @@ def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[], unw
                 # we have an array of objects
                 schema_to_flatten = schema["properties"][start_key]["items"]["properties"]
             else:
-                # we have an array of values
-                if not unwind_key:
-                    raise ValueError(
-                        f"Schema at start_key = '${start_key}' is an array of values not objects, therefor you must provide an 'unwind_key' to provide a column name for these values in the database at ${schema_path}"  # noqa
-                    )
-                schema_to_flatten = {f"${unwind_key}": schema["properties"][start_key]["items"]}
+                # The schema suggests we will have an array of values
+                # However the actual aggregation should be converting this into an array of objects
+                schema_to_flatten = {"id": schema["properties"][start_key]["items"]}
         else:
             schema_to_flatten = schema["properties"]
         flattened_schema = flatten_object(schema_to_flatten, discard_fields=discard_fields)

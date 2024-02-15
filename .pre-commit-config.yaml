@@ -18,6 +18,21 @@ repos:
       - id: fix-byte-order-marker
       - id: mixed-line-ending  # force UNIX file endings for consistency
         args: [--fix=lf]
+      - id: check-json
+        exclude: |
+          (?x)(
+            .jshintrc$|
+            .eslintrc.json$|
+            tslint.json$|
+            lerna.json$|
+            tsconfig.json$|
+            tsconfig.*\.json$|
+            .vscode/.*$|
+            /fixtures/.*\.json$|
+            .removed/.*$|
+            test/api/payloads/.*.json$|
+            \@infrastructure/.*$
+          )
       - id: pretty-format-json
         args: [--autofix, --indent, "2", --no-ensure-ascii, --no-sort-keys]
         exclude: |

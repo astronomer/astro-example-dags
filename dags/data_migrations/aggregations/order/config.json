@@ -18,5 +18,18 @@
     "order_changes_log",
     "platform_order_creation_response",
     "_id"
+  ],
+  "convert_fields": [
+    {
+      "function": "string_possibly_pounds_to_pence",
+      "fields": [
+        "subtotal_price",
+        "delivery_fee",
+        "total_purchase_price",
+        "discount_after_purchase"
+      ],
+      "function_args": [],
+      "aggregation_stage": 1
+    }
   ]
 }

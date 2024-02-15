@@ -7,24 +7,31 @@
             }
         }
     },
-    { "$unwind": "$refunds" },
     {
-        "$replaceRoot": {
-            "newRoot": {
-                "$mergeObjects": [
-                  {
-                    "transaction_id": "$_id"
-                  },
-                  "$refunds"
+        "$unwind": {
+            "path": "$refunds",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
+    {
+        "$set": {
+            "transaction_id": "$_id",
+            "transactionitem_id": "$refunds",
+            "id": {
+                "$concat": [
+                  {"$toString": "$_id"},
+                  "__",
+                  {"$toString": "$arrayIndex"}
                 ]
             }
         }
     },
-    { "$set": { "id": "$_id"}},
     {
         "$project": {
-            "refunds": 0,
-            "_id": 0
+            "transactionitem_id": 1,
+            "transaction_id": 1,
+            "id":1,
+            "_id":0
         }
     },
     { "$skip": 0 },

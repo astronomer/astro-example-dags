@@ -1,5 +1,15 @@
 {
   "source_collection": "transactions",
   "destination_table": "transaction",
-  "jsonschema": "ITransaction.json"
+  "jsonschema": "ITransaction.json",
+  "convert_fields": [
+    {
+      "function": "convert_epoch",
+      "fields": [
+        "payment_timestamp"
+      ],
+      "function_args": [],
+      "aggregation_stage": 1
+    }
+  ]
 }

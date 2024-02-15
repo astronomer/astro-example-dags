@@ -7,20 +7,38 @@
             }
         }
     },
-    { "$unwind": "$possible_delivery_fees" },
+    {
+        "$unwind": {
+            "path": "$possible_delivery_fees",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
     {
         "$replaceRoot": {
             "newRoot": {
                 "$mergeObjects": [
                   {
-                    "order_id": "$_id"
+                    "order_id": "$_id",
+                    "arrayIndex": "$arrayIndex"
                   },
                   "$possible_delivery_fees"
                 ]
             }
         }
     },
-    { "$set": { "id": "$_id"}},
+    {
+        "$set": {
+            "id": {
+                "$concat": [
+                    {"$toString": "$order_id"},
+                    "__",
+                    {"$toString": "$_id"},
+                    "__",
+                    {"$toString": "$arrayIndex"}
+                ]
+            }
+        }
+    },
     {
         "$project": {
             "possible_delivery_fees": 0,

@@ -6,14 +6,16 @@ from typing import List, Iterable, Optional
 from datetime import datetime
 
 import pandas as pd
-from bson import ObjectId, json_util, decode_all
+from bson import ObjectId, json_util
 from jinja2 import Template
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
-from utils.json_schema_to_dataframe import json_schema_to_dataframe
+
+from plugins.utils.field_conversions import convert_field
+from plugins.utils.json_schema_to_dataframe import json_schema_to_dataframe
 
 pd.set_option("display.max_rows", 10)  # or a large number instead of None
 pd.set_option("display.max_columns", None)  # Display any number of columns
@@ -43,12 +45,12 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type jsonschema: str
     :param unwind: Field to Unwind
     :type unwind: str
-    :param unwind_key: Required if the unwind field is an array of values not objects. This key will be used as the column name
-    :type unwind_key: str
     :param preserve_fields: Fields that you create during the aggregation stage that you want to keep, but don't exist in the json Schema  # noqa
     :type preserve_fields: Optional[List[str]]
     :param discard_fields: Fields that you don't want to keep that despite them existing in the json Schema
     :type discard_fields: Optional[List[str]]
+    :param convert_fields: Fields that you want to apply a complex conversion to using a named function
+    :type convert_fields: Optional[List[str]]
     """
 
     template_fields = ("aggregation_query", "preoperation")
@@ -70,9 +72,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         destination_table: str,
         destination_schema: str,
         unwind: Optional[str] = None,
-        unwind_key: Optional[str] = None,
         preserve_fields: Optional[List[str]] = [],
         discard_fields: Optional[List[str]] = [],
+        convert_fields: Optional[List[str]] = [],
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -87,9 +89,9 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.destination_table = destination_table
         self.destination_schema = destination_schema
         self.unwind = unwind
-        self.unwind_key = unwind_key
         self.preserve_fields = preserve_fields or []
         self.discard_fields = discard_fields or []
+        self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
 
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
@@ -107,43 +109,37 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
             self._prepare_schema()
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
+            primary_key = "id"
+            print(f"PRIMARY_KEY=={primary_key}")
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
-                    self.log.info(f"Ensuring {self.destination_schema} schema exists")
-                    conn.execute(f"CREATE SCHEMA IF NOT EXISTS {self.destination_schema};")  # noqa
                     offset = 0
                     limit = 5000  # Set your desired chunk size
+                    ds = context["ds"]
 
-                    aggregation_query = json.loads(self.aggregation_query)
+                    aggregation_query = self._prepare_aggregation_query()
 
                     while True:
-
-                        aggregation_query[-1] = {"$limit": limit}
-                        aggregation_query[-2] = {"$skip": offset}
-                        aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
-                        if context["prev_data_interval_start_success"]:
-                            aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context[
-                                "prev_data_interval_start_success"
-                            ]
-                        else:
-                            if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
-                                del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+                        aggregation_query = self._prepare_runtime_aggregation_query(
+                            aggregation_query, limit, offset, context
+                        )
 
                         self.log.info("Select SQL: \n%s", aggregation_query)
                         pprint(aggregation_query)
 
                         collection = mongo_hook.get_collection(self.source_collection)
 
-                        cursor = collection.aggregate_raw_batches(
+                        cursor = collection.aggregate(
                             pipeline=aggregation_query,
                         )
-                        documents = []
-                        while True:
-                            try:
-                                documents.extend([x for x in decode_all(cursor.next())])
-                            except StopIteration:
-                                break
+                        documents = list(cursor)
+                        # documents = []
+                        # while True:
+                        #     try:
+                        #         documents.extend([x for x in decode_all(cursor.next())])
+                        #     except StopIteration:
+                        #         break
 
                         print("TOTAL docs after", len(documents))
                         select_df = DataFrame(list(documents))
@@ -171,20 +167,21 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         insert_df = self.align_to_schema_df(select_df)
                         print("TOTAL AFTER ALIGNMENT df", insert_df.shape)
                         print("ALIGNED COLUMNS", insert_df.columns)
-                        primary_key = self.unwind_key if self.unwind_key else "id"
-                        print(f"PRIMARY_KEY=={primary_key}")
 
                         null_id_records = insert_df[insert_df[primary_key].isnull()]
                         if not null_id_records.empty:
                             print(f"Records with null primary key field '{primary_key}':")
                             print("NULL ID", null_id_records.tolist())
 
+                        # Add the ds value for this run
+                        insert_df["airflow_synced_at"] = ds
                         pprint(insert_df.iloc[0])
                         insert_df.to_sql(
                             self.destination_table,
                             conn,
                             if_exists="append",
                             schema=self.destination_schema,
+                            index=False,
                         )
                         offset += limit
 
@@ -327,24 +324,21 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     #     return element
 
     def _prepare_schema(self):
+        self.log.info("Preparing Schema")
         self._flattened_schema = json_schema_to_dataframe(
             self.jsonschema,
             start_key=self.unwind,
             discard_fields=self.discard_fields,
-            unwind_key=self.unwind_key,
         )
+        if "_id" in self._flattened_schema:
+            # We will ignore this field
+            del self._flattened_schema["_id"]
+
         if "id" not in self._flattened_schema:
-            # We should allow the aggregation query the power to specify the $id
+            # The aggregation query should always produce an "id" field
             # but that field won't exist in the jsonschemas
             # for now we'll assume it'll be a string and see how it goes
-            if "_id" in self._flattened_schema:
-                self._flattened_schema["id"] = self._flattened_schema["_id"]
-                del self._flattened_schema["_id"]
-            elif self.unwind_key:
-                # We'll use this and it's already been dealt with
-                self._flattened_schema[self.unwind_key] = ("string", None)
-            else:
-                self._flattened_schema["id"] = ("string", None)
+            self._flattened_schema["id"] = ("string", None)
 
         # print("FLATTENED_SCHEMA", self._flattened_schema)
         # Step 1: Combine and preserve columns ensuring no duplicates
@@ -427,3 +421,30 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         conn_uri = hook.get_uri().replace("postgres:/", "postgresql:/")
         conn_uri = re.sub(r"\?.*$", "", conn_uri)
         return create_engine(conn_uri, **engine_kwargs)
+
+    def _prepare_aggregation_query(self):
+        aggregation_query = json.loads(self.aggregation_query)
+        for function_config in self.convert_fields:
+            function_name = function_config["function"]
+            fields = function_config["fields"]
+            function_arguments = function_config["function_args"]
+            aggregation_stage = function_config["aggregation_stage"]
+            if "$set" not in aggregation_query[aggregation_stage]:
+                aggregation_query.insert(aggregation_stage, {"$set": {}})
+            for field_name in fields:
+                result = convert_field(function_name, field_name, *function_arguments)
+                aggregation_query[aggregation_stage]["$set"].update(result)
+
+        return aggregation_query
+
+    def _prepare_runtime_aggregation_query(self, aggregation_query, limit, offset, context):
+        aggregation_query[-1] = {"$limit": limit}
+        aggregation_query[-2] = {"$skip": offset}
+        aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
+        if context["prev_data_interval_start_success"]:
+            aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context["prev_data_interval_start_success"]
+        else:
+            if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
+                del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+
+        return aggregation_query
