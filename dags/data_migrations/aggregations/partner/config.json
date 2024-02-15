@@ -1,5 +1,16 @@
 {
   "source_collection": "partners",
   "destination_table": "partner",
-  "jsonschema": "IPartner.json"
+  "jsonschema": "IPartner.json",
+  "convert_fields": [
+    {
+      "function": "string_possibly_pounds_to_pence",
+      "fields": [
+        "delivery_fee",
+        "shipping_method.price"
+      ],
+      "function_args": [],
+      "aggregation_stage": 1
+    }
+  ]
 }
