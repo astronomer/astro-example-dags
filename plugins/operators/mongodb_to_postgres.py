@@ -93,6 +93,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.discard_fields = discard_fields or []
         self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
+        self.separator = "__"
 
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
 
@@ -159,7 +160,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         print("TOTAL AFTER DISCARD df", select_df.shape)
                         pprint(documents[0])
 
-                        select_df = self.flatten_dataframe_columns_precisely(select_df, separator="__")
+                        select_df = self.flatten_dataframe_columns_precisely(select_df)
 
                         print("TOTAL AFTER FLATTEN df", select_df.shape)
                         print("FINAL COLUMNS", select_df.columns)
@@ -249,7 +250,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         # print("items dict", items)
         return items
 
-    def flatten_dataframe_columns_precisely(self, df, separator="__"):
+    def flatten_dataframe_columns_precisely(self, df):
         """Flatten all dictionary columns in a DataFrame and handle non-dict items."""
         flattened_data = pd.DataFrame()
         for column in df.columns:
@@ -273,7 +274,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         # print("COLUMN item dict", column, item)
                         flattened_item = self.flatten_dict(
                             item,
-                            separator=separator,
+                            separator=self.separator,
                         )
                         column_data.append(flattened_item)
                     else:
@@ -283,7 +284,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                 column_df = pd.json_normalize(column_data)
                 # Rename columns to ensure they are prefixed correctly
                 column_df.columns = [
-                    f"{column}{separator}{subcol}" if not subcol == "PARENT_COLUMN" else column
+                    f"{column}{self.separator}{subcol}" if not subcol == "PARENT_COLUMN" else column
                     for subcol in column_df.columns
                 ]
 
@@ -432,8 +433,10 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
             if "$set" not in aggregation_query[aggregation_stage]:
                 aggregation_query.insert(aggregation_stage, {"$set": {}})
             for field_name in fields:
-                result = convert_field(function_name, field_name, *function_arguments)
+                result, dtype = convert_field(function_name, field_name, *function_arguments)
                 aggregation_query[aggregation_stage]["$set"].update(result)
+                flattened_name = self._convert_fieldname_to_flattened_name(field_name)
+                self._flattened_schema[flattened_name] = dtype
 
         return aggregation_query
 
@@ -448,3 +451,6 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                 del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
 
         return aggregation_query
+
+    def _convert_fieldname_to_flattened_name(self, field_name):
+        return field_name.replace(".", self.separator)

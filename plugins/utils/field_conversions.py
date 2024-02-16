@@ -1,6 +1,7 @@
 # Function to generate the transformation logic for a single field
 def _string_possibly_pounds_to_pence(field_name, *args):
-    return _convert_anything_to_something("int", field_name, *args)
+    field = _convert_anything_to_something("int", field_name, *args)
+    return field, ("Int32", None)
 
 
 def _convert_pounds_to_pence_explicit(field_name):
@@ -14,7 +15,7 @@ def _convert_pounds_to_pence_explicit(field_name):
                 }
             }
         }
-    }
+    }, ("Int32", None)
 
 
 def _convert_epoch(field_name):
@@ -36,7 +37,7 @@ def _convert_epoch(field_name):
                 },
             }
         }
-    }
+    }, ("Int64", None)
 
 
 def _convert_anything_to_something(to_type, field_name):
