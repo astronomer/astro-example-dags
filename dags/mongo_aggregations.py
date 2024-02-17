@@ -6,9 +6,10 @@ from airflow.operators.dummy import DummyOperator
 
 from operators.mongodb_to_postgres import MongoDBToPostgresViaDataframeOperator
 from operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
-from operators.create_missing_columns import CreateMissingPostgresColumnsOperator
+from operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
 from data_migrations.aggregation_loader import load_aggregation_configs
 from operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
+from operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 
 # Now load the migrations
 migrations = load_aggregation_configs("aggregations")
@@ -41,6 +42,14 @@ public_schema_exists = EnsurePostgresSchemaExistsOperator(
     task_id="ensure_public_schema_exists",
     schema="public",
     postgres_conn_id="postgres_datalake_conn_id",
+    dag=dag,
+)
+
+ensure_missing_columns_function_exists = EnsureMissingColumnsPostgresFunctionOperator(
+    task_id="ensure_missing_columns_function",
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="transient_data",
+    destination_schema="public",
     dag=dag,
 )
 migration_tasks = []
@@ -76,16 +85,19 @@ for config in migrations:
         dag=dag,
     )
     task_id = f"ensure_public_{config['destination_table']}_columns_uptodate"
-    ensure_datalake_table_columns = CreateMissingPostgresColumnsOperator(
+    ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
-        source_schema="transient_data",
-        source_table=config["destination_table"],
-        destination_schema="public",
-        destination_table=config["destination_table"],
+        table=config["destination_table"],
         dag=dag,
     )
     mongo_to_postgres >> ensure_datalake_table >> ensure_datalake_table_columns
     migration_tasks.append(mongo_to_postgres)
 
-start_task >> transient_schema_exists >> public_schema_exists >> migration_tasks
+(
+    start_task
+    >> transient_schema_exists
+    >> public_schema_exists
+    >> ensure_missing_columns_function_exists
+    >> migration_tasks
+)
