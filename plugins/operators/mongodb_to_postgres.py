@@ -7,13 +7,13 @@ from datetime import datetime
 
 import pandas as pd
 from bson import ObjectId, json_util
-from jinja2 import Template
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 
+from plugins.utils.render_template import render_template
 from plugins.utils.field_conversions import convert_field
 from plugins.utils.json_schema_to_dataframe import json_schema_to_dataframe
 
@@ -94,6 +94,20 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
         self.separator = "__"
+        self.delete_template = """DO $$
+BEGIN
+   IF EXISTS (
+    SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
+    AND tablename = '{{destination_table}}') THEN
+      DELETE FROM {{ destination_schema }}.{{destination_table}}
+        WHERE airflow_synced_at = '{{ ds }}';
+   END IF;
+END $$;
+"""
+        self.context = {
+            "destination_schema": destination_schema,
+            "destination_table": destination_table,
+        }
 
         self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
 
@@ -107,6 +121,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
             self.log.info("Extracting data from %s", self.mongo_conn_id)
             self.log.info("Executing: \n %s", self.aggregation_query)
+            self.delete_sql = render_template(self.delete_template, context=context, extra_context=self.context)
 
             self._prepare_schema()
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
@@ -120,6 +135,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                     ds = context["ds"]
 
                     aggregation_query = self._prepare_aggregation_query()
+                    self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+                    conn.execute(self.delete_sql)
 
                     while True:
                         aggregation_query = self._prepare_runtime_aggregation_query(
@@ -187,7 +204,24 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                         offset += limit
 
                     conn.execute(
-                        f"ALTER TABLE {self.destination_schema}.{self.destination_table} ADD PRIMARY KEY ({primary_key});"  # noqa
+                        f"""
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        JOIN pg_class c ON c.oid = i.indrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_class ic ON ic.oid = i.indexrelid
+        WHERE n.nspname = '{self.destination_schema}'  -- Schema name
+        AND c.relname = '{self.destination_table}'  -- Table name
+        AND ic.relname = '{self.destination_table}_idx'  -- Index name
+    ) THEN
+        ALTER TABLE {self.destination_schema}.{self.destination_table}
+            ADD CONSTRAINT {self.destination_table}_idx PRIMARY KEY (id);
+    END IF;
+END $$;
+"""  # noqa
                     )  # noqa
 
                     transaction.commit()
@@ -195,13 +229,6 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
                     self.log.error("Error during database operation: %s", e)
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
-
-            # with conn.cursor() as cur:
-            #     if self.preoperation:
-            #         self.log.info("preoperation Detected, running\n\n %s \n\n", self.preoperation)
-            #         cur.execute(self.preoperation)
-            #     cur.copy_expert(self.aggregation_query, f_dest.name)
-            #     conn.commit()
 
             self.log.info("import successful")
             return f"Successfully migrated {self.destination_table} Data"
@@ -393,22 +420,12 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
 
     def render_aggregation_query(self, context, limit, offset):
 
-        new_context = {
+        extra_context = {
             "limit": limit,
             "offset": offset,
         }
 
-        # Merge the new variables with the existing context to keep Airflow variables accessible
-        combined_context = {**context, **new_context}
-
-        from pprint import pprint
-
-        pprint(combined_context)
-        # Manually render the template with the combined context
-        jinja_template = Template(self.aggregation_query)
-        output = jinja_template.render(**combined_context)
-
-        return json.loads(output)
+        return json.loads(render_template(self.aggregation_query, context=context, extra_context=extra_context))
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
@@ -443,12 +460,20 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     def _prepare_runtime_aggregation_query(self, aggregation_query, limit, offset, context):
         aggregation_query[-1] = {"$limit": limit}
         aggregation_query[-2] = {"$skip": offset}
-        aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
-        if context["prev_data_interval_start_success"]:
-            aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context["prev_data_interval_start_success"]
-        else:
-            if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
-                del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+        if "updatedAt" in aggregation_query[0]["$match"]:
+            if "$lte" in aggregation_query[0]["$match"]["updatedAt"]:
+                aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
+            if context["prev_data_interval_start_success"]:
+                aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context["prev_data_interval_start_success"]
+            else:
+                if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
+                    del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+
+            if (
+                "$gte" not in aggregation_query[0]["$match"]["updatedAt"]
+                and "$lte" not in aggregation_query[0]["$match"]["updatedAt"]
+            ):
+                aggregation_query[0]["$match"] = {}
 
         return aggregation_query
 

@@ -2,8 +2,7 @@
     {
         "$match": {
             "updatedAt": {
-                "$gte": "{{ prev_data_interval_start_success }}",
-                "$lte": "{{ data_interval_end }}"
+                "$gte": "{{ prev_data_interval_start_success }}"
             }
         }
     },

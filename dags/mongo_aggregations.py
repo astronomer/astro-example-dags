@@ -4,12 +4,13 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 
-from operators.mongodb_to_postgres import MongoDBToPostgresViaDataframeOperator
-from operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
-from operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
 from data_migrations.aggregation_loader import load_aggregation_configs
-from operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
-from operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
+from plugins.operators.mongodb_to_postgres import MongoDBToPostgresViaDataframeOperator
+from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
+from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
+from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
+from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
+from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
 
 # Now load the migrations
 migrations = load_aggregation_configs("aggregations")
@@ -55,9 +56,10 @@ ensure_missing_columns_function_exists = EnsureMissingColumnsPostgresFunctionOpe
 migration_tasks = []
 for config in migrations:
     schema_path = os.path.join(generated_schemas_abspath, config["jsonschema"])
+    task_id = f"{config['task_name']}_migrate_to_postgres"
 
     mongo_to_postgres = MongoDBToPostgresViaDataframeOperator(
-        task_id=config["task_id"],
+        task_id=task_id,
         mongo_conn_id="mongo_db_conn_id",
         postgres_conn_id="postgres_datalake_conn_id",
         preoperation=config["preoperation"],
@@ -74,7 +76,7 @@ for config in migrations:
         dag=dag,
     )
 
-    task_id = f"ensure_public_{config['destination_table']}_exists"
+    task_id = f"{config['task_name']}_ensure_public_schema_exists"
     ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
@@ -84,14 +86,23 @@ for config in migrations:
         destination_table=config["destination_table"],
         dag=dag,
     )
-    task_id = f"ensure_public_{config['destination_table']}_columns_uptodate"
+    task_id = f"{config['task_name']}_ensure_public_columns_uptodate"
     ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         table=config["destination_table"],
         dag=dag,
     )
-    mongo_to_postgres >> ensure_datalake_table >> ensure_datalake_table_columns
+    task_id = f"{config['task_name']}_append_to_datalake"
+    append_transient_table_data = AppendTransientTableDataOperator(
+        task_id=task_id,
+        postgres_conn_id="postgres_datalake_conn_id",
+        source_schema="transient_data",
+        table=config["destination_table"],
+        destination_schema="public",
+        dag=dag,
+    )
+    (mongo_to_postgres >> ensure_datalake_table >> ensure_datalake_table_columns >> append_transient_table_data)
     migration_tasks.append(mongo_to_postgres)
 
 (

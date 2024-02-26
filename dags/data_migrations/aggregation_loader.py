@@ -48,8 +48,8 @@ def load_aggregation_configs(relative_path):
                         f"migration subdirectory name {dir_name} doesn't make sense for config supplied {destination_table}"  # noqa
                     )
 
-                # Dynamically generate the task ID
-                config["task_id"] = f"migrate_{dir_name}_to_postgres"
+                # Dynamically generate the task Name
+                config["task_name"] = f"{dir_name}"
 
                 migrations.append(config)
     return migrations
