@@ -37,6 +37,7 @@ import requests
 def example_astronauts():
     #Define tasks
     @task(
+        #Define a dataset outlet for the task. This can be used to schedule downstream DAGs when this task has run.
         outlets=[Dataset("current_astronauts")]
     )  # Define that this task updates the `current_astronauts` Dataset
     def get_astronauts(**context) -> list[dict]:
