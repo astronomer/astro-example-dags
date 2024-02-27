@@ -58,7 +58,8 @@ BEGIN
   end LOOP;
   IF (str != '') THEN
     str = trim(trailing ',' from str);
-    str = 'ALTER TABLE ' || {self.destination_schema} || '.' || _table || ' ' || str;
+    str = 'ALTER TABLE {self.destination_schema}.' || _table || ' ' || str;
+    raise notice ':str';
     EXECUTE str;
   ELSE
     raise notice 'No Schema Changes Detected';

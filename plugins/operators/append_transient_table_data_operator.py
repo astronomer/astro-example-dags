@@ -54,11 +54,16 @@ class AppendTransientTableDataOperator(BaseOperator):
                         o.airflow_synced_at = '{{ ds }}'
                 );
 """
-        self.insert_template = """INSERT INTO {{ destination_schema }}.{{table}}
-                SELECT o.*
-                FROM {{source_schema}}.{{table}} o
-                WHERE
-                    o.airflow_synced_at = '{{ ds }}'
+        self.columns_template = """SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = '{{source_schema}}'
+            AND table_name   = '{{table}}';
+
+"""
+        self.insert_template = """INSERT INTO {{destination_schema}}.{{table}} ({{column_names_str}})
+            SELECT {{column_names_str}}
+            FROM {{source_schema}}.{{table}};
+
             ;
 """
 
@@ -69,15 +74,33 @@ class AppendTransientTableDataOperator(BaseOperator):
             hook = BaseHook.get_hook(self.postgres_conn_id)
 
             self.delete_sql = render_template(self.delete_template, context=context, extra_context=self.context)
-            self.insert_sql = render_template(self.insert_template, context=context, extra_context=self.context)
+            self.columns_sql = render_template(self.columns_template, context=context, extra_context=self.context)
             engine = self.get_postgres_sqlalchemy_engine(hook)
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
                     self.log.info("Appending {self.table} Data into Datalake")
                     self.log.info(f"{self.delete_sql}")
-                    self.log.info(f"{self.insert_sql}")
                     conn.execute(self.delete_sql)
+
+                    self.log.info(f"{self.columns_sql}")
+                    result = conn.execute(self.columns_sql)
+                    column_names = [f'"{row["column_name"]}"' for row in result]
+                    column_names_str = ", ".join(column_names)
+
+                    # Check if column_names is not empty
+                    if not column_names:
+                        raise AirflowException(f"No columns found for table {self.source_schema}.{self.table}")
+
+                    self.insert_sql = render_template(
+                        self.insert_template,
+                        context=context,
+                        extra_context={
+                            **self.context,
+                            "column_names_str": column_names_str,
+                        },
+                    )
+                    self.log.info(f"{self.insert_sql}")
                     conn.execute(self.insert_sql)
                     transaction.commit()
                 except Exception as e:

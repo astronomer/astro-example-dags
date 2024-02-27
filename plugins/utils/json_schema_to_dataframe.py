@@ -60,7 +60,7 @@ def map_json_type_to_dtype(json_type, ts_type=None):
     }
     # Adjust date handling based on tsType
     if json_type == "date":
-        if ts_type == "Date":
+        if ts_type == "Date" or ts_type == "Date | moment":
             return "datetime64[ns, UTC]"  # or "datetime64[ns]" for naive datetime
         else:
             return "string"
