@@ -36,7 +36,9 @@ import requests
 )
 def example_astronauts():
     #Define tasks
-    @task(outlets=[Dataset("current_astronauts")])
+    @task(
+        outlets=[Dataset("current_astronauts")]
+    )  # Define that this task updates the `current_astronauts` Dataset
     def get_astronauts(**context) -> list[dict]:
         """
         This task uses the requests library to retrieve a list of Astronauts 
