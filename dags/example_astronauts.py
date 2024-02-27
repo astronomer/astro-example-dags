@@ -1,4 +1,6 @@
 """
+## Astronaut ETL example DAG
+
 This DAG queries the list of astronauts currently in space from the 
 Open Notify API and prints each astronaut's name and flying craft.
 
@@ -14,6 +16,8 @@ accordingly each time it runs.
 
 For more explanation and getting started instructions, see our Write your 
 first DAG tutorial: https://docs.astronomer.io/learn/get-started-with-airflow
+
+![Picture of the ISS](https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2010/02/space_station_over_earth/10293696-3-eng-GB/Space_Station_over_Earth_card_full.jpg)
 """
 
 from airflow import Dataset
@@ -21,18 +25,23 @@ from airflow.decorators import dag, task
 from pendulum import datetime
 import requests
 
-#Define the basic parameters of the DAG, like schedule and start date
+#Define the basic parameters of the DAG, like schedule and start_date
 @dag(
-    schedule="@daily", start_date=datetime(2024, 1, 1), catchup=False, tags=["example"]
+    start_date=datetime(2024, 1, 1),
+    schedule="@daily",
+    catchup=False,
+    doc_md=__doc__,
+    default_args={"owner": "Astro", "retries": 3},
+    tags=["example"],
 )
 def example_astronauts():
     #Define tasks
     @task(outlets=[Dataset("current_astronauts")])
-    def get_astronauts(**context):
+    def get_astronauts(**context) -> list[dict]:
         """
         This task uses the requests library to retrieve a list of Astronauts 
         currently in space. The results are pushed to XCom with a specific key
-        so they can be used in a downstream pipeline. It returns a list
+        so they can be used in a downstream pipeline. The task returns a list
         of Astronauts to be used in the next task.
         """
         r = requests.get("http://api.open-notify.org/astros.json")
@@ -45,7 +54,7 @@ def example_astronauts():
         return list_of_people_in_space
 
     @task
-    def print_astronaut_craft(greeting, person_in_space):
+    def print_astronaut_craft(greeting: str, person_in_space: dict) -> None:
         """
         This task creates a print statement with the name of an 
         Astronaut in space and the craft they are flying on from 
