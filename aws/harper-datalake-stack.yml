@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Fargate task in a private subnet with a load balancer and auto scaling
+
+Parameters:
+  Stage:
+    Description: An harper:environment name that is prefixed to resource names
+    Type: String
+
+  PORT:
+    Type: String
+    Default: 6533
+
+  InitalVolumeSize:
+    Description: Initial database volume size
+    Type: String
+    Default: 10
+    AllowedValues:
+      - 10
+  MaxVolumeSize:
+    Description: Database maximum volume size
+    Type: String
+    Default: 40
+    AllowedValues:
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+
+  # https://cloud.astronomer.io/clr9qwhbn033u01qzg6shab5j/deployments/clt4wht0a00nz01lkog7kna4t/details
+  AstronomerIoIP1:
+    Type: String
+    Default: '3.78.70.36/32' # Replace with Astronomer.io's IP
+  AstronomerIoIP2:
+    Type: String
+    Default: '3.120.79.78/32' # Replace with Astronomer.io's IP
+  # https://help.tableau.com/current/pro/desktop/en-us/publish_tableau_online_ip_authorization.htm
+  TableauIP1:
+    Type: String
+    Default: '34.246.74.86/32' # Replace with Tableau's IP
+  TableauIP2:
+    Type: String
+    Default: '52.215.158.213/32' # Replace with Tableau's IP
+  DatalakeAdminUser:
+    Description: The database admin user
+    Type: String
+  DatalakeAdminPass:
+    Description: The database admin password
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    ConstraintDescription: The password must be at least 8 characters long.
+
+Resources:
+
+  SubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupName: !Sub "${Stage}-datalake-subnetgroup"
+      DBSubnetGroupDescription: !Sub "Subnet Group for the RDS ${Stage} Datalake"
+      SubnetIds:
+        - Fn::ImportValue:
+            !Sub "${Stage}-private-subnet-1"
+        # - Fn::ImportValue:
+        #     !Sub "${Stage}-private-subnet-2"
+        # - Fn::ImportValue:
+        #     !Sub "${Stage}-private-subnet-3"
+    Tags:
+        - Key: Name
+          Value: !Sub "${Stage}-datalake-subnetgroup"
+        - Key: harper:env
+          Value: !Ref Stage
+        - Key: harper:stack
+          Value: harper-vpc-stack
+        - Key: harper:version
+          Value: '2'
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access from specific IPs to RDS PostgreSQL
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref PORT
+          ToPort: !Ref PORT
+          CidrIp: !Ref AstronomerIoIP1
+        - IpProtocol: tcp
+          FromPort: !Ref PORT
+          ToPort: !Ref PORT
+          CidrIp: !Ref AstronomerIoIP2
+        - IpProtocol: tcp
+          FromPort: !Ref PORT
+          ToPort: !Ref PORT
+          CidrIp: !Ref TableauIP1
+        - IpProtocol: tcp
+          FromPort: !Ref PORT
+          ToPort: !Ref PORT
+          CidrIp: !Ref TableauIP2
+
+  PostgreSQLInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.t4g.medium
+      StorageType: 'gp2'
+      AllocatedStorage: !Ref InitalVolumeSize
+      MaxAllocatedStorage: !Ref MaxVolumeSize
+      Engine: postgres
+      EngineVersion: '12'
+      MasterUsername: !Ref DatalakeAdminUser
+      MasterUserPassword: !Ref DatalakeAdminPass
+      DBSubnetGroupName: !Ref DBSubnetGroupName
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+
+Outputs:
+  DBEndpoint:
+    Description: The datalake endpoint
+    Value: !GetAtt PostgreSQLInstance.Endpoint.Address

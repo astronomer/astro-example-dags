@@ -1,0 +1,12 @@
+---
+
+yaml-files:
+  - '*.yaml'
+  - '*.yml'
+  - '.yamllint'
+
+rules:
+  line-length:
+    max: 300
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
