@@ -78,7 +78,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
-        self.log.info("Initialising MongoAtlasToPostgresViaDataframeOperator")
+        self.log.info("Initialising MongoDBToPostgresViaDataframeOperator")
         self.mongo_conn_id = mongo_conn_id
         self.postgres_conn_id = postgres_conn_id
         self.preoperation = preoperation
@@ -109,11 +109,11 @@ END $$;
             "destination_table": destination_table,
         }
 
-        self.log.info("Initialised MongoAtlasToPostgresViaDataframeOperator")
+        self.log.info("Initialised MongoDBToPostgresViaDataframeOperator")
 
     def execute(self, context):
         try:
-            self.log.info("Executing MongoAtlasToPostgresViaDataframeOperator")
+            self.log.info("Executing MongoDBToPostgresViaDataframeOperator")
             mongo_hook = BaseHook.get_hook(self.mongo_conn_id)
             self.log.info("source_hook")
             destination_hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -152,15 +152,10 @@ END $$;
                             pipeline=aggregation_query,
                         )
                         documents = list(cursor)
-                        # documents = []
-                        # while True:
-                        #     try:
-                        #         documents.extend([x for x in decode_all(cursor.next())])
-                        #     except StopIteration:
-                        #         break
 
                         print("TOTAL docs after", len(documents))
                         select_df = DataFrame(list(documents))
+
                         print("TOTAL df", select_df.shape)
 
                         if select_df.empty:
@@ -193,6 +188,8 @@ END $$;
 
                         # Add the ds value for this run
                         insert_df["airflow_synced_at"] = ds
+                        # Make all column names lowercase
+                        insert_df.columns = insert_df.columns.str.lower()
                         pprint(insert_df.iloc[0])
                         insert_df.to_sql(
                             self.destination_table,
