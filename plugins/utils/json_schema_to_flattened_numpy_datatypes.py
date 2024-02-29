@@ -1,8 +1,8 @@
 import json
 
 
-def flatten_object(obj, parent_key="", sep="__", discard_fields=[]):
-    items = {}
+def flatten_object(obj, parent_key="", sep="__", discard_fields=[], preserve_fields={}):
+    items = preserve_fields.copy()
     print("FLATTEN_OBJECT", obj)
     for k, v in obj.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
@@ -84,7 +84,7 @@ def map_bson_type_to_dtype(bson_type, ts_type=None, comment=None):
     return bson_pandas_numpy_mapping.get(bson_type, "string")
 
 
-def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
+def json_schema_to_flattened_numpy_datatypes(schema_path, start_key=None, discard_fields=[], preserve_fields={}):
     """Create an empty DataFrame based on a flattened JSON Schema, setting array columns to store JSON strings."""
 
     with open(schema_path, "r") as file:
@@ -102,10 +102,17 @@ def json_schema_to_dataframe(schema_path, start_key=None, discard_fields=[]):
             else:
                 # The schema suggests we will have an array of values
                 # However the actual aggregation should be converting this into an array of objects
-                schema_to_flatten = {"id": schema["properties"][start_key]["items"]}
+                # So it should tell us what this schema looks like in the preserve_fields dict
+                print(f"Returning the preserve_fields array for {start_key}")
+                return preserve_fields
+                # schema_to_flatten = {"id": schema["properties"][start_key]["items"]}
         else:
             schema_to_flatten = schema["properties"]
-        flattened_schema = flatten_object(schema_to_flatten, discard_fields=discard_fields)
+        flattened_schema = flatten_object(
+            schema_to_flatten,
+            discard_fields=discard_fields,
+            preserve_fields=preserve_fields,
+        )
     else:
         raise ValueError("Schema does not have a top-level object with properties")
 

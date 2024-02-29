@@ -15,6 +15,9 @@ from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalak
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
 
+# from airflow.models.baseoperator import chain, chain_linear
+
+
 # Now load the migrations
 migrations = load_aggregation_configs("aggregations")
 
@@ -153,22 +156,8 @@ for config in migrations:
         >> ensure_datalake_table_columns
         >> append_transient_table_data
     )
+    append_transient_table_data >> base_tables_completed
     migration_tasks.append(drop_transient_table)
-
-report_tasks = []
-counter = 1
-last_report_task = base_tables_completed
-for group_list in reports_sql_files:
-    group_tasks = []
-    report_task = DummyOperator(task_id=f"reports_{counter}", dag=dag)
-    for config in group_list:
-        id = config["id"]
-        task = DummyOperator(task_id=id, dag=dag)
-        report_task >> task
-    counter += 1
-    last_report_task >> report_task
-    last_report_task = report_task
-
 
 (
     start_task
@@ -176,6 +165,21 @@ for group_list in reports_sql_files:
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
     >> migration_tasks
-    >> base_tables_completed
-    >> report_tasks
 )
+
+last_report_task = base_tables_completed
+for group_index, group_list in enumerate(reports_sql_files, start=1):
+    report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
+    report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
+    last_report_task >> report_task
+
+    # Initialize an array to hold all tasks in the current group
+    tasks_in_current_group = []
+
+    for config in group_list:
+        id = config["id"]
+        task = DummyOperator(task_id=id, dag=dag)
+        # Add the current task to the array
+        tasks_in_current_group.append(task)
+    report_task >> tasks_in_current_group >> report_task_complete
+    last_report_task = report_task_complete

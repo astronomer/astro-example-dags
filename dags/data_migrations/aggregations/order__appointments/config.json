@@ -3,8 +3,15 @@
   "destination_table": "order__appointments",
   "jsonschema": "IOrder.json",
   "unwind": "appointments",
-  "preserve_fields": [
-    "order_id",
-    "appointment_id"
-  ]
+  "preserve_fields": {
+    "order_id": [
+      "string"
+    ],
+    "id": [
+      "string"
+    ],
+    "appointment_id": [
+      "string"
+    ]
+  }
 }

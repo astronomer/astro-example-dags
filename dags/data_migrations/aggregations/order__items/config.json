@@ -3,7 +3,9 @@
   "destination_table": "order__items",
   "jsonschema": "IOrder.json",
   "unwind": "items",
-  "preserve_fields": [
-    "order_id"
-  ]
+  "preserve_fields": {
+    "order_id": [
+      "string"
+    ]
+  }
 }

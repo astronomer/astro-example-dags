@@ -3,7 +3,9 @@
   "destination_table": "order__payment_references",
   "jsonschema": "IOrder.json",
   "unwind": "zettle_payment_references",
-  "preserve_fields": [
-    "order_id"
-  ]
+  "preserve_fields": {
+    "order_id": [
+      "string"
+    ]
+  }
 }

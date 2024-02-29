@@ -3,7 +3,9 @@
   "destination_table": "order__changes_log",
   "jsonschema": "IOrder.json",
   "unwind": "order_changes_log",
-  "preserve_fields": [
-    "order_id"
-  ]
+  "preserve_fields": {
+    "order_id": [
+      "string"
+    ]
+  }
 }

@@ -2,7 +2,7 @@ import re
 import sys
 import json
 from pprint import pprint  # noqa
-from typing import List, Iterable, Optional
+from typing import Dict, List, Iterable, Optional
 from datetime import datetime
 
 import pandas as pd
@@ -16,7 +16,7 @@ from bson.codec_options import CodecOptions
 
 from plugins.utils.render_template import render_template
 from plugins.utils.field_conversions import convert_field
-from plugins.utils.json_schema_to_dataframe import json_schema_to_dataframe
+from plugins.utils.json_schema_to_flattened_numpy_datatypes import json_schema_to_flattened_numpy_datatypes
 
 pd.set_option("display.max_rows", 10)  # or a large number instead of None
 pd.set_option("display.max_columns", None)  # Display any number of columns
@@ -73,7 +73,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         destination_table: str,
         destination_schema: str,
         unwind: Optional[str] = None,
-        preserve_fields: Optional[List[str]] = [],
+        preserve_fields: Optional[Dict] = {},
         discard_fields: Optional[List[str]] = [],
         convert_fields: Optional[List[str]] = [],
         **kwargs,
@@ -90,7 +90,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.destination_table = destination_table
         self.destination_schema = destination_schema
         self.unwind = unwind
-        self.preserve_fields = preserve_fields or []
+        self.preserve_fields = preserve_fields or {}
         self.discard_fields = discard_fields or []
         self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
@@ -357,10 +357,11 @@ END $$;
 
     def _prepare_schema(self):
         self.log.info("Preparing Schema")
-        self._flattened_schema = json_schema_to_dataframe(
+        self._flattened_schema = json_schema_to_flattened_numpy_datatypes(
             self.jsonschema,
             start_key=self.unwind,
             discard_fields=self.discard_fields,
+            preserve_fields=self.preserve_fields,
         )
         if "_id" in self._flattened_schema:
             # We will ignore this field
@@ -376,7 +377,7 @@ END $$;
         # Step 1: Combine and preserve columns ensuring no duplicates
         combined_columns = list(self._flattened_schema.keys())
         if self.preserve_fields:
-            combined_columns += [field for field in self.preserve_fields if field not in combined_columns]
+            combined_columns += [field for field, v in self.preserve_fields.items() if field not in combined_columns]
 
         # # Step 2: Exclude discard fields
         # if self.discard_fields:
