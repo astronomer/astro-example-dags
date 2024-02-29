@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
+from bson.codec_options import CodecOptions
 
 from plugins.utils.render_template import render_template
 from plugins.utils.field_conversions import convert_field
@@ -146,7 +147,13 @@ END $$;
                         self.log.info("Select SQL: \n%s", aggregation_query)
                         pprint(aggregation_query)
 
-                        collection = mongo_hook.get_collection(self.source_collection)
+                        mongo_conn = mongo_hook.get_conn()
+                        codec_options = CodecOptions(tz_aware=True)
+
+                        # we do this because the mongo_hook.get_collection doesn't let you pass codec_options
+                        collection = mongo_conn.get_database(mongo_hook.connection.schema).get_collection(
+                            self.source_collection, codec_options=codec_options
+                        )
 
                         cursor = collection.aggregate(
                             pipeline=aggregation_query,
@@ -376,14 +383,18 @@ END $$;
         #     combined_columns = [column for column in combined_columns if column not in self.discard_fields]
 
         print("COMBINED_COLUMNS", combined_columns)
-        self._combined_columns = combined_columns
+        self._schema_columns = [col.lower() for col in combined_columns]
+        self._schema_columns = sorted(self._schema_columns)
+        print("SCHEMA COLUMNS LOWERCASE", combined_columns)
 
     def align_to_schema_df(self, df):
 
-        # Step 3: Reindex DataFrame to adjust columns, using 'None' for any new columns' fill value
-        insert_df = df.reindex(columns=self._combined_columns, fill_value=None)
+        # ensure existing df columns are lowered to match the schemas lowercase'd columns
+        df.columns = df.columns.str.lower()
+        insert_df = df.reindex(columns=self._schema_columns, fill_value=None)
 
         for column, (dtype, *rest) in self._flattened_schema.items():
+            column = column.lower()
             if column in insert_df.columns:
                 print(f"aligning column {column} as type {dtype}")
                 insert_df[column] = insert_df[column].astype(dtype)

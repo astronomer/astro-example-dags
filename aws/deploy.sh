@@ -1,5 +1,12 @@
 #!/bin/bash
 
+CMD=$1
+if [ "$CMD" == "" ]; then
+    CMD="update-stack"
+else
+    CMD="deploy-stack"
+fi
+
 STAGE="production"
 
 if [ "$STAGE" == "production" ]; then
@@ -9,7 +16,7 @@ else
   LogRetentionInDays=90
 fi
 
-aws_slack_webhook=$(op item get "$STAGE-datalake" --format json --vault Environments --fields ALERTS_SLACK_WEBHOOK | jq -r '.value' || exit 1)
+aws_slack_webhook=$(op item get "$STAGE-vpc" --format json --vault Environments --fields ALERTS_SLACK_WEBHOOK | jq -r '.value' || exit 1)
 DatalakeAdminUser=$(op item get "$STAGE-datalake" --format json --vault Environments --fields DATALAKE_ADMINUSER | jq -r '.value' || exit 1)
 DatalakeAdminPass=$(op item get "$STAGE-datalake" --format json --vault Environments --fields DATALAKE_ADMINPASS | jq -r '.value' || exit 1)
 
@@ -17,7 +24,7 @@ DatalakeAdminPass=$(op item get "$STAGE-datalake" --format json --vault Environm
 # aws cloudformation delete-stack --stack-name "$stage-harper-vpc-stack"
 
 # Create the CloudFormation stack and pass the parameters
-aws cloudformation update-stack \
+aws cloudformation $CMD \
     --stack-name "$STAGE-harper-datalake-stack" \
     --template-body file://harper-datalake-stack.yml \
     --parameters \

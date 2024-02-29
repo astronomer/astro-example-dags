@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
@@ -10,6 +10,7 @@ from data_migrations.aggregation_loader import load_aggregation_configs
 from plugins.operators.mongodb_to_postgres import MongoDBToPostgresViaDataframeOperator
 from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
 from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
+from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
@@ -20,20 +21,31 @@ migrations = load_aggregation_configs("aggregations")
 default_args = {
     "owner": "airflow",
     "start_date": datetime(2019, 7, 14),
+    "schedule_interval": "@daily",
+    # "email": ["martin@harperconcierge.com"],
+    # "email_on_failure": True,
+    # "email_on_retry": False,
+    "retry_delay": timedelta(minutes=5),
+    "retries": 3,
 }
 
 
 dag = DAG(
     "data_aggregation_dag",
-    schedule_interval=None,
+    catchup=False,
     default_args=default_args,
     template_searchpath="/usr/local/airflow/dags",
 )
 
 start_task = DummyOperator(task_id="start", dag=dag)
+base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag)
 generated_schemas_path = "../include/generatedSchemas/"
 generated_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), generated_schemas_path)
 
+reports = "./sql/reports"
+reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
+
+reports_sql_files = get_recursive_sql_file_lists(reports_abspath, subdir="reports")
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(
     task_id="ensure_transient_schema_exists",
@@ -141,7 +153,22 @@ for config in migrations:
         >> ensure_datalake_table_columns
         >> append_transient_table_data
     )
-    migration_tasks.append(mongo_to_postgres)
+    migration_tasks.append(drop_transient_table)
+
+report_tasks = []
+counter = 1
+last_report_task = base_tables_completed
+for group_list in reports_sql_files:
+    group_tasks = []
+    report_task = DummyOperator(task_id=f"reports_{counter}", dag=dag)
+    for config in group_list:
+        id = config["id"]
+        task = DummyOperator(task_id=id, dag=dag)
+        report_task >> task
+    counter += 1
+    last_report_task >> report_task
+    last_report_task = report_task
+
 
 (
     start_task
@@ -149,4 +176,6 @@ for config in migrations:
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
     >> migration_tasks
+    >> base_tables_completed
+    >> report_tasks
 )
