@@ -392,9 +392,13 @@ END $$;
         # ensure existing df columns are lowered to match the schemas lowercase'd columns
         df.columns = df.columns.str.lower()
         insert_df = df.reindex(columns=self._schema_columns, fill_value=None)
+        print(self._flattened_schema.items())
+        print(insert_df.columns)
 
         for column, (dtype, *rest) in self._flattened_schema.items():
+            print(f"column name = {column}")
             column = column.lower()
+            print(f"column lower_name = {column}")
             if column in insert_df.columns:
                 print(f"aligning column {column} as type {dtype}")
                 insert_df[column] = insert_df[column].astype(dtype)
