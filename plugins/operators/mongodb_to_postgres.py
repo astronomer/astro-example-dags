@@ -16,6 +16,7 @@ from bson.codec_options import CodecOptions
 
 from plugins.utils.render_template import render_template
 from plugins.utils.field_conversions import convert_field
+from plugins.utils.detect_duplicate_columns import detect_duplicate_columns
 from plugins.utils.json_schema_to_flattened_numpy_datatypes import json_schema_to_flattened_numpy_datatypes
 
 pd.set_option("display.max_rows", 10)  # or a large number instead of None
@@ -183,6 +184,7 @@ END $$;
 
                         print("TOTAL AFTER FLATTEN df", select_df.shape)
                         print("FINAL COLUMNS", select_df.columns)
+                        detect_duplicate_columns(select_df.columns)
                         self.log.info("Postgres URI: \n %s", destination_hook.get_uri())
                         insert_df = self.align_to_schema_df(select_df)
                         print("TOTAL AFTER ALIGNMENT df", insert_df.shape)
@@ -392,6 +394,11 @@ END $$;
 
         # ensure existing df columns are lowered to match the schemas lowercase'd columns
         df.columns = df.columns.str.lower()
+        print("Align columns duplication detection")
+        print("Checking schema columns")
+        detect_duplicate_columns(self._schema_columns)
+        print("Checking ResultsSet columns", list(df.columns))
+        detect_duplicate_columns(df.columns)
         insert_df = df.reindex(columns=self._schema_columns, fill_value=None)
         print(self._flattened_schema.items())
         print(insert_df.columns)

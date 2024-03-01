@@ -33,7 +33,7 @@ class EnsureMissingColumnsPostgresFunctionOperator(BaseOperator):
         self.source_schema = source_schema
         self.destination_schema = destination_schema
 
-        self.template_func = f"""CREATE OR REPLACE FUNCTION addMissingColumns(_table TEXT)
+        self.template_func = f"""CREATE OR REPLACE FUNCTION addMissingColumns(_source_table TEXT, _destination_table TEXT)
 RETURNS VOID
 AS
 $$
@@ -44,11 +44,11 @@ DECLARE
     WHERE
         NOT EXISTS(
             SELECT * FROM INFORMATION_SCHEMA.COLUMNS c_public
-            WHERE c_public.table_name=_table
+            WHERE c_public.table_name=_destination_table
             AND c_public.column_name=c_transient.column_name
             AND c_public.table_schema='{self.destination_schema}'
       )
-      AND c_transient.table_name=_table
+      AND c_transient.table_name=_source_table
       AND c_transient.table_schema='{self.source_schema}'
     ;
 BEGIN
@@ -58,7 +58,7 @@ BEGIN
   end LOOP;
   IF (str != '') THEN
     str = trim(trailing ',' from str);
-    str = 'ALTER TABLE {self.destination_schema}.' || _table || ' ' || str;
+    str = 'ALTER TABLE {self.destination_schema}.' || _destination_table || ' ' || str;
     raise notice ':str';
     EXECUTE str;
   ELSE

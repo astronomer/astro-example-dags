@@ -13,6 +13,7 @@ from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumn
 from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
+from plugins.operators.ensure_datalake_table_view_exists import EnsurePostgresDatalakeTableViewExistsOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
 
 # from airflow.models.baseoperator import chain, chain_linear
@@ -28,8 +29,9 @@ default_args = {
     # "email": ["martin@harperconcierge.com"],
     # "email_on_failure": True,
     # "email_on_retry": False,
+    "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
-    "retries": 3,
+    "retries": 0,
 }
 
 
@@ -37,6 +39,7 @@ dag = DAG(
     "data_aggregation_dag",
     catchup=False,
     default_args=default_args,
+    max_active_runs=1,  # This ensures sequential execution
     template_searchpath="/usr/local/airflow/dags",
 )
 
@@ -96,7 +99,7 @@ for config in migrations:
         destination_schema="transient_data",
         destination_table=config["destination_table"],
         unwind=config.get("unwind"),
-        preserve_fields=config.get("preserve_fields", []),
+        preserve_fields=config.get("preserve_fields", {}),
         discard_fields=config.get("discard_fields", []),
         convert_fields=config.get("convert_fields", []),
         dag=dag,
@@ -111,14 +114,14 @@ for config in migrations:
         dag=dag,
     )
 
-    task_id = f"{config['task_name']}_ensure_public_schema_exists"
+    task_id = f"{config['task_name']}_ensure_datalake_table_exists"
     ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         source_schema="transient_data",
         source_table=config["destination_table"],
         destination_schema="public",
-        destination_table=config["destination_table"],
+        destination_table=f"raw_{config['destination_table']}",
         dag=dag,
     )
 
@@ -127,7 +130,7 @@ for config in migrations:
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         schema="public",
-        table=config["destination_table"],
+        table=f"raw_{config['destination_table']}",
         dag=dag,
     )
 
@@ -135,7 +138,8 @@ for config in migrations:
     ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
-        table=config["destination_table"],
+        source_table=config["destination_table"],
+        destination_table=f"raw_{config['destination_table']}",
         dag=dag,
     )
     task_id = f"{config['task_name']}_append_to_datalake"
@@ -143,8 +147,21 @@ for config in migrations:
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         source_schema="transient_data",
-        table=config["destination_table"],
+        source_table=config["destination_table"],
         destination_schema="public",
+        destination_table=f"raw_{config['destination_table']}",
+        dag=dag,
+    )
+    task_id = f"{config['task_name']}_ensure_datalake_table_view"
+    ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
+        task_id=task_id,
+        postgres_conn_id="postgres_datalake_conn_id",
+        source_schema="public",
+        source_table=f"raw_{config['destination_table']}",
+        destination_schema="public",
+        destination_table=config["destination_table"],
+        append_fields=config.get("append_fields", ["createdat", "updatedat", "airflow_synced_at"]),
+        prepend_fields=config.get("prepend_fields", ["id"]),
         dag=dag,
     )
     (
@@ -155,8 +172,10 @@ for config in migrations:
         >> refresh_datalake_table
         >> ensure_datalake_table_columns
         >> append_transient_table_data
+        >> ensure_table_view_exists
+        >> base_tables_completed
     )
-    append_transient_table_data >> base_tables_completed
+    # append_transient_table_data >> base_tables_completed
     migration_tasks.append(drop_transient_table)
 
 (

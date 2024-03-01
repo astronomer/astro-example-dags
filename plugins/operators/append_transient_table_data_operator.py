@@ -15,9 +15,11 @@ class AppendTransientTableDataOperator(BaseOperator):
     :type postgres_conn_id: str
     :param source_schema: Source Schema name
     :type source_schema: str
+    :param source_table: Source Table name
+    :type table: str
     :param destination_schema: Destination Schema name
     :type destination_schema: str
-    :param table: Table name
+    :param destination_table: Destination Table name
     :type table: str
     """
 
@@ -29,7 +31,8 @@ class AppendTransientTableDataOperator(BaseOperator):
         postgres_conn_id: str = "postgres_conn_id",
         source_schema: str,
         destination_schema: str,
-        table: str,
+        source_table: str,
+        destination_table: str,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -37,19 +40,21 @@ class AppendTransientTableDataOperator(BaseOperator):
         self.postgres_conn_id = postgres_conn_id
         self.source_schema = source_schema
         self.destination_schema = destination_schema
-        self.table = table
+        self.source_table = source_table
+        self.destination_table = destination_table
 
         self.context = {
             "source_schema": source_schema,
+            "source_table": source_table,
             "destination_schema": destination_schema,
-            "table": table,
+            "destination_table": self.destination_table,
         }
 
-        self.delete_template = """DELETE FROM {{ destination_schema }}.{{table}}
+        self.delete_template = """DELETE FROM {{ destination_schema }}.{{destination_table}}
             WHERE
                 id IN (
                     SELECT o.id
-                    FROM {{source_schema}}.{{table}} o
+                    FROM {{source_schema}}.{{source_table}} o
                     WHERE
                         o.airflow_synced_at = '{{ ds }}'
                 );
@@ -57,12 +62,12 @@ class AppendTransientTableDataOperator(BaseOperator):
         self.columns_template = """SELECT column_name
             FROM information_schema.columns
             WHERE table_schema = '{{source_schema}}'
-            AND table_name   = '{{table}}';
+            AND table_name   = '{{source_table}}';
 
 """
-        self.insert_template = """INSERT INTO {{destination_schema}}.{{table}} ({{column_names_str}})
+        self.insert_template = """INSERT INTO {{destination_schema}}.{{destination_table}} ({{column_names_str}})
             SELECT {{column_names_str}}
-            FROM {{source_schema}}.{{table}};
+            FROM {{source_schema}}.{{source_table}};
 
             ;
 """
@@ -79,7 +84,7 @@ class AppendTransientTableDataOperator(BaseOperator):
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
-                    self.log.info("Appending {self.table} Data into Datalake")
+                    self.log.info("Appending {self.destination_table} Data into Datalake")
                     self.log.info(f"{self.delete_sql}")
                     conn.execute(self.delete_sql)
 
@@ -90,7 +95,7 @@ class AppendTransientTableDataOperator(BaseOperator):
 
                     # Check if column_names is not empty
                     if not column_names:
-                        raise AirflowException(f"No columns found for table {self.source_schema}.{self.table}")
+                        raise AirflowException(f"No columns found for table {self.source_schema}.{self.source_table}")
 
                     self.insert_sql = render_template(
                         self.insert_template,
@@ -108,7 +113,7 @@ class AppendTransientTableDataOperator(BaseOperator):
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
-            return f"Data Appended for {self.table}"
+            return f"Data Appended to {self.destination_table}"
         except Exception as e:
             self.log.error(f"An error occurred: {e}")
             raise AirflowException(e)

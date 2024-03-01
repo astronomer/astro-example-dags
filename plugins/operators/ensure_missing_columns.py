@@ -11,7 +11,9 @@ class EnsureMissingPostgresColumnsOperator(BaseOperator):
     """
     :param postgres_conn_id: postgres connection id
     :type postgres_conn_id: str
-    :param table: Table name
+    :param source_table: Source Table name
+    :type table: str
+    :param destination_table: Destination Table name
     :type table: str
     """
 
@@ -21,13 +23,15 @@ class EnsureMissingPostgresColumnsOperator(BaseOperator):
         self,
         *,
         postgres_conn_id: str = "postgres_conn_id",
-        table: str,
+        source_table: str,
+        destination_table: str,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.log.info("Initialising EnsureMissingPostgresColumnsOperator")
         self.postgres_conn_id = postgres_conn_id
-        self.table = table
+        self.source_table = source_table
+        self.destination_table = destination_table
 
         self.log.info("Initialised EnsureMissingPostgresColumnsOperator")
 
@@ -39,15 +43,19 @@ class EnsureMissingPostgresColumnsOperator(BaseOperator):
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
-                    self.log.info(f"SELECT addmissingcolumns('{self.table}');")  # noqa
-                    conn.execute(f"SELECT addmissingcolumns('{self.table}');")  # noqa
+                    self.log.info(
+                        f"SELECT addmissingcolumns('{self.source_table}', '{self.destination_table}');"  # noqa
+                    )
+                    conn.execute(
+                        f"SELECT addmissingcolumns('{self.source_table}', '{self.destination_table}');"  # noqa
+                    )
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
-            return f"{self.table} columns uptodate"
+            return f"{self.destination_table} columns uptodate"
         except Exception as e:
             self.log.error(f"An error occurred: {e}")
             raise AirflowException(e)
