@@ -2,7 +2,7 @@
     {
         "$match": {
             "updatedAt": {
-                "$gte": "{{ prev_data_interval_start_success }}"
+                "$gt": "{{ last_successful_dagrun_ds }}"
             }
         }
     },

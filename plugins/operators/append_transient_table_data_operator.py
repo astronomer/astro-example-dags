@@ -56,7 +56,7 @@ class AppendTransientTableDataOperator(BaseOperator):
                     SELECT o.id
                     FROM {{source_schema}}.{{source_table}} o
                     WHERE
-                        o.airflow_synced_at = '{{ ds }}'
+                        o.airflow_sync_ds = '{{ ds }}'
                 );
 """
         self.columns_template = """SELECT column_name

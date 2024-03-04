@@ -12,6 +12,14 @@
     ],
     "appointment_id": [
       "string"
+    ],
+    "createdAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
+    ],
+    "updatedAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
     ]
   }
 }

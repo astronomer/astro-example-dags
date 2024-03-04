@@ -9,10 +9,11 @@ import pandas as pd
 from bson import ObjectId, json_util
 from pandas import DataFrame
 from sqlalchemy import create_engine
-from airflow.models import BaseOperator
+from airflow.models import XCom, BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from bson.codec_options import CodecOptions
+from airflow.utils.session import provide_session
 
 from plugins.utils.render_template import render_template
 from plugins.utils.field_conversions import convert_field
@@ -55,10 +56,11 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type convert_fields: Optional[List[str]]
     """
 
-    template_fields = ("aggregation_query", "preoperation")
+    # we manually render the aggregation_query field
+    template_fields = "preoperation"
     template_ext = (".json", ".sql")
 
-    template_fields_renderers = {"preoperation": "sql", "aggregation_query": "json"}
+    template_fields_renderers = {"preoperation": "sql"}
     ui_color = "#f9c915"
 
     def __init__(
@@ -95,6 +97,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.discard_fields = discard_fields or []
         self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
+        self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ds"
         self.separator = "__"
         self.delete_template = """DO $$
 BEGIN
@@ -102,7 +105,7 @@ BEGIN
     SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
     AND tablename = '{{destination_table}}') THEN
       DELETE FROM {{ destination_schema }}.{{destination_table}}
-        WHERE airflow_synced_at = '{{ ds }}';
+        WHERE airflow_sync_ds = '{{ ds }}';
    END IF;
 END $$;
 """
@@ -115,7 +118,18 @@ END $$;
 
     def execute(self, context):
         try:
-            self.log.info("Executing MongoDBToPostgresViaDataframeOperator")
+            ds = context["ds"]
+            run_id = context["run_id"]
+            last_successful_dagrun_ds = self.get_last_successful_dagrun_ds(run_id=run_id)
+            extra_context = {
+                **context,
+                **self.context,
+                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ds,
+            }
+
+            self.log.info(
+                f"Executing MongoDBToPostgresViaDataframeOperator since last successful dagrun {last_successful_dagrun_ds}"  # noqa
+            )
             mongo_hook = BaseHook.get_hook(self.mongo_conn_id)
             self.log.info("source_hook")
             destination_hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -123,18 +137,18 @@ END $$;
 
             self.log.info("Extracting data from %s", self.mongo_conn_id)
             self.log.info("Executing: \n %s", self.aggregation_query)
-            self.delete_sql = render_template(self.delete_template, context=context, extra_context=self.context)
+            self.delete_sql = render_template(self.delete_template, context=extra_context)
 
             self._prepare_schema()
             engine = self.get_postgres_sqlalchemy_engine(destination_hook)
             primary_key = "id"
+            total_docs_processed = 0
             print(f"PRIMARY_KEY=={primary_key}")
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
                     offset = 0
                     limit = 5000  # Set your desired chunk size
-                    ds = context["ds"]
 
                     aggregation_query = self._prepare_aggregation_query()
                     self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
@@ -142,7 +156,7 @@ END $$;
 
                     while True:
                         aggregation_query = self._prepare_runtime_aggregation_query(
-                            aggregation_query, limit, offset, context
+                            aggregation_query, limit, offset, extra_context
                         )
 
                         self.log.info("Select SQL: \n%s", aggregation_query)
@@ -160,6 +174,7 @@ END $$;
                             pipeline=aggregation_query,
                         )
                         documents = list(cursor)
+                        total_docs_processed += len(documents)
 
                         print("TOTAL docs after", len(documents))
                         select_df = DataFrame(list(documents))
@@ -196,7 +211,7 @@ END $$;
                             print("NULL ID", null_id_records.tolist())
 
                         # Add the ds value for this run
-                        insert_df["airflow_synced_at"] = ds
+                        insert_df["airflow_sync_ds"] = ds
                         # Make all column names lowercase
                         insert_df.columns = insert_df.columns.str.lower()
                         pprint(insert_df.iloc[0])
@@ -209,8 +224,10 @@ END $$;
                         )
                         offset += limit
 
-                    conn.execute(
-                        f"""
+                    # Check how many Docs total
+                    if total_docs_processed > 0:
+                        conn.execute(
+                            f"""
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -228,14 +245,15 @@ BEGIN
     END IF;
 END $$;
 """  # noqa
-                    )  # noqa
-
+                        )  # noqa
+                    context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value=context["ds"])
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
+            context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
             self.log.info("import successful")
             return f"Successfully migrated {self.destination_table} Data"
         except Exception as e:
@@ -480,17 +498,18 @@ END $$;
     def _prepare_runtime_aggregation_query(self, aggregation_query, limit, offset, context):
         aggregation_query[-1] = {"$limit": limit}
         aggregation_query[-2] = {"$skip": offset}
+        last_successful_dagrun_ds = context.get(self.last_successful_dagrun_xcom_key, None)
         if "updatedAt" in aggregation_query[0]["$match"]:
             if "$lte" in aggregation_query[0]["$match"]["updatedAt"]:
                 aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
-            if context["prev_data_interval_start_success"]:
-                aggregation_query[0]["$match"]["updatedAt"]["$gte"] = context["prev_data_interval_start_success"]
+            if last_successful_dagrun_ds:
+                aggregation_query[0]["$match"]["updatedAt"]["$gt"] = last_successful_dagrun_ds
             else:
-                if "$gte" in aggregation_query[0]["$match"]["updatedAt"]:
-                    del aggregation_query[0]["$match"]["updatedAt"]["$gte"]
+                if "$gt" in aggregation_query[0]["$match"]["updatedAt"]:
+                    del aggregation_query[0]["$match"]["updatedAt"]["$gt"]
 
             if (
-                "$gte" not in aggregation_query[0]["$match"]["updatedAt"]
+                "$gt" not in aggregation_query[0]["$match"]["updatedAt"]
                 and "$lte" not in aggregation_query[0]["$match"]["updatedAt"]
             ):
                 aggregation_query[0]["$match"] = {}
@@ -499,3 +518,31 @@ END $$;
 
     def _convert_fieldname_to_flattened_name(self, field_name):
         return field_name.replace(".", self.separator)
+
+    @provide_session
+    def get_last_successful_dagrun_ds(self, run_id, session=None):
+        # query = (
+        #     session.query(XCom)
+        #     .filter(
+        #         XCom.dag_id == self.dag_id,
+        #         XCom.task_id == self.task_id,
+        #         XCom.key == self.last_successful_dagrun_xcom_key,
+        #         XCom.execution_date < current_datetime,
+        #     )
+        #     # .order_by(XCom.execution_date.desc())
+        #     .order_by(XCom.execution_date)
+        #     .first()
+        # )
+        query = XCom.get_many(
+            include_prior_dates=True,
+            dag_ids=self.dag_id,
+            run_id=run_id,
+            task_ids=self.task_id,
+            key=self.last_successful_dagrun_xcom_key,
+            session=session,
+            limit=1,
+        )
+
+        xcom = query.first()
+
+        return xcom.deserialize_value if xcom else None

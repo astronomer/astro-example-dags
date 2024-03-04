@@ -2,7 +2,7 @@
     {
         "$match": {
             "updatedAt": {
-                "$gte": "{{ prev_data_interval_start_success }}",
+                "$gt": "{{ last_successful_dagrun_ds }}",
                 "$lte": "{{ data_interval_end }}"
             },
             "zettle_payment_references": {
@@ -17,7 +17,9 @@
             "newRoot": {
                 "$mergeObjects": [
                   {
-                    "order_id": "$_id"
+                    "order_id": "$_id",
+                    "createdAt": "$createdAt",
+                    "updatedAt": "$updatedAt"
                   },
                   "$zettle_payment_references"
                 ]

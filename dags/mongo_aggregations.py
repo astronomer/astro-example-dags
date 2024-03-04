@@ -3,21 +3,24 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import ShortCircuitOperator
+from airflow.utils.trigger_rule import TriggerRule
+
+from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
+from plugins.utils.found_records_to_process import found_records_to_process
+from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 
 from plugins.operators.drop_table import DropPostgresTableOperator
 from plugins.operators.analyze_table import RefreshPostgresTableStatisticsOperator
-from data_migrations.aggregation_loader import load_aggregation_configs
 from plugins.operators.mongodb_to_postgres import MongoDBToPostgresViaDataframeOperator
 from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
 from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
-from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 from plugins.operators.ensure_datalake_table_view_exists import EnsurePostgresDatalakeTableViewExistsOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
 
-# from airflow.models.baseoperator import chain, chain_linear
-
+from data_migrations.aggregation_loader import load_aggregation_configs
 
 # Now load the migrations
 migrations = load_aggregation_configs("aggregations")
@@ -43,8 +46,21 @@ dag = DAG(
     template_searchpath="/usr/local/airflow/dags",
 )
 
-start_task = DummyOperator(task_id="start", dag=dag)
-base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag)
+# start_task = DummyOperator(task_id="start", dag=dag)
+doc = """
+Skip the subsequent tasks if
+    a) the execution_date is in past
+    b) there multiple dag runs are currently active
+"""
+start_task = ShortCircuitOperator(
+    task_id="skip_check",
+    python_callable=is_latest_dagrun,
+    depends_on_past=False,
+    dag=dag,
+)
+start_task.doc = doc
+
+base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag, trigger_rule=TriggerRule.NONE_FAILED)
 generated_schemas_path = "../include/generatedSchemas/"
 generated_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), generated_schemas_path)
 
@@ -104,6 +120,13 @@ for config in migrations:
         convert_fields=config.get("convert_fields", []),
         dag=dag,
     )
+    previous_task_id = task_id
+    task_id = f"{config['task_name']}_has_records_to_process"
+    has_records_to_process = ShortCircuitOperator(
+        task_id=task_id,
+        python_callable=found_records_to_process,
+        op_kwargs={"parent_task_id": previous_task_id, "xcom_key": "documents_found"},
+    )
 
     task_id = f"{config['task_name']}_refresh_transient_table_stats"
     refresh_transient_table = RefreshPostgresTableStatisticsOperator(
@@ -160,13 +183,14 @@ for config in migrations:
         source_table=f"raw_{config['destination_table']}",
         destination_schema="public",
         destination_table=config["destination_table"],
-        append_fields=config.get("append_fields", ["createdat", "updatedat", "airflow_synced_at"]),
+        append_fields=config.get("append_fields", ["createdat", "updatedat", "airflow_sync_ds"]),
         prepend_fields=config.get("prepend_fields", ["id"]),
         dag=dag,
     )
     (
         drop_transient_table
         >> mongo_to_postgres
+        >> has_records_to_process
         >> refresh_transient_table
         >> ensure_datalake_table
         >> refresh_datalake_table

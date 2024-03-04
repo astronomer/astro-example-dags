@@ -2,7 +2,7 @@
     {
         "$match": {
             "updatedAt": {
-                "$gte": "{{ prev_data_interval_start_success }}",
+                "$gt": "{{ last_successful_dagrun_ds }}",
                 "$lte": "{{ data_interval_end }}"
             }
         }
@@ -23,7 +23,9 @@
                   "__",
                   {"$toString": "$arrayIndex"}
                 ]
-            }
+            },
+            "updatedAt": "$updatedAt",
+            "createdAt": "$createdAt"
         }
     },
     {
@@ -31,6 +33,8 @@
             "appointment_date": 1,
             "order_id": 1,
             "id":1,
+            "updatedAt":1,
+            "createdAt":1,
             "_id":0
         }
     },

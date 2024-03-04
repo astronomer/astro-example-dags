@@ -13,6 +13,14 @@
     "appointment_date": [
       "datetime64[ns, UTC]",
       "date-time"
+    ],
+    "createdAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
+    ],
+    "updatedAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
     ]
   }
 }
