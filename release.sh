@@ -9,3 +9,4 @@ fi
 echo "Using scope $SCOPE"
 
 bump2version "$SCOPE"
+git push origin --follow-tags
