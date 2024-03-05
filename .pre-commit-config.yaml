@@ -3,7 +3,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
       # - id: check-docstring-first
@@ -45,7 +45,7 @@ repos:
       - id: requirements-txt-fixer
         args: [requirements.txt]
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.29.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
   - repo: https://github.com/pycqa/isort
@@ -54,19 +54,19 @@ repos:
       - id: isort
         name: isort (python)
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.2.0
     hooks:
       - id: black
         language_version: python3  # Should be a command that runs python3.6+
         exclude: .+\/migrations.*\.py$
         args: [-t, py37, -l, "119"]
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 7.0.0
     hooks:
       - id: flake8
         exclude: .+\/migrations.*\.py$
   - repo: https://github.com/martyzz1/pre-commit-hooks
-    rev: v1.8
+    rev: v1.19
     hooks:
       - id: prepend-branch-name
   # - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -83,7 +83,7 @@ repos:
   #     - id: mdspell
   #     - id: spelling-sort
   - repo: https://codeberg.org/frnmst/md-toc
-    rev: '8.1.8'  # or a specific git tag from md-toc
+    rev: '8.2.3'  # or a specific git tag from md-toc
     hooks:
       - id: md-toc
         args: [-p, '-s1', 'github', '-l6', '-c']  # CLI options
@@ -97,6 +97,6 @@ repos:
       - id: rst-linter
         args: [--allow-raw]
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v0.75.1 # The version of cfn-lint to use
+    rev: v0.86.0 # The version of cfn-lint to use
     hooks:
       - id: cfn-lint-rc
