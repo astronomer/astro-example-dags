@@ -110,6 +110,8 @@ workflows:
 
       - build_image_and_deploy:
           name: build_image_and_deploy-production
+          requires:
+              - circleci-orb/slack-monitor-production
           context:
              - production-astro
           filters:
