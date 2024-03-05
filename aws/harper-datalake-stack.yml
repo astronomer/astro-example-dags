@@ -54,10 +54,13 @@ Parameters:
     NoEcho: true
     MinLength: 8
     ConstraintDescription: The password must be at least 8 characters long.
+  BastionSecurityGroupId:
+    Description: The BastionSecuriityGroupId For the Bastion Host
+    Type: String
 
 Resources:
 
-  SubnetGroup:
+  DBSubnetGroup:
     Type: "AWS::RDS::DBSubnetGroup"
     Properties:
       DBSubnetGroupName: !Sub "${Stage}-datalake-subnetgroup"
@@ -65,26 +68,24 @@ Resources:
       SubnetIds:
         - Fn::ImportValue:
             !Sub "${Stage}-private-subnet-1"
-        # - Fn::ImportValue:
-        #     !Sub "${Stage}-private-subnet-2"
-        # - Fn::ImportValue:
-        #     !Sub "${Stage}-private-subnet-3"
-    Tags:
-        - Key: Name
-          Value: !Sub "${Stage}-datalake-subnetgroup"
-        - Key: harper:env
-          Value: !Ref Stage
-        - Key: harper:stack
-          Value: harper-vpc-stack
-        - Key: harper:version
-          Value: '2'
+        - Fn::ImportValue:
+            !Sub "${Stage}-private-subnet-2"
+        - Fn::ImportValue:
+            !Sub "${Stage}-private-subnet-3"
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow access from specific IPs to RDS PostgreSQL
-      VpcId: !Ref VPCId
+      VpcId:
+        Fn::ImportValue:
+            !Sub "${Stage}-vpc-id"
+
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref PORT
+          ToPort: !Ref PORT
+          SourceSecurityGroupId: !Ref BastionSecurityGroupId
         - IpProtocol: tcp
           FromPort: !Ref PORT
           ToPort: !Ref PORT
@@ -101,6 +102,15 @@ Resources:
           FromPort: !Ref PORT
           ToPort: !Ref PORT
           CidrIp: !Ref TableauIP2
+      Tags:
+          - Key: Name
+            Value: !Sub "${Stage}-datalake-postgres"
+          - Key: harper:env
+            Value: !Ref Stage
+          - Key: harper:stack
+            Value: harper-datalake-stack
+          - Key: harper:version
+            Value: '2'
 
   PostgreSQLInstance:
     Type: AWS::RDS::DBInstance
@@ -113,9 +123,20 @@ Resources:
       EngineVersion: '12'
       MasterUsername: !Ref DatalakeAdminUser
       MasterUserPassword: !Ref DatalakeAdminPass
-      DBSubnetGroupName: !Ref DBSubnetGroupName
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      MultiAZ: false
+      Port: !Ref PORT
       VPCSecurityGroups:
         - !Ref DBSecurityGroup
+      Tags:
+          - Key: Name
+            Value: !Sub "${Stage}-datalake-postgres"
+          - Key: harper:env
+            Value: !Ref Stage
+          - Key: harper:stack
+            Value: harper-datalake-stack
+          - Key: harper:version
+            Value: '2'
 
 Outputs:
   DBEndpoint:

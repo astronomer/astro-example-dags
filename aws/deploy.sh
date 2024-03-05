@@ -4,19 +4,12 @@ CMD=$1
 if [ "$CMD" == "" ]; then
     CMD="update-stack"
 else
-    CMD="deploy-stack"
+    CMD="create-stack"
 fi
 
 STAGE="production"
+BastionSecurityGroupId=$(aws cloudformation describe-stacks --stack-name production-harper-bastion-stack --query "Stacks[0].Outputs[?OutputKey=='BastionSecurityGroup'].OutputValue" --output text)
 
-if [ "$STAGE" == "production" ]; then
-  # 6 years
-  LogRetentionInDays=2192
-else
-  LogRetentionInDays=90
-fi
-
-aws_slack_webhook=$(op item get "$STAGE-vpc" --format json --vault Environments --fields ALERTS_SLACK_WEBHOOK | jq -r '.value' || exit 1)
 DatalakeAdminUser=$(op item get "$STAGE-datalake" --format json --vault Environments --fields DATALAKE_ADMINUSER | jq -r '.value' || exit 1)
 DatalakeAdminPass=$(op item get "$STAGE-datalake" --format json --vault Environments --fields DATALAKE_ADMINPASS | jq -r '.value' || exit 1)
 
@@ -29,9 +22,8 @@ aws cloudformation $CMD \
     --template-body file://harper-datalake-stack.yml \
     --parameters \
       ParameterKey=Stage,ParameterValue="${STAGE}" \
-      ParameterKey=LogRetentionInDays,ParameterValue="${LogRetentionInDays}" \
-      ParameterKey=SlackWebhookUrl,ParameterValue="${aws_slack_webhook}" \
       ParameterKey=DatalakeAdminUser,ParameterValue="${DatalakeAdminUser}" \
       ParameterKey=DatalakeAdminPass,ParameterValue="${DatalakeAdminPass}" \
+      ParameterKey=BastionSecurityGroupId,ParameterValue="${BastionSecurityGroupId}" \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
     --region eu-west-1 \
