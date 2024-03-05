@@ -210,19 +210,19 @@ for config in migrations:
     >> migration_tasks
 )
 
-last_report_task = base_tables_completed
-for group_index, group_list in enumerate(reports_sql_files, start=1):
-    report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
-    report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
-    last_report_task >> report_task
+# last_report_task = base_tables_completed
+# for group_index, group_list in enumerate(reports_sql_files, start=1):
+#     report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
+#     report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
+#     last_report_task >> report_task
 
-    # Initialize an array to hold all tasks in the current group
-    tasks_in_current_group = []
+#     # Initialize an array to hold all tasks in the current group
+#     tasks_in_current_group = []
 
-    for config in group_list:
-        id = config["id"]
-        task = DummyOperator(task_id=id, dag=dag)
-        # Add the current task to the array
-        tasks_in_current_group.append(task)
-    report_task >> tasks_in_current_group >> report_task_complete
-    last_report_task = report_task_complete
+#     for config in group_list:
+#         id = config["id"]
+#         task = DummyOperator(task_id=id, dag=dag)
+#         # Add the current task to the array
+#         tasks_in_current_group.append(task)
+#     report_task >> tasks_in_current_group >> report_task_complete
+#     last_report_task = report_task_complete

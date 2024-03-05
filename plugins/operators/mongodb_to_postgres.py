@@ -97,7 +97,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.discard_fields = discard_fields or []
         self.convert_fields = convert_fields or []
         self.output_encoding = sys.getdefaultencoding()
-        self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ds"
+        self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.separator = "__"
         self.delete_template = """DO $$
 BEGIN
@@ -120,15 +120,15 @@ END $$;
         try:
             ds = context["ds"]
             run_id = context["run_id"]
-            last_successful_dagrun_ds = self.get_last_successful_dagrun_ds(run_id=run_id)
+            last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
             extra_context = {
                 **context,
                 **self.context,
-                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ds,
+                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
             }
 
             self.log.info(
-                f"Executing MongoDBToPostgresViaDataframeOperator since last successful dagrun {last_successful_dagrun_ds}"  # noqa
+                f"Executing MongoDBToPostgresViaDataframeOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
             )
             mongo_hook = BaseHook.get_hook(self.mongo_conn_id)
             self.log.info("source_hook")
@@ -246,7 +246,7 @@ BEGIN
 END $$;
 """  # noqa
                         )  # noqa
-                    context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value=context["ds"])
+                    context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value=context["ts"])
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
@@ -498,12 +498,12 @@ END $$;
     def _prepare_runtime_aggregation_query(self, aggregation_query, limit, offset, context):
         aggregation_query[-1] = {"$limit": limit}
         aggregation_query[-2] = {"$skip": offset}
-        last_successful_dagrun_ds = context.get(self.last_successful_dagrun_xcom_key, None)
+        last_successful_dagrun_ts = context.get(self.last_successful_dagrun_xcom_key, None)
         if "updatedAt" in aggregation_query[0]["$match"]:
             if "$lte" in aggregation_query[0]["$match"]["updatedAt"]:
                 aggregation_query[0]["$match"]["updatedAt"]["$lte"] = context["data_interval_end"]
-            if last_successful_dagrun_ds:
-                aggregation_query[0]["$match"]["updatedAt"]["$gt"] = last_successful_dagrun_ds
+            if last_successful_dagrun_ts:
+                aggregation_query[0]["$match"]["updatedAt"]["$gt"] = last_successful_dagrun_ts
             else:
                 if "$gt" in aggregation_query[0]["$match"]["updatedAt"]:
                     del aggregation_query[0]["$match"]["updatedAt"]["$gt"]
@@ -520,19 +520,7 @@ END $$;
         return field_name.replace(".", self.separator)
 
     @provide_session
-    def get_last_successful_dagrun_ds(self, run_id, session=None):
-        # query = (
-        #     session.query(XCom)
-        #     .filter(
-        #         XCom.dag_id == self.dag_id,
-        #         XCom.task_id == self.task_id,
-        #         XCom.key == self.last_successful_dagrun_xcom_key,
-        #         XCom.execution_date < current_datetime,
-        #     )
-        #     # .order_by(XCom.execution_date.desc())
-        #     .order_by(XCom.execution_date)
-        #     .first()
-        # )
+    def get_last_successful_dagrun_ts(self, run_id, session=None):
         query = XCom.get_many(
             include_prior_dates=True,
             dag_ids=self.dag_id,
@@ -544,5 +532,7 @@ END $$;
         )
 
         xcom = query.first()
+        if xcom:
+            return datetime.fromisoformat(xcom.value)
 
-        return xcom.deserialize_value if xcom else None
+        return None
