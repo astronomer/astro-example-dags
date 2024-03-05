@@ -60,7 +60,7 @@ jobs:
       - checkout
       - attach_workspace:
         at: <<parameters.workspace-root>>
-      - restore-custom-env-var:
+      - aws-ecr-extra/restore-custom-env-var:
         env-var-file: <<parameters.workspace-root>>/<<parameters.env-var-file>>
       - run:
           name: "Build docker image and push to Quay"
