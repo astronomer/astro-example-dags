@@ -16,7 +16,7 @@ repos:
       - id: trailing-whitespace
         exclude: |
           (?x)(
-            .setup.cfg$|
+            setup.cfg$|
             something_else$
           )
       - id: end-of-file-fixer
