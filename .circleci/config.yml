@@ -111,7 +111,7 @@ workflows:
       - build_image_and_deploy:
           name: build_image_and_deploy-production
           requires:
-              - circleci-orb/slack-monitor-production
+              - aws-ecr-extra/setup-env-vars
           context:
              - production-astro
           filters:
