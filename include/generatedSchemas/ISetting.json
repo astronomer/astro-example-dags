@@ -1,0 +1,354 @@
+{
+  "title": "ISettingSchema",
+  "type": "object",
+  "bsonType": [
+    "object"
+  ],
+  "properties": {
+    "_id": {
+      "bsonType": [
+        "objectId"
+      ],
+      "type": "string",
+      "tsType": "MongooseObjectId"
+    },
+    "appointment_length": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "assistant_work_start": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "assistant_work_end": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "timekit_mode": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "refund_order_notification_emails": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "remove_orders_from_brand": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "webhooks": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "bsonType": [
+          "object"
+        ],
+        "properties": {
+          "topic": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "error_notification_email": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "updated_admin": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "admin_version": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "checkout_version": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "harper_gtm_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "send_order_confirmation_text_message": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "availability_alert_notification_email": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "run_izettle_to_add_products": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "run_izettle_to_remove_products": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "run_izettle_to_import_purchases": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "izettle_category_not_to_be_removed": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "products_uploaded_izettle": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "availability_report_notification_emails": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "route_time_duration_in_seconds": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "green_slot_process": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "route_max_distance_in_meter": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "route_min_distance_in_meter": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "create_appointment_in_timekit": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "basket_size": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "izettle_signing_key": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "signature_key": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "set_cookie_domain": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "max_active_try_orders": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "customer_service": {
+      "title": "customer_service",
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ],
+          "default": "Harper"
+        },
+        "phone": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ],
+          "default": "+443339398123"
+        },
+        "email": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ],
+          "default": "service@harperconcierge.com"
+        },
+        "opening_hours": {
+          "type": "array",
+          "bsonType": [
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    }
+  },
+  "required": [
+    "appointment_length",
+    "assistant_work_start",
+    "assistant_work_end",
+    "timekit_mode",
+    "name",
+    "refund_order_notification_emails",
+    "remove_orders_from_brand",
+    "webhooks",
+    "error_notification_email",
+    "updated_admin",
+    "admin_version",
+    "checkout_version",
+    "harper_gtm_id",
+    "send_order_confirmation_text_message",
+    "availability_alert_notification_email",
+    "run_izettle_to_add_products",
+    "run_izettle_to_remove_products",
+    "run_izettle_to_import_purchases",
+    "izettle_category_not_to_be_removed",
+    "products_uploaded_izettle",
+    "availability_report_notification_emails",
+    "route_time_duration_in_seconds",
+    "green_slot_process",
+    "route_max_distance_in_meter",
+    "route_min_distance_in_meter",
+    "create_appointment_in_timekit",
+    "basket_size",
+    "izettle_signing_key",
+    "signature_key",
+    "set_cookie_domain",
+    "max_active_try_orders",
+    "customer_service",
+    "createdAt",
+    "updatedAt"
+  ],
+  "additionalProperties": false
+}
