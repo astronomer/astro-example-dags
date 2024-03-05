@@ -69,7 +69,7 @@ jobs:
           command: |
             set -e
             IMAGE_TAG=$(eval echo "${IMAGE_EVAL_TAG}")
-            image_tag="astro-${IMAGE_TAG}
+            image_tag="astro-${IMAGE_TAG}"
             docker build -t ${image_tag} .
             curl -sSL install.astronomer.io | sudo bash -s
             astro deploy -i ${image_tag} ${ASTRO_DEPLOYMENT_ID} -f
