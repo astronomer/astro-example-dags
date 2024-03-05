@@ -3,6 +3,7 @@
 
 version: 2.1
 
+repo: &repo "airflow-dags"
 slack-production-status-channel: &slack-production-status-channel "C0500P9SQ3H"
 giphy-success-keyword: &giphy-success-keyword "party"
 giphy-failure-keyword: &giphy-failure-keyword "broken"
