@@ -1,16 +1,54 @@
 # Use the latest 2.1 version of CircleCI pipeline process engine.
 # See: https://circleci.com/docs/configuration-reference
+
 version: 2.1
+
+slack-production-status-channel: &slack-production-status-channel "C0500P9SQ3H"
+giphy-success-keyword: &giphy-success-keyword "party"
+giphy-failure-keyword: &giphy-failure-keyword "broken"
+env-var-file: &env-var-file custom-env-vars
+full-image-tag: &full-image-tag "${CIRCLE_BUILD_NUM}"
+deploy-tag: &deploy-tag "${BUILD_TAG_SHA1}"
+workspace-root: &workspace-root /tmp/workspace
+orb-circleci-orb-version: &orb-circleci-orb-version harper/circleci-orb@2.1.11
+orb-op-secrets-version: &orb-op-secrets-version onepassword/secrets@1.0.0
+orb-aws-ecr-extra-version: &orb-aws-ecr-extra-version martyzz1/aws-ecr-extra@8.2.4
+post-process-custom-image: &post-process-custom-image "http://assets.harperconcierge.com/deployment_logos/deployment_logo_api.png"
 
 orbs:
   docker: circleci/docker@2.0.1
   github-cli: circleci/github-cli@2.0.0
+  circleci-orb: *orb-circleci-orb-version
+  1password: *orb-op-secrets-version
+  aws-ecr-extra: *orb-aws-ecr-extra-version
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
 
   build_image_and_deploy:
+    parameters:
+      env-var-file:
+        default: 'custom-env-vars'
+        description: >-
+          Name of a custom env var file which will be passed to >> $BASH_ENV
+          Ideal for passing environment variables from earlier jobs
+          Most useful for Image tagging
+          Defaults to 'custom-env-vars'.
+        type: string
+      workspace-root:
+        type: string
+        default: "."
+        description: >
+          Workspace root path that is either an absolute path or a path relative
+          to the working directory. Defaults to '.' (the working directory)
+      tag:
+        default: latest
+        description: >-
+          A docker image tag to build and push
+          (default = latest)
+        type: string
+
     docker:
       - image: cimg/base:stable
     # Add steps to the job
@@ -19,17 +57,22 @@ jobs:
       - setup_remote_docker:
           version: 20.10.11
       - checkout
+      - attach_workspace:
+        at: <<parameters.workspace-root>>
+      - restore-custom-env-var:
+        env-var-file: <<parameters.workspace-root>>/<<parameters.env-var-file>>
       - run:
           name: "Build docker image and push to Quay"
+          environment:
+            IMAGE_EVAL_TAG: <<parameters.tag>>
           command: |
+            IMAGE_TAG=$(eval echo "${IMAGE_EVAL_TAG}")
             docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
-            image_tag=quay.io/astronomer/astro-trial-examples:astro-$(date +%Y%m%d%H%M%S)
+            image_tag="quay.io/astronomer/astro-trial-examples:astro-${IMAGE_TAG}
             docker build -t ${image_tag} .
             docker push ${image_tag}
             curl -sSL install.astronomer.io | sudo bash -s
             astro deploy -i ${image_tag} ${ASTRO_DEPLOYMENT_ID} -f
-
-
 
 # Invoke jobs with workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -37,10 +80,43 @@ workflows:
   version: 2.1
   build-and-deploy:
     jobs:
-      - build_image_and_deploy:
-          context:
-             - astro-example-dags
+      - aws-ecr-extra/setup-env-vars:
+            filters:
+              branches:
+                only: /.*/
+              tags:
+                only: /.*/
+            env-var-file: *env-var-file
+            full-image-tag: *full-image-tag
+            repo: *repo
+            persist-to-workspace: true
+      - circleci-orb/slack-monitor:
+          name: circleci-orb/slack-monitor-production
+          requires:
+              - aws-ecr-extra/setup-env-vars
           filters:
+            tags:
+              only: /^(?!.*-staging.*)v.*/
             branches:
-              only:
-                - main
+              ignore: /^.*/
+          giphy-failure-keyword: *giphy-failure-keyword
+          giphy-success-keyword: *giphy-success-keyword
+          context: Build Credentials
+          stage: Production
+          post-process-channel: *slack-production-status-channel
+          post-process-custom-image: *post-process-custom-image
+          env-var-file: *env-var-file
+          workspace-root: *workspace-root
+
+      - build_image_and_deploy:
+          name: build_image_and_deploy-production
+          context:
+             - production-astro
+          filters:
+            tags:
+              only: /^(?!.*-staging.*)v.*/
+            branches:
+              ignore: /^.*/
+          workspace-root: *workspace-root
+          env-var-file: *env-var-file
+          tag: *deploy-tag
