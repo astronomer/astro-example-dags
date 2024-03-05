@@ -14,6 +14,11 @@ repos:
       - id: debug-statements
       - id: detect-private-key
       - id: trailing-whitespace
+        exclude: |
+          (?x)(
+            .setup.cfg$|
+            something_else$
+          )
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: mixed-line-ending  # force UNIX file endings for consistency
