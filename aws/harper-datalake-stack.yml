@@ -31,6 +31,10 @@ Parameters:
       - 90
       - 100
 
+  OfficeIP:
+    Type: String
+    # Default: '185.214.181.161/32' # Replace with Astronomer.io's IP
+    Default: '185.214.181.61/32' # Replace with Astronomer.io's IP
   # https://cloud.astronomer.io/clr9qwhbn033u01qzg6shab5j/deployments/clt4wht0a00nz01lkog7kna4t/details
   AstronomerIoIP1:
     Type: String
@@ -67,11 +71,11 @@ Resources:
       DBSubnetGroupDescription: !Sub "Subnet Group for the RDS ${Stage} Datalake"
       SubnetIds:
         - Fn::ImportValue:
-            !Sub "${Stage}-private-subnet-1"
+            !Sub "${Stage}-public-subnet-1"
         - Fn::ImportValue:
-            !Sub "${Stage}-private-subnet-2"
+            !Sub "${Stage}-public-subnet-2"
         - Fn::ImportValue:
-            !Sub "${Stage}-private-subnet-3"
+            !Sub "${Stage}-public-subnet-3"
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -80,28 +84,6 @@ Resources:
       VpcId:
         Fn::ImportValue:
             !Sub "${Stage}-vpc-id"
-
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref PORT
-          ToPort: !Ref PORT
-          SourceSecurityGroupId: !Ref BastionSecurityGroupId
-        - IpProtocol: tcp
-          FromPort: !Ref PORT
-          ToPort: !Ref PORT
-          CidrIp: !Ref AstronomerIoIP1
-        - IpProtocol: tcp
-          FromPort: !Ref PORT
-          ToPort: !Ref PORT
-          CidrIp: !Ref AstronomerIoIP2
-        - IpProtocol: tcp
-          FromPort: !Ref PORT
-          ToPort: !Ref PORT
-          CidrIp: !Ref TableauIP1
-        - IpProtocol: tcp
-          FromPort: !Ref PORT
-          ToPort: !Ref PORT
-          CidrIp: !Ref TableauIP2
       Tags:
           - Key: Name
             Value: !Sub "${Stage}-datalake-postgres"
@@ -111,6 +93,67 @@ Resources:
             Value: harper-datalake-stack
           - Key: harper:version
             Value: '2'
+
+  BastionSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Bastion Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      SourceSecurityGroupId: !Ref BastionSecurityGroupId
+
+  OfficeSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Office Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      CidrIp: !Ref OfficeIP
+      # CidrIp: 0.0.0.0/0
+
+  AstronomerSecurityGroupIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Astronomer Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      CidrIp: !Ref AstronomerIoIP1
+
+  AstronomerSecurityGroupIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Astronomer Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      CidrIp: !Ref AstronomerIoIP2
+
+  TableauSecurityGroupIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Tableau Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      CidrIp: !Ref TableauIP1
+
+  TableauSecurityGroupIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DBSecurityGroup
+      Description: "DBSecurityGroup for Tableau Access"
+      IpProtocol: tcp
+      FromPort: !Ref PORT
+      ToPort: !Ref PORT
+      CidrIp: !Ref TableauIP2
 
   PostgreSQLInstance:
     Type: AWS::RDS::DBInstance
@@ -124,6 +167,7 @@ Resources:
       MasterUsername: !Ref DatalakeAdminUser
       MasterUserPassword: !Ref DatalakeAdminPass
       DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: true
       MultiAZ: false
       Port: !Ref PORT
       VPCSecurityGroups:
@@ -139,6 +183,13 @@ Resources:
             Value: '2'
 
 Outputs:
-  DBEndpoint:
+  DatalakeEndpoint:
     Description: The datalake endpoint
     Value: !GetAtt PostgreSQLInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${Stage}-DatalakeEndpoint"
+  DatalakePort:
+    Description: The database port number
+    Value: !Ref PORT
+    Export:
+      Name: !Sub "${Stage}-DatalakePort"

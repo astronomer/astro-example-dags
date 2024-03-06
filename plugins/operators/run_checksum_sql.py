@@ -9,14 +9,16 @@ from airflow.hooks.base import BaseHook
 from plugins.utils.render_template import render_template
 
 
-class RunSQLPostgresOperator(BaseOperator):
+class RunChecksumSQLPostgresOperator(BaseOperator):
     """
     :param postgres_conn_id: postgres connection id
     :type postgres_conn_id: str
     :param schema: Schema name
     :type schema: str
-    :param table: Table name
-    :type table: str
+    :param filename: File name
+    :type filename: str
+    :param checksum: File checksum
+    :type checksum: str
     :param sql: sql
     :type sql: str
     """
@@ -31,22 +33,34 @@ class RunSQLPostgresOperator(BaseOperator):
         *,
         postgres_conn_id: str = "postgres_conn_id",
         schema: str,
-        table: str,
+        filename: str,
+        checksum: str,
         sql: str,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
-        self.log.info("Initialising RunSQLPostgresOperator")
+        self.log.info("Initialising RunChecksumSQLPostgresOperator")
         self.postgres_conn_id = postgres_conn_id
         self.schema = schema
-        self.table = table
+        self.filename = filename
+        self.checksum = checksum
         self.sql_template = sql
         self.context = {
             "schema": schema,
-            "table": table,
+            "filename": filename,
+            "checksum": checksum,
         }
+        self.preoperation_template = f"""
+CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
+    id SERIAL PRIMARY KEY,
+    checksum CHAR(64),
+    filename TEXT UNIQUE,
+    updatedat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+"""
 
-        self.log.info("Initialised RunSQLPostgresOperator")
+        self.log.info("Initialised RunChecksumSQLPostgresOperator")
 
     def execute(self, context):
         try:
