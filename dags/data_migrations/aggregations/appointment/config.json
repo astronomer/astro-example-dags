@@ -1,0 +1,5 @@
+{
+  "source_collection": "appointments",
+  "destination_table": "appointment",
+  "jsonschema": "IAppointment.json"
+}
