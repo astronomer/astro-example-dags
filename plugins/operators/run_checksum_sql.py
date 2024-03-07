@@ -80,6 +80,10 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     self.context["is_modified"] = is_modified
 
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
+
+                    # Validate the materialized view name
+                    self._validate_materialized_view_name(self.sql)
+
                     self.log.info(f"Executing {self.sql}")
                     conn.execute(self.sql)
                     transaction.commit()
@@ -129,3 +133,26 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         else:
             # If the record exists and the checksum matches, it's not considered modified
             return False
+
+    def _validate_sql_convention(self, sql):
+        if self.report_type == "index":
+            return
+        pattern = ""
+        expected_prefix = ""
+        if self.report_type == "report":
+            pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
+            expected_prefix = "report__"
+        elif self.report_type == "fact":
+            pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
+            expected_prefix = "fact__"
+        elif self.report_type == "dimension":
+            pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
+            expected_prefix = "dim__"
+
+        if pattern:
+            matches = re.findall(pattern, sql, re.IGNORECASE)
+            for _, view_or_table_name in matches:
+                if not view_or_table_name.startswith(expected_prefix):
+                    raise AirflowException(
+                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.report_type}'."  # noqa
+                    )

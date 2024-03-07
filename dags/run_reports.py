@@ -7,10 +7,7 @@ from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 
-from data_migrations.aggregation_loader import load_aggregation_configs
-
-# Now load the migrations
-migrations = load_aggregation_configs("aggregations")
+from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
 
 default_args = {
     "owner": "airflow",
@@ -61,7 +58,16 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
 
     for config in group_list:
         id = config["id"]
-        task = DummyOperator(task_id=id, dag=dag)
+        task = RunChecksumSQLPostgresOperator(
+            task_id=id,
+            postgres_conn_id="postgres_datalake_conn_id",
+            schema="public",
+            filename=config["filename"],
+            checksum=config["checksum"],
+            sql=config["sql"],
+            report_type="report",
+            dag=dag,
+        )
         # Add the current task to the array
         tasks_in_current_group.append(task)
     report_task >> tasks_in_current_group >> report_task_complete

@@ -157,9 +157,9 @@ for config in migrations:
         dag=dag,
     )
 
-    task_id = f"{config['task_name']}_ensure_public_columns_uptodate"
+    missing_columns_task_id = f"{config['task_name']}_ensure_public_columns_uptodate"
     ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
-        task_id=task_id,
+        task_id=missing_columns_task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         source_table=config["destination_table"],
         destination_table=f"raw_{config['destination_table']}",
@@ -183,6 +183,7 @@ for config in migrations:
         source_table=f"raw_{config['destination_table']}",
         destination_schema="public",
         destination_table=config["destination_table"],
+        prev_task_id=missing_columns_task_id,
         append_fields=config.get("append_fields", ["createdat", "updatedat", "airflow_sync_ds"]),
         prepend_fields=config.get("prepend_fields", ["id"]),
         dag=dag,

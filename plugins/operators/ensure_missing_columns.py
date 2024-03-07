@@ -46,15 +46,18 @@ class EnsureMissingPostgresColumnsOperator(BaseOperator):
                     self.log.info(
                         f"SELECT addmissingcolumns('{self.source_table}', '{self.destination_table}');"  # noqa
                     )
-                    conn.execute(
+                    result = conn.execute(
                         f"SELECT addmissingcolumns('{self.source_table}', '{self.destination_table}');"  # noqa
                     )
+                    column_added = result[0]
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
+            # Use XCom to pass the result
+            context["ti"].xcom_push(key="columns_added", value=column_added)
             return f"{self.destination_table} columns uptodate"
         except Exception as e:
             self.log.error(f"An error occurred: {e}")

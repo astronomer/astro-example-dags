@@ -22,6 +22,8 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
     :type destination_schema: str
     :param destination_table: Destination Table name
     :type destination_table: str
+    :param prev_task_id: task_id of a previous task we want to check xcom to see if new columns were added
+    :type prev_task_id: str
     :param prepend_fields: Fields that you want to appear at the start of the table columns
     :type prepend_fields: Optional[List[str]]
     :param append_fields: Fields that you want to appear at the end of the table columns
@@ -39,6 +41,7 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
         source_table: str,
         destination_schema: str,
         destination_table: str,
+        prev_task_id: str,
         append_fields: Optional[List[str]] = [],
         prepend_fields: Optional[List[str]] = [],
         **kwargs,
@@ -50,6 +53,7 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
         self.source_table = source_table
         self.destination_schema = destination_schema
         self.destination_table = destination_table
+        self.prev_task_id = prev_task_id
         self.append_fields = append_fields
         self.prepend_fields = prepend_fields
 
@@ -67,19 +71,29 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
 
 """  # noqa
 
-        self.create_template = (
-            "DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.{{ destination_table }};\n"
-            "CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.{{ destination_table }} AS\n"
-            "    SELECT {{column_names_str}} FROM {{ source_schema }}.{{ source_table }}\n"
-            "WITH NO DATA;\n"
-            "CREATE UNIQUE INDEX {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);\n"  # noqa
-            "REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};\n"
-        )
+        # We only want to drop this view if its dependant table was modified
+        # as its likely to CASCADE across ALL the reports.
+        # Thats fine, they will all be recreated ok, BUT it increases the downtime whilst the process is running
+
+        self.create_template = """{% if is_modified %}
+            DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.{{ destination_table }} CASCADE;
+            {% end %}
+            CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.{{ destination_table }} AS
+                SELECT {{column_names_str}} FROM {{ source_schema }}.{{ source_table }}
+            WITH NO DATA;
+            {% if is_modified %}
+            CREATE UNIQUE INDEX {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);
+            {% end %}
+            "REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
+"""
 
         self.log.info("Initialised EnsurePostgresDatalakeTableViewExistsOperator OK")
 
     def execute(self, context):
         try:
+            is_modified = context["ti"].xcom_pull(task_ids=self.prev_task_id, key="columns_added")
+            self.context["is_modified"] = is_modified
+
             hook = BaseHook.get_hook(self.postgres_conn_id)
 
             self.columns_sql = render_template(self.columns_template, context=context, extra_context=self.context)

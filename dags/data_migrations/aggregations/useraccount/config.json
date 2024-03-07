@@ -1,0 +1,5 @@
+{
+  "source_collection": "users",
+  "destination_table": "useraccount",
+  "jsonschema": "IUser.json"
+}

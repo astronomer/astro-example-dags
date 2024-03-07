@@ -1,6 +1,6 @@
 {
   "source_collection": "orders",
-  "destination_table": "order",
+  "destination_table": "orders",
   "jsonschema": "IOrder.json",
   "discard_fields": [
     "items",

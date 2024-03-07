@@ -38,6 +38,7 @@ RETURNS VOID
 AS
 $$
 DECLARE
+  column_added BOOLEAN := FALSE;
   str text;
   t_curs cursor for
     SELECT * FROM INFORMATION_SCHEMA.COLUMNS c_transient
@@ -55,6 +56,7 @@ BEGIN
   str := '';
   FOR t_row in t_curs LOOP
     str := str ||' ADD COLUMN '||t_row.column_name||' '||t_row.data_type||' DEFAULT NULL,';
+    column_added := TRUE;
   end LOOP;
   IF (str != '') THEN
     str = trim(trailing ',' from str);
@@ -64,6 +66,7 @@ BEGIN
   ELSE
     raise notice 'No Schema Changes Detected';
   END IF;
+  RETURN column_added;
 end;
 $$
 LANGUAGE plpgsql;
