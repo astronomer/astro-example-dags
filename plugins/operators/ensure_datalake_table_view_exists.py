@@ -77,21 +77,21 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
 
         self.create_template = """{% if is_modified %}
             DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.{{ destination_table }} CASCADE;
-            {% end %}
+            {% endif %}
             CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.{{ destination_table }} AS
                 SELECT {{column_names_str}} FROM {{ source_schema }}.{{ source_table }}
             WITH NO DATA;
             {% if is_modified %}
             CREATE UNIQUE INDEX {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);
-            {% end %}
-            "REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
+            {% endif %}
+            REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
 """
 
         self.log.info("Initialised EnsurePostgresDatalakeTableViewExistsOperator OK")
 
     def execute(self, context):
         try:
-            is_modified = context["ti"].xcom_pull(task_ids=self.prev_task_id, key="columns_added")
+            is_modified = context["ti"].xcom_pull(task_ids=self.prev_task_id, key="is_modified")
             self.context["is_modified"] = is_modified
 
             hook = BaseHook.get_hook(self.postgres_conn_id)

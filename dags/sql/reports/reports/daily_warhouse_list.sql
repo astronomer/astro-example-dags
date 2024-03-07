@@ -1,6 +1,6 @@
 {% if is_modified %}
 DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.daily_warehouse_list CASCADE;
-{% end %}
+{% endif %}
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.daily_warehouse_list AS
     SELECT  o.id,
@@ -24,6 +24,6 @@ WITH NO DATA;
 
 {% if is_modified %}
 CREATE UNIQUE INDEX daily_warehouse_list_idx ON {{ destination_schema }}.daily_warehouse_list (id);
-{% end %}
+{% endif %}
 
 REFRESH MATERIALIZED VIEW {{ destination_schema }}.daily_warehouse_list;

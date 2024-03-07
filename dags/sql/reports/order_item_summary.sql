@@ -1,6 +1,6 @@
 {% if is_modified %}
 DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.order_item_summary CASCADE;
-{% end %}
+{% endif %}
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.order_item_summary AS
     SELECT
         o.id AS order_id,
@@ -21,5 +21,5 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.order_item_summa
 WITH NO DATA;
 {% if is_modified %}
 CREATE UNIQUE INDEX order_item_summary_idx ON {{ destination_schema }}.order_item_summary (id);
-{% end %}
+{% endif %}
 REFRESH MATERIALIZED VIEW {{ destination_schema }}.order_item_summary;

@@ -34,7 +34,7 @@ class EnsureMissingColumnsPostgresFunctionOperator(BaseOperator):
         self.destination_schema = destination_schema
 
         self.template_func = f"""CREATE OR REPLACE FUNCTION addMissingColumns(_source_table TEXT, _destination_table TEXT)
-RETURNS VOID
+RETURNS BOOLEAN
 AS
 $$
 DECLARE
