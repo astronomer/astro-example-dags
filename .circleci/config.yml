@@ -14,7 +14,7 @@ workspace-root: &workspace-root /tmp/workspace
 orb-circleci-orb-version: &orb-circleci-orb-version harper/circleci-orb@2.1.11
 orb-op-secrets-version: &orb-op-secrets-version onepassword/secrets@1.0.0
 orb-aws-ecr-extra-version: &orb-aws-ecr-extra-version martyzz1/aws-ecr-extra@8.2.4
-post-process-custom-image: &post-process-custom-image "http://assets.harperconcierge.com/deployment_logos/deployment_logo_api.png"
+post-process-custom-image: &post-process-custom-image "http://assets.harperconcierge.com/deployment_logos/deployment_logo_airflow.png"
 
 orbs:
   docker: circleci/docker@2.0.1
