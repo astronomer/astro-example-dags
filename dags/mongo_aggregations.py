@@ -39,7 +39,7 @@ default_args = {
 
 
 dag = DAG(
-    "data_aggregation_dag",
+    "mongo_migrations_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
