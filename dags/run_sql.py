@@ -38,10 +38,6 @@ wait_for_aggregations = ExternalTaskSensor(
     dag=dag,
 )
 
-
-generated_schemas_path = "../include/generatedSchemas/"
-generated_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), generated_schemas_path)
-
 reports = "./sql/reports"
 reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
 
