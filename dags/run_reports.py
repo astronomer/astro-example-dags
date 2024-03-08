@@ -31,8 +31,8 @@ dag = DAG(
 )
 
 wait_for_aggregations = ExternalTaskSensor(
-    task_id="wait_for_aggregations_to_complete",
-    external_dag_id="data_aggregation_dag",  # The ID of the DAG you're waiting for
+    task_id="wait_for_functions_to_complete",
+    external_dag_id="run_functions_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
@@ -61,7 +61,7 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
             filename=config["filename"],
             checksum=config["checksum"],
             sql=config["sql"],
-            report_type="report",
+            sql_type="report",
             dag=dag,
         )
         # Add the current task to the array

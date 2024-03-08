@@ -21,8 +21,8 @@ class RunChecksumSQLPostgresOperator(BaseOperator):
     :type checksum: str
     :param sql: sql
     :type sql: str
-    :param report_type: type of sql [report|fact|index]
-    :type report_type: str
+    :param sql_type: type of sql [report|function|index|dimension]
+    :type sql_type: str
     """
 
     ui_color = "#f9c915"
@@ -35,7 +35,7 @@ class RunChecksumSQLPostgresOperator(BaseOperator):
         filename: str,
         checksum: str,
         sql: str,
-        report_type: str,
+        sql_type: str,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -44,7 +44,7 @@ class RunChecksumSQLPostgresOperator(BaseOperator):
         self.schema = schema
         self.filename = filename
         self.checksum = checksum
-        self.report_type = report_type
+        self.sql_type = sql_type
         self.sql_template = sql
         self.context = {
             "schema": schema,
@@ -56,10 +56,10 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
     id SERIAL PRIMARY KEY,
     checksum CHAR(64),
     filename TEXT,
-    report_type TEXT,
+    sql_type TEXT,
     updatedat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_filename_report_type UNIQUE (filename, report_type)
+    CONSTRAINT unique_filename_sql_type UNIQUE (filename, sql_type)
 );
 """
 
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
-            return f"Run SQL for {self.schema},{self.filename}, {self.report_type}"
+            return f"Run SQL for {self.schema},{self.filename}, {self.sql_type}"
         except Exception as e:
             self.log.error(f"An error occurred: {e}")
             raise AirflowException(e)
@@ -122,16 +122,16 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         # Check if the record exists and if the checksum matches
         select_query = f"""
             SELECT checksum FROM {self.schema}.report_checksums
-            WHERE filename = '{self.filename}' AND report_type = '{self.report_type}';
+            WHERE filename = '{self.filename}' AND sql_type = '{self.sql_type}';
         """
         existing_record = conn.execute(select_query).fetchone()
 
         # If the record does not exist or the checksum is different, perform upsert
         if not existing_record or existing_record["checksum"] != self.checksum:
             upsert_query = f"""
-                INSERT INTO {self.schema}.report_checksums (filename, checksum, report_type)
-                VALUES ('{self.filename}', '{self.checksum}', '{self.report_type}')
-                ON CONFLICT (filename, report_type)
+                INSERT INTO {self.schema}.report_checksums (filename, checksum, sql_type)
+                VALUES ('{self.filename}', '{self.checksum}', '{self.sql_type}')
+                ON CONFLICT (filename, sql_type)
                 DO UPDATE SET checksum = EXCLUDED.checksum, updatedat = CURRENT_TIMESTAMP;
             """
             conn.execute(upsert_query)
@@ -143,19 +143,22 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             return False
 
     def _validate_sql_convention(self, sql):
-        if self.report_type == "index":
+        if self.sql_type == "index":
             return
         pattern = ""
         expected_prefix = ""
-        if self.report_type == "report":
+        if self.sql_type == "report":
             pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "rep__"
-        elif self.report_type == "fact":
+        elif self.sql_type == "function":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "fact__"
-        elif self.report_type == "dimension":
+        elif self.sql_type == "dimension":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "dim__"
+        elif self.sql_type == "function":  # This is the new case for SQL functions
+            pattern = r"CREATE (OR REPLACE )?FUNCTION (\w+)\.(\w+)"
+            expected_prefix = "fn__"
 
         if pattern:
             matches = re.findall(pattern, sql, re.IGNORECASE)
@@ -164,5 +167,5 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                 view_or_table_name = match[-1]  # This gets the last element of the match tuple
                 if not view_or_table_name.startswith(expected_prefix):
                     raise AirflowException(
-                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.report_type}'."  # noqa
+                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.sql_type}'."  # noqa
                     )
