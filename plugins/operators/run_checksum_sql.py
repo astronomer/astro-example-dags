@@ -21,7 +21,7 @@ class RunChecksumSQLPostgresOperator(BaseOperator):
     :type checksum: str
     :param sql: sql
     :type sql: str
-    :param sql_type: type of sql [report|function|index|dimension]
+    :param sql_type: type of sql [report|function|index|dimension|user]
     :type sql_type: str
     """
 
@@ -144,6 +144,8 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
 
     def _validate_sql_convention(self, sql):
         if self.sql_type == "index":
+            return
+        elif self.sql_type == "user":
             return
         pattern = ""
         expected_prefix = ""
