@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP TABLE IF EXISTS {{ schema}}.dim__time;
+DROP TABLE IF EXISTS {{ schema}}.dim__time CASCADE;
 {% endif %}
 DO $$
 DECLARE
@@ -10,7 +10,7 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'dim__time') THEN
         -- Create the table if it does not exist
         CREATE TABLE public.dim__time (
-            id DATE PRIMARY KEY,
+            date_id DATE PRIMARY KEY,
             date DATE,
             year INT,
             month INT,
@@ -36,13 +36,13 @@ BEGIN
         table_was_created := TRUE;
 
         -- Create an index on the id column if the table was just created
-        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON public.dim__time(id);
+        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON public.dim__time(date_id);
     END IF;
 
     -- If the table was just created, perform the INSERT operation
     IF table_was_created THEN
         INSERT INTO dim__time (
-            id,
+            date_id,
             date,
             year,
             month,
@@ -64,7 +64,7 @@ BEGIN
             monthend
         )
         SELECT
-            datum as id,
+            datum as date_id,
             datum as date,
             EXTRACT(YEAR FROM datum) as year,
             EXTRACT(MONTH FROM datum) as month,
@@ -82,8 +82,8 @@ BEGIN
             EXTRACT(DOW FROM datum) as dayofweek_num,
             EXTRACT(ISODOW FROM datum) as isodayofweek_num,
             CASE WHEN EXTRACT(ISODOW FROM datum) IN (6, 7) THEN 'weekend' ELSE 'weekday' END as weekend,
-            datum + (1 - EXTRACT(DAY FROM datum))::integer as monthstart,
-            (datum + INTERVAL '1 month' - INTERVAL '1 day')::date as monthend
+            date_trunc('month', datum)::date as monthstart,
+            (date_trunc('month', datum) + INTERVAL '1 MONTH' - INTERVAL '1 day')::date as monthend
         FROM generate_series('2016-01-01'::date, '2026-12-31'::date, '1 day'::interval) AS sequence(datum);
     END IF;
 END

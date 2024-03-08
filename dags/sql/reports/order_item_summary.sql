@@ -13,7 +13,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_item_summary AS
         COUNT(CASE WHEN oi.received = TRUE THEN 1 END) AS num_received_by_harper_warehouse,
         COUNT(CASE WHEN oi.received_by_warehouse = TRUE THEN 1 END) AS num_received_by_partner_warehouse
     FROM
-        public.orders o
+        {{ schema }}.orders o
     JOIN
         order__items oi ON o.id = oi.order_id
     GROUP BY
