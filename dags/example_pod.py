@@ -1,19 +1,9 @@
-from pendulum import datetime, duration
 from airflow import DAG
 from airflow.configuration import conf
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
-
-default_args = {
-    "owner": "airflow",
-    "depends_on_past": False,
-    "start_date": datetime(2024, 1, 1),
-    "email_on_failure": False,
-    "email_on_retry": False,
-    "retries": 1,
-    "retry_delay": duration(minutes=5),
-}
+from pendulum import datetime, duration
 
 namespace = conf.get("kubernetes", "NAMESPACE")
 # This will detect the default namespace locally and read the
@@ -26,11 +16,17 @@ else:
     config_file = None
 
 with DAG(
-    dag_id="example_pod", schedule="@once", default_args=default_args
+    dag_id="example_pod",
+    start_date=datetime(2024, 1, 1),
+    schedule="@daily",
+    catchup=False,
+    doc_md=__doc__,
+    default_args={"owner": "Astro", "retries": 0},
+    tags=["example"],
 ) as dag:
     KubernetesPodOperator(
         namespace=namespace,
-        image="eqtble_dlt",
+        image="eqtble_dlt:latest",
         # labels={"<pod-label>": "<label-name>"},
         name="airflow-test-pod",
         task_id="task-one",
@@ -39,4 +35,5 @@ with DAG(
         config_file=config_file,
         is_delete_operator_pod=True,
         get_logs=True,
+        image_pull_policy="IfNotPresent",  # crucial to avoid pulling image from the non-existing local registry
     )
