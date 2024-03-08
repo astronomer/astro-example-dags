@@ -23,31 +23,31 @@ default_args = {
 
 
 dag = DAG(
-    "create_dimensions_dag",
+    "05_create_reports_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
     template_searchpath="/usr/local/airflow/dags",
 )
 
-wait_for_indexes = ExternalTaskSensor(
-    task_id="wait_for_indexes_to_complete",
-    external_dag_id="create_indexes_dag",  # The ID of the DAG you're waiting for
+wait_for_functions = ExternalTaskSensor(
+    task_id="wait_for_functions_to_complete",
+    external_dag_id="04_create_functions_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
 )
 
-dimensions = "./sql/dimensions"
-dimensions_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), dimensions)
+reports = "./sql/reports"
+reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
 
-dimensions_sql_files = get_recursive_sql_file_lists(dimensions_abspath, subdir="dimensions")
+reports_sql_files = get_recursive_sql_file_lists(reports_abspath, subdir="reports")
 
-last_dimension_task = wait_for_indexes
-for group_index, group_list in enumerate(dimensions_sql_files, start=1):
-    dimension_task = DummyOperator(task_id=f"dimensions_{group_index}", dag=dag)
-    dimension_task_complete = DummyOperator(task_id=f"dimensions_{group_index}_complete", dag=dag)
-    last_dimension_task >> dimension_task
+last_report_task = wait_for_functions
+for group_index, group_list in enumerate(reports_sql_files, start=1):
+    report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
+    report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
+    last_report_task >> report_task
 
     # Initialize an array to hold all tasks in the current group
     tasks_in_current_group = []
@@ -61,10 +61,10 @@ for group_index, group_list in enumerate(dimensions_sql_files, start=1):
             filename=config["filename"],
             checksum=config["checksum"],
             sql=config["sql"],
-            sql_type="dimension",
+            sql_type="report",
             dag=dag,
         )
         # Add the current task to the array
         tasks_in_current_group.append(task)
-    dimension_task >> tasks_in_current_group >> dimension_task_complete
-    last_dimension_task = dimension_task_complete
+    report_task >> tasks_in_current_group >> report_task_complete
+    last_report_task = report_task_complete
