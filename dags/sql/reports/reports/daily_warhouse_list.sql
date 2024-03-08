@@ -1,8 +1,8 @@
 {% if is_modified %}
-DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.daily_warehouse_list CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__daily_warehouse_list CASCADE;
 {% endif %}
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.daily_warehouse_list AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_warehouse_list AS
     SELECT  o.id,
             o.order_name,
             o.order_status,
@@ -11,19 +11,20 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.daily_warehouse_
             ua.first_name,
             ua.last_name,
             o.order_type,
-            r_ois.*,
+            r_ois.total_items,
+            r_ois.num_received_by_harper_warehouse,
             o.updatedAt,
             o.createdAt,
             o.airflow_sync_ds
     FROM orders o
     LEFT JOIN useraccount ua ON ua.id = o.style_concierge
-    LEFT JOIN report_order_item_summary r_ois ON r_ois.order_id = o.id
+    LEFT JOIN rep__order_item_summary r_ois ON r_ois.order_id = o.id
     WHERE o.appointment__date::date = CURRENT_DATE
       AND o.order_type NOT IN ('add_to_order', 'ship_direct', 'harper_try')
 WITH NO DATA;
 
 {% if is_modified %}
-CREATE UNIQUE INDEX daily_warehouse_list_idx ON {{ destination_schema }}.daily_warehouse_list (id);
+CREATE UNIQUE INDEX IF NOT EXISTS daily_warehouse_list_idx ON {{ schema }}.rep__daily_warehouse_list (id);
 {% endif %}
 
-REFRESH MATERIALIZED VIEW {{ destination_schema }}.daily_warehouse_list;
+REFRESH MATERIALIZED VIEW {{ schema }}.rep__daily_warehouse_list;

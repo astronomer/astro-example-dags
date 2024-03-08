@@ -76,16 +76,27 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
         # Thats fine, they will all be recreated ok, BUT it increases the downtime whilst the process is running
 
         self.create_template = """{% if is_modified %}
-            DROP MATERIALIZED VIEW IF EXISTS {{ destination_schema }}.{{ destination_table }} CASCADE;
+            DROP VIEW IF EXISTS {{ destination_schema }}.{{ destination_table }} CASCADE;
             {% endif %}
-            CREATE MATERIALIZED VIEW IF NOT EXISTS {{ destination_schema }}.{{ destination_table }} AS
-                SELECT {{column_names_str}} FROM {{ source_schema }}.{{ source_table }}
-            WITH NO DATA;
-            {% if is_modified %}
-            CREATE UNIQUE INDEX {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);
-            {% endif %}
-            REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
-"""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT FROM pg_catalog.pg_class c
+                    JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                    WHERE  n.nspname = '{{ destination_schema }}'
+                    AND    c.relname = '{{ destination_table }}'
+                    AND    c.relkind = 'v' -- 'v' stands for view
+                ) THEN
+                EXECUTE 'CREATE VIEW {{ destination_schema }}.{{ destination_table }} AS
+                    SELECT {{column_names_str}} FROM {{ source_schema }}.{{ source_table }};';
+                END IF;
+            END
+$$;
+        {% if is_modified %}
+        CREATE UNIQUE INDEX IF NOT EXISTS {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);
+        {% endif %}
+"""  # noqa
+        # REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
 
         self.log.info("Initialised EnsurePostgresDatalakeTableViewExistsOperator OK")
 

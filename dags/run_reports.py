@@ -57,7 +57,7 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
     tasks_in_current_group = []
 
     for config in group_list:
-        id = config["id"]
+        id = config["filename"]
         task = RunChecksumSQLPostgresOperator(
             task_id=id,
             postgres_conn_id="postgres_datalake_conn_id",

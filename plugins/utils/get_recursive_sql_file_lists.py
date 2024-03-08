@@ -26,9 +26,10 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="subreports"
                 modified_filepath = os.sep.join(path_parts[last_dir_index:])
 
                 file_info = {
-                    "id": filename_without_extension,
+                    "filename": filename_without_extension,
                     "filepath": modified_filepath,
-                    "hash": sha256_hash,
+                    "checksum": sha256_hash,
+                    "sql": content.decode("utf-8"),
                 }
                 current_level_files.append(file_info)
 

@@ -26,9 +26,6 @@ class RunChecksumSQLPostgresOperator(BaseOperator):
     """
 
     ui_color = "#f9c915"
-    template_fields = "sql"
-    template_ext = ".sql"
-    template_fields_renderers = {"sql": "sql"}
 
     def __init__(
         self,
@@ -61,8 +58,8 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
     filename TEXT,
     report_type TEXT,
     updatedat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    UNIQUE (filename, report_type)
+    createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_filename_report_type UNIQUE (filename, report_type)
 );
 """
 
@@ -76,13 +73,24 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
+
+                    self.preoperation_sql = render_template(
+                        self.preoperation_template,
+                        context=context,
+                        extra_context=self.context,
+                    )
+                    self.log.info(f"Executing {self.preoperation_sql}")
+                    conn.execute(self.preoperation_sql)
+
                     is_modified = self._check_if_modified(conn)
+                    self.log.info(f"{self.filename}.sql is modified = {is_modified}")
                     self.context["is_modified"] = is_modified
 
+                    self.log.info(self.sql_template)
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
 
-                    # Validate the materialized view name
-                    self._validate_materialized_view_name(self.sql)
+                    # Validate the SQL to make sure it follows our naming convention
+                    self._validate_sql_convention(self.sql)
 
                     self.log.info(f"Executing {self.sql}")
                     conn.execute(self.sql)
@@ -92,7 +100,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     transaction.rollback()
                     raise AirflowException(f"Database operation failed Rolling Back: {e}")
 
-            return f"Dropped {self.schema}.{self.table}"
+            return f"Run SQL for {self.schema},{self.filename}, {self.report_type}"
         except Exception as e:
             self.log.error(f"An error occurred: {e}")
             raise AirflowException(e)
@@ -141,7 +149,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         expected_prefix = ""
         if self.report_type == "report":
             pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
-            expected_prefix = "report__"
+            expected_prefix = "rep__"
         elif self.report_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "fact__"
@@ -151,7 +159,9 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
 
         if pattern:
             matches = re.findall(pattern, sql, re.IGNORECASE)
-            for _, view_or_table_name in matches:
+            for match in matches:
+                # Assuming the table or view name is always the last group captured
+                view_or_table_name = match[-1]  # This gets the last element of the match tuple
                 if not view_or_table_name.startswith(expected_prefix):
                     raise AirflowException(
                         f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.report_type}'."  # noqa
