@@ -23,7 +23,7 @@ default_args = {
 
 
 dag = DAG(
-    "06_create_users_dag",
+    "100_create_users_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
@@ -31,8 +31,8 @@ dag = DAG(
 )
 
 wait_for_reports = ExternalTaskSensor(
-    task_id="wait_for_reports_to_complete",
-    external_dag_id="05_create_reports_dag",  # The ID of the DAG you're waiting for
+    task_id="wait_for_migrations_to_complete",
+    external_dag_id="01_mongo_migrations_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,

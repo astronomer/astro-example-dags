@@ -1,4 +1,5 @@
 .git
+.direnv
 .envrc
 .DS_Store # macOS specific ignore
 airflow_settings.yaml
