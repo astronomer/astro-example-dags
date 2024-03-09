@@ -1,1 +1,1 @@
-CREATE UNIQUE INDEX IF NOT EXISTS orders__apptdate_idx ON {{ schema }}.orders (appointment__date);
+CREATE UNIQUE INDEX IF NOT EXISTS raw__orders__apptdate_idx ON {{ schema }}.raw__orders (appointment__date);

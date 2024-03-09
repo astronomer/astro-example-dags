@@ -61,7 +61,7 @@ for group_index, group_list in enumerate(indexes_sql_files, start=1):
             filename=config["filename"],
             checksum=config["checksum"],
             sql=config["sql"],
-            index_type="index",
+            sql_type="index",
             dag=dag,
         )
         # Add the current task to the array

@@ -144,7 +144,7 @@ for config in migrations:
         source_schema="transient_data",
         source_table=config["destination_table"],
         destination_schema="public",
-        destination_table=f"raw_{config['destination_table']}",
+        destination_table=f"raw__{config['destination_table']}",
         dag=dag,
     )
 
@@ -153,7 +153,7 @@ for config in migrations:
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         schema="public",
-        table=f"raw_{config['destination_table']}",
+        table=f"raw__{config['destination_table']}",
         dag=dag,
     )
 
@@ -162,7 +162,7 @@ for config in migrations:
         task_id=missing_columns_task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         source_table=config["destination_table"],
-        destination_table=f"raw_{config['destination_table']}",
+        destination_table=f"raw__{config['destination_table']}",
         dag=dag,
     )
     task_id = f"{config['task_name']}_append_to_datalake"
@@ -172,7 +172,7 @@ for config in migrations:
         source_schema="transient_data",
         source_table=config["destination_table"],
         destination_schema="public",
-        destination_table=f"raw_{config['destination_table']}",
+        destination_table=f"raw__{config['destination_table']}",
         dag=dag,
     )
     task_id = f"{config['task_name']}_ensure_datalake_table_view"
@@ -180,7 +180,7 @@ for config in migrations:
         task_id=task_id,
         postgres_conn_id="postgres_datalake_conn_id",
         source_schema="public",
-        source_table=f"raw_{config['destination_table']}",
+        source_table=f"raw__{config['destination_table']}",
         destination_schema="public",
         destination_table=config["destination_table"],
         prev_task_id=missing_columns_task_id,
