@@ -34,7 +34,7 @@ wait_for_reports = ExternalTaskSensor(
     dag=dag,
 )
 
-sheets = "./dags/sheets"
+sheets = "sheets"
 sheets_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), sheets)
 
 sheets_configs = load_sheet_configs(sheets_abspath)
