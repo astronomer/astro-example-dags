@@ -13,6 +13,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_warehouse_list AS
             o.order_type,
             r_ois.total_items,
             r_ois.num_received_by_harper_warehouse,
+            get_halo_url(o.id, o.order_type) AS halo_link,
             o.updatedAt,
             o.createdAt,
             o.airflow_sync_ds
