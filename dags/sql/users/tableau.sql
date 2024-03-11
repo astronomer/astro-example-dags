@@ -24,4 +24,6 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO tableau;
 
 -- Grant execute on all functions in the public schema
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO tableau;
+{% else %}
+NULL;
 {% endif %}
