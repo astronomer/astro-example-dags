@@ -1,4 +1,6 @@
 '''
+## Example Pod DAG
+
 Sample dag to import into K8S
 '''
 
@@ -49,7 +51,7 @@ with DAG(
     default_args={"owner": "Astro", "retries": 0},
     tags=["example"],
 ) as dag:
-    KubernetesPodOperator(
+    k = KubernetesPodOperator(
         namespace=namespace,
         image="eqtble_dlt:latest",
         # labels={"<pod-label>": "<label-name>"},
@@ -64,3 +66,5 @@ with DAG(
         env_vars=env_vars,
         arguments=["greenhouse_pipeline.py"],
     )
+
+    k
