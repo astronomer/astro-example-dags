@@ -1,5 +1,8 @@
-import json
+'''
+Sample dag to import into K8S
+'''
 
+import json
 from airflow import DAG
 from airflow.configuration import conf
 from airflow.hooks.base_hook import BaseHook
