@@ -48,10 +48,10 @@ with DAG(
     schedule="@daily",
     catchup=False,
     doc_md=__doc__,
-    default_args={"owner": "Astro", "retries": 0},
+    default_args={"owner": "Astro", "retries": 3},
     tags=["example"],
 ) as dag:
-    k = KubernetesPodOperator(
+    kubernetesPodOperator(
         namespace=namespace,
         image="eqtble_dlt:latest",
         # labels={"<pod-label>": "<label-name>"},
@@ -66,5 +66,4 @@ with DAG(
         env_vars=env_vars,
         arguments=["greenhouse_pipeline.py"],
     )
-
-    k
+ 
