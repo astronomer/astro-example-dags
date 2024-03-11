@@ -7,7 +7,7 @@ Sample dag to import into K8S
 import json
 from airflow import DAG
 from airflow.configuration import conf
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base import BaseHook
 from airflow.models import Connection
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
@@ -24,9 +24,9 @@ else:
     in_cluster = True
     config_file = None
 
-greenhouse_connection: Connection = BaseHook.get_connection("greenhouse_eqtble_sandbox")
-workable_connection: Connection = BaseHook.get_connection("workable_eqtble_sandbox")
-snowflake_connection: Connection = BaseHook.get_connection("snowflake_sandbox")
+greenhouse_connection: Connection = Connection.get_connection_from_secrets("greenhouse_eqtble_sandbox")
+workable_connection: Connection = Connection.get_connection_from_secrets("workable_eqtble_sandbox")
+snowflake_connection: Connection = Connection.get_connection_from_secrets("snowflake_sandbox")
 
 snowflake_extra = json.loads(snowflake_connection.get_extra())
 
