@@ -51,7 +51,7 @@ with DAG(
     default_args={"owner": "Astro", "retries": 3},
     tags=["example"],
 ) as dag:
-    kubernetesPodOperator(
+    k = kubernetesPodOperator(
         namespace=namespace,
         image="eqtble_dlt:latest",
         # labels={"<pod-label>": "<label-name>"},
@@ -67,3 +67,4 @@ with DAG(
         arguments=["greenhouse_pipeline.py"],
     )
  
+    k
