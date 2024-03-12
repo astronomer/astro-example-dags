@@ -61,8 +61,8 @@ start_task = ShortCircuitOperator(
 start_task.doc = doc
 
 base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag, trigger_rule=TriggerRule.NONE_FAILED)
-generated_schemas_path = "../include/generatedSchemas/"
-generated_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), generated_schemas_path)
+exported_schemas_path = "../include/exportedSchemas/"
+exported_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), exported_schemas_path)
 
 reports = "./sql/reports"
 reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
@@ -91,7 +91,7 @@ ensure_missing_columns_function_exists = EnsureMissingColumnsPostgresFunctionOpe
 )
 migration_tasks = []
 for config in migrations:
-    schema_path = os.path.join(generated_schemas_abspath, config["jsonschema"])
+    schema_path = os.path.join(exported_schemas_abspath, config["jsonschema"])
 
     task_id = f"{config['task_name']}_drop_transient_table_if_exists"
     drop_transient_table = DropPostgresTableOperator(
