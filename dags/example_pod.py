@@ -26,9 +26,9 @@ else:
 
     
 workable_connection = BaseHook.get_connection("workable_eqtble_sandbox")
-snowflake_connection = BaseHook.get_connection("snowflake_sandbox")
 greenhouse_connection = BaseHook.get_connection("greenhouse_eqtble_sandbox")
 
+snowflake_connection = BaseHook.get_connection("snowflake_sandbox")
 snowflake_extra = json.loads(snowflake_connection.get_extra())
 
 env_vars = {
