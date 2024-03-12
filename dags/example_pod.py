@@ -13,6 +13,7 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
 from pendulum import datetime, duration
+from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
 
 namespace = conf.get("kubernetes", "NAMESPACE")
 # This will detect the default namespace locally and read the
@@ -28,7 +29,7 @@ else:
 workable_connection = BaseHook.get_connection("workable_eqtble_sandbox")
 greenhouse_connection = BaseHook.get_connection("greenhouse_eqtble_sandbox")
 
-snowflake_connection = BaseHook.get_connection("snowflake_sandbox")
+snowflake_connection = SnowflakeHook.get_connection("snowflake_sandbox")
 snowflake_extra = json.loads(snowflake_connection.get_extra())
 
 env_vars = {
