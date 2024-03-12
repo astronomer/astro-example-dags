@@ -31,7 +31,7 @@ class StripeToPostgresOperator(BaseOperator):
         self.destination_table = destination_table
         self.postgres_conn_id = postgres_conn_id
         self.stripe_conn_id = stripe_conn_id
-        self.discard_fields = []
+        self.discard_fields = ["payment_method_details", "source"]
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.separator = "__"
 
@@ -58,21 +58,29 @@ class StripeToPostgresOperator(BaseOperator):
         engine = self.get_postgres_sqlalchemy_engine(hook)
         with engine.connect() as conn:
 
-            starting_after = None
-            created = {
-                "gt": last_successful_dagrun_ts,
-                "lte": context["data_interval_end"].int_timestamp,
-            }
-            total_docs_processed = 0
+            lte = context["data_interval_end"].int_timestamp
+            if last_successful_dagrun_ts:
+                query = f"created>{last_successful_dagrun_ts} AND created<={lte}"
+            else:
+                query = f"created<={lte}"
 
-            while True:
-                result = stripe.Charge.list(
-                    limit=100,
-                    starting_after=starting_after,
-                    created=created,
+            query += ' AND status:"succeeded"'
+            total_docs_processed = 0
+            limit = 100
+            page = None
+            has_more = True
+
+            while has_more:
+                result = stripe.Charge.search(
+                    query=query,
+                    limit=limit,
+                    page=page,
                 )
                 records = result.data
                 total_docs_processed += len(records)
+                has_more = result.has_more
+                if has_more:
+                    page = result.next_page
 
                 df = DataFrame(records)
 
@@ -80,8 +88,7 @@ class StripeToPostgresOperator(BaseOperator):
                     self.log.info("No More Charges Data to process.")
                     break
 
-                self.log.info(f"Last charge Id {starting_after}.")
-                starting_after = records[-1].id
+                self.log.info(f"Processing ResultSet {total_docs_processed}.")
                 df["airflow_sync_ds"] = ds
 
                 if self.discard_fields:
