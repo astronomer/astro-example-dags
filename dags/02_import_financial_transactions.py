@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.operators.stripe_to_postgres_operator import StripeToPostgresOperator
+from plugins.operators.zettle_to_postgres_operator import ZettleToPostgresOperator
 
 default_args = {
     "owner": "airflow",
@@ -16,7 +17,7 @@ default_args = {
 
 
 dag = DAG(
-    "02_import_stripe_charges",
+    "02_import_financial_transactions_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
@@ -31,7 +32,7 @@ wait_for_migrations = ExternalTaskSensor(
     dag=dag,
 )
 
-task = StripeToPostgresOperator(
+stripe_task = StripeToPostgresOperator(
     task_id="import_stripe_transactions_to_datalake",
     postgres_conn_id="postgres_datalake_conn_id",
     stripe_conn_id="stripe_conn_id",
@@ -39,4 +40,12 @@ task = StripeToPostgresOperator(
     destination_table="stripe__charges",
     dag=dag,
 )
-wait_for_migrations >> task
+zettle_task = ZettleToPostgresOperator(
+    task_id="import_zettle_transactions_to_datalake",
+    postgres_conn_id="postgres_datalake_conn_id",
+    zettle_conn_id="zettle_conn_id",
+    destination_schema="transient_data",
+    destination_table="zettle__charges",
+    dag=dag,
+)
+wait_for_migrations >> [stripe_task, zettle_task]

@@ -1,12 +1,15 @@
 import re
 import json
+import urllib.parse
 from datetime import datetime
+from urllib.parse import urlencode
 
 import pandas as pd
-import stripe
+import requests
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
+from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from airflow.utils.session import provide_session
 from airflow.utils.decorators import apply_defaults
@@ -17,23 +20,23 @@ from plugins.utils.render_template import render_template
 # YOU MUST CREATE THE DESTINATION SPREADSHEET IN ADVANCE MANUALLY IN ORDER FOR THIS TO WORK
 
 
-class StripeToPostgresOperator(BaseOperator):
+class ZettleToPostgresOperator(BaseOperator):
     @apply_defaults
     def __init__(
         self,
         postgres_conn_id,
-        stripe_conn_id,
+        zettle_conn_id,
         destination_schema,
         destination_table,
         *args,
         **kwargs,
     ):
-        super(StripeToPostgresOperator, self).__init__(*args, **kwargs)
+        super(ZettleToPostgresOperator, self).__init__(*args, **kwargs)
         self.destination_schema = destination_schema
         self.destination_table = destination_table
         self.postgres_conn_id = postgres_conn_id
-        self.stripe_conn_id = stripe_conn_id
-        self.discard_fields = ["payment_method_details", "source"]
+        self.zettle_conn_id = zettle_conn_id
+        self.discard_fields = []
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.separator = "__"
 
@@ -56,11 +59,16 @@ END $$;
 
         # Fetch data from the database
         hook = BaseHook.get_hook(self.postgres_conn_id)
-        stripe_conn = Connection.get_connection_from_secrets(self.stripe_conn_id)
-        stripe.api_key = stripe_conn.password
+        zettle_conn = Connection.get_connection_from_secrets(self.zettle_conn_id)
+        api_key = zettle_conn.password
+        print(zettle_conn, zettle_conn.extra_dejson)
+        grant_type = zettle_conn.extra_dejson.get("grant_type")
+        client_id = zettle_conn.extra_dejson.get("client_id")
+        token = self.get_zettle_access_token(grant_type, client_id, api_key)
         ds = context["ds"]
         run_id = context["run_id"]
         last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
+
         extra_context = {
             **context,
             **self.context,
@@ -79,29 +87,39 @@ END $$;
             self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
             conn.execute(self.delete_sql)
 
-            lte = context["data_interval_end"].int_timestamp
-            if last_successful_dagrun_ts:
-                query = f"created>{last_successful_dagrun_ts} AND created<={lte}"
-            else:
-                query = f"created<={lte}"
-
-            query += ' AND status:"succeeded"'
+            lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
             limit = 100
-            page = None
-            has_more = True
+            offset = 0
 
-            while has_more:
-                result = stripe.Charge.search(
-                    query=query,
-                    limit=limit,
-                    page=page,
-                )
-                records = result.data
+            # Base URL path
+            base_url = "https://finance.izettle.com/v2/accounts/LIQUID/transactions"
+            # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
+
+            while True:
+                # Dictionary of query parameters
+                query_params = {
+                    "start": start_param,
+                    "end": lte,
+                    "limit": limit,
+                    "offset": offset,
+                }
+                full_url = f"{base_url}?{urlencode(query_params)}"
+                headers = {"Authorization": f"Bearer {token}"}
+
+                response = requests.get(full_url, headers=headers)
+                print(response.json())
+
+                if response.status_code == 200 and response.json():
+                    records = response.json()
+                else:
+                    self.log.error("Error Retreiving Zettle transaction: %s", response)
+                    raise AirflowException("Error getting Zettle Transactions")
+
+                print(records)
+
                 total_docs_processed += len(records)
-                has_more = result.has_more
-                if has_more:
-                    page = result.next_page
 
                 df = DataFrame(records)
 
@@ -109,7 +127,9 @@ END $$;
                     self.log.info("No More Charges Data to process.")
                     break
 
-                self.log.info(f"Processing ResultSet {total_docs_processed}.")
+                offset += limit
+
+                self.log.info(f"Processing ResultSet {total_docs_processed} from batch {offset}.")
                 df["airflow_sync_ds"] = ds
 
                 if self.discard_fields:
@@ -132,31 +152,14 @@ END $$;
             # Check how many Docs total
             if total_docs_processed > 0:
                 conn.execute(
-                    f"""
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_index i
-        JOIN pg_class c ON c.oid = i.indrelid
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        JOIN pg_class ic ON ic.oid = i.indexrelid
-        WHERE n.nspname = '{self.destination_schema}'  -- Schema name
-        AND c.relname = '{self.destination_table}'  -- Table name
-        AND ic.relname = '{self.destination_table}_idx'  -- Index name
-    ) THEN
-        ALTER TABLE {self.destination_schema}.{self.destination_table}
-            ADD CONSTRAINT {self.destination_table}_idx PRIMARY KEY (id);
-    END IF;
-END $$;
-"""
+                    f"CREATE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuid_idx_idx ON _originatingtransactionuuid_idx (originatingtransactionuuid);"  # noqa
                 )
 
         context["ti"].xcom_push(
             key=self.last_successful_dagrun_xcom_key,
-            value=context["data_interval_end"].int_timestamp,
+            value=context["data_interval_end"].to_iso8601_string(),
         )
-        self.log.info("Stripe Charges written to Datalake successfully.")
+        self.log.info("Zettle Charges written to Datalake successfully.")
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
@@ -264,3 +267,23 @@ END $$;
             return datetime.fromisoformat(xcom.value)
 
         return None
+
+    def get_zettle_access_token(self, grant_type, client_id, api_key):
+        try:
+            url = "https://oauth.izettle.com/token"
+            data = {
+                "grant_type": grant_type,
+                "client_id": client_id,
+                "assertion": api_key,
+            }
+            headers = {
+                "content-type": "application/x-www-form-urlencoded",
+            }
+            response = requests.post(url, data=urllib.parse.urlencode(data), headers=headers)
+
+            if response.status_code == 200 and response.json():
+                data = response.json()
+                return data.get("access_token")
+        except Exception as e:
+            self.log.error("Error during database operation: %s", e)
+            raise AirflowException(f"Error getting Zettle Access Token: {e}")

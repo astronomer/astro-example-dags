@@ -37,11 +37,19 @@ wait_for_indexes = ExternalTaskSensor(
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
 )
+wait_for_financials = ExternalTaskSensor(
+    task_id="wait_for_financials_to_import",
+    external_dag_id="02_import_financial_transactions_dag",  # The ID of the DAG you're waiting for
+    external_task_id=None,  # Set to None to wait for the entire DAG to complete
+    allowed_states=["success"],  # You might need to customize this part
+    dag=dag,
+)
 
 dimensions = "./sql/dimensions"
 dimensions_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), dimensions)
 
 dimensions_sql_files = get_recursive_sql_file_lists(dimensions_abspath, subdir="dimensions")
+wait_for_financials >> wait_for_indexes
 
 last_dimension_task = wait_for_indexes
 for group_index, group_list in enumerate(dimensions_sql_files, start=1):
