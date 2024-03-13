@@ -111,7 +111,7 @@ END $$;
                 response = requests.get(full_url, headers=headers)
                 print(response.json())
 
-                if response.status_code == 200 and response.json():
+                if response.status_code == 200:
                     records = response.json()
                 else:
                     self.log.error("Error Retreiving Zettle transaction: %s", response)
