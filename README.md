@@ -9,7 +9,7 @@ Project Contents
 Your Astro project contains the following files and folders:
 
 - dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://docs.astronomer.io/learn/get-started-with-airflow). 
+    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://docs.astronomer.io/learn/get-started-with-airflow).
 - Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
 - include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
 - packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
@@ -46,3 +46,25 @@ Contact
 =======
 
 The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+
+
+## Debug Kubernetes
+Open shell on temporary pod to test network
+```bash
+kubectl run -i --tty --rm debug --image=busybox --restart=Never -- sh
+```
+
+initiate DNS lookup:
+```bash
+nslookup gn92733.eu-central-1.snowflakecomputing.com
+```
+
+Inspect log:
+```bash
+kubectl logs --namespace=kube-system -l k8s-app=kube-dns
+```
+
+DNS on Docker Desktop > 2.24.2 seems to be unreliable for the internet. See [issue](https://github.com/docker/for-win/issues/13768). But, you can run the latest Docker desktop and patch `coredns` like this:
+```
+kubectl patch deployment coredns -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"coredns","image":"registry.k8s.io/coredns/coredns:v1.10.0"}]}}}}'
+```
