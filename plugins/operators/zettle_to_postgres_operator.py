@@ -152,7 +152,7 @@ END $$;
             # Check how many Docs total
             if total_docs_processed > 0:
                 conn.execute(
-                    f"CREATE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuid_idx_idx ON _originatingtransactionuuid_idx (originatingtransactionuuid);"  # noqa
+                    f"CREATE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuid_idx ON {self.destination_schema}.{self.destination_table} (originatingtransactionuuid);"  # noqa
                 )
 
         context["ti"].xcom_push(
