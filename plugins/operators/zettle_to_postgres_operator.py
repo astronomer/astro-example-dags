@@ -264,7 +264,7 @@ END $$;
 
         xcom = query.first()
         if xcom:
-            return datetime.fromisoformat(xcom.value)
+            return xcom.value
 
         return None
 
