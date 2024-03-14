@@ -47,6 +47,13 @@ Contact
 
 The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
 
+## Local Kubernetes Setup
+Use K8s via Docker Desktop as described here:
+https://docs.astronomer.io/learn/kubepod-operator. Change the cluster's server to: `server: https://kubernetes.docker.internal:6443`
+
+To test the image hosted in our private github image repository follow this guide to set up the needed github credential:
+https://docs.astronomer.io/astro/kubernetespodoperator#run-images-from-a-private-registry
+
 
 ## Debug Kubernetes
 Open shell on temporary pod to test network
