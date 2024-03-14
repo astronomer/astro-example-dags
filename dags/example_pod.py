@@ -15,6 +15,8 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
 from pendulum import datetime, duration
 from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
 
+from kubernetes.client import models as k8s
+
 namespace = conf.get("kubernetes", "NAMESPACE")
 # This will detect the default namespace locally and read the
 # environment namespace when deployed to Astronomer.
@@ -55,7 +57,9 @@ with DAG(
 ) as dag:
     KubernetesPodOperator(
         namespace=namespace,
-        image="eqtble_dlt:latest",
+        # image="eqtble_dlt:latest",
+        image="ghcr.io/untitled-data-company/eqtable-dlt:main",
+        image_pull_secrets=[k8s.V1LocalObjectReference("ghcr-login-secret")],
         # labels={"<pod-label>": "<label-name>"},
         name="airflow-test-pod",
         task_id="task-one",

@@ -65,6 +65,6 @@ kubectl logs --namespace=kube-system -l k8s-app=kube-dns
 ```
 
 DNS on Docker Desktop > 2.24.2 seems to be unreliable for the internet. See [issue](https://github.com/docker/for-win/issues/13768). But, you can run the latest Docker desktop and patch `coredns` like this:
-```
+```bash
 kubectl patch deployment coredns -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"coredns","image":"registry.k8s.io/coredns/coredns:v1.10.0"}]}}}}'
 ```
