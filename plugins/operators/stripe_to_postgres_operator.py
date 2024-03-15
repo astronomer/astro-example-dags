@@ -14,10 +14,12 @@ from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
 
+from plugins.operators.mixins.dag_run_task_comms_mixin import DagRunTaskCommsMixin
+
 # YOU MUST CREATE THE DESTINATION SPREADSHEET IN ADVANCE MANUALLY IN ORDER FOR THIS TO WORK
 
 
-class StripeToPostgresOperator(BaseOperator):
+class StripeToPostgresOperator(DagRunTaskCommsMixin, BaseOperator):
     @apply_defaults
     def __init__(
         self,
@@ -35,6 +37,7 @@ class StripeToPostgresOperator(BaseOperator):
         self.stripe_conn_id = stripe_conn_id
         self.discard_fields = ["payment_method_details", "source"]
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
+        self.last_successful_transaction_key = "last_successful_transaction_id"
         self.separator = "__"
 
         self.context = {
@@ -61,56 +64,72 @@ END $$;
         ds = context["ds"]
         run_id = context["run_id"]
         last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
-        extra_context = {
-            **context,
-            **self.context,
-            f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
-        }
-
-        self.delete_sql = render_template(self.delete_template, context=extra_context)
-
-        self.log.info(
-            f"Executing MongoDBToPostgresViaDataframeOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
-        )
 
         engine = self.get_postgres_sqlalchemy_engine(hook)
+
         with engine.connect() as conn:
+            self.ensure_task_comms_table_exists(conn)
+            starting_after = self.get_last_successful_transaction_id(conn, context)
+            extra_context = {
+                **context,
+                **self.context,
+                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
+            }
 
-            self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
-            conn.execute(self.delete_sql)
+            self.log.info(
+                f"Executing StripeToPostgresOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
+            )
 
-            lte = context["data_interval_end"].int_timestamp
-            if last_successful_dagrun_ts:
-                query = f"created>{last_successful_dagrun_ts} AND created<={lte}"
+            if starting_after:
+                self.log.info(
+                    f"StripeToPostgresOperator Restarting task for this Dagrun from the last successful transaction_id {starting_after} after last successful dagrun {last_successful_dagrun_ts}"  # noqa
+                )
             else:
-                query = f"created<={lte}"
+                self.log.info(
+                    f"StripeToPostgresOperator Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}"  # noqa
+                )
+                self.log.info(f"StripeToPostgresOperator Deleting previous Data from this Dagrun")  # noqa
+                self.delete_sql = render_template(self.delete_template, context=extra_context)
+                self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+                conn.execute(self.delete_sql)
 
-            query += ' AND status:"succeeded"'
+            created = {
+                "gt": last_successful_dagrun_ts or 1690898262,
+                "lte": context["data_interval_end"].int_timestamp,
+            }
             total_docs_processed = 0
+
             limit = 100
-            page = None
             has_more = True
 
             while has_more:
-                result = stripe.Charge.search(
-                    query=query,
+                print(created, starting_after, limit)
+                result = stripe.BalanceTransaction.list(
                     limit=limit,
-                    page=page,
+                    starting_after=starting_after,
+                    created=created,
+                    expand=["data.source"],
                 )
+
                 records = result.data
-                total_docs_processed += len(records)
                 has_more = result.has_more
-                if has_more:
-                    page = result.next_page
+                total_docs_processed += len(records)
 
                 df = DataFrame(records)
 
                 if df.empty:
-                    self.log.info("No More Charges Data to process.")
+                    self.log.info("UNEXPECTED EMPTY Balance Transactions to process.")
                     break
 
-                self.log.info(f"Processing ResultSet {total_docs_processed}.")
+                df["source_id"] = df["source"].apply(lambda x: x.get("id") if x is not None else None)
+                df["source_invoice_id"] = df["source"].apply(lambda x: x.get("invoice") if x is not None else None)
+                df["source_charge_id"] = df["source"].apply(lambda x: x.get("charge") if x is not None else None)
+                df.drop(columns=["source"], inplace=True)
+
+                starting_after = records[-1].id
+                self.log.info(f"Processing ResultSet {total_docs_processed} - {starting_after}.")
                 df["airflow_sync_ds"] = ds
+                print(records[0])
 
                 if self.discard_fields:
                     # keep this because if we're dropping any problematic fields
@@ -128,6 +147,7 @@ END $$;
                     schema=self.destination_schema,
                     index=False,
                 )
+                self.set_last_successful_transaction_id(conn, context, starting_after)
 
             # Check how many Docs total
             if total_docs_processed > 0:
@@ -152,10 +172,9 @@ END $$;
 """
                 )
 
-        context["ti"].xcom_push(
-            key=self.last_successful_dagrun_xcom_key,
-            value=context["data_interval_end"].int_timestamp,
-        )
+            self.clear_task_vars(conn, context)
+
+        self.set_last_successful_dagrun_ts(context, context["data_interval_end"].int_timestamp)
         self.log.info("Stripe Charges written to Datalake successfully.")
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
@@ -246,6 +265,15 @@ END $$;
             flattened_data = pd.concat([flattened_data, column_df], axis=1)
 
         return flattened_data
+
+    def set_last_successful_transaction_id(self, conn, context, starting_after):
+        return self.set_task_var(conn, context, self.last_successful_transaction_key, starting_after)
+
+    def get_last_successful_transaction_id(self, conn, context):
+        return self.get_task_var(conn, context, self.last_successful_transaction_key)
+
+    def set_last_successful_dagrun_ts(self, context, value):
+        context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value=value)
 
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):

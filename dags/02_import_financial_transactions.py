@@ -32,12 +32,12 @@ wait_for_migrations = ExternalTaskSensor(
     dag=dag,
 )
 
-stripe_task = StripeToPostgresOperator(
+stripe_balances_task = StripeToPostgresOperator(
     task_id="import_stripe_transactions_to_datalake",
     postgres_conn_id="postgres_datalake_conn_id",
     stripe_conn_id="stripe_conn_id",
     destination_schema="transient_data",
-    destination_table="stripe__charges",
+    destination_table="stripe__transactions",
     dag=dag,
 )
 zettle_task = ZettleToPostgresOperator(
@@ -48,4 +48,4 @@ zettle_task = ZettleToPostgresOperator(
     destination_table="zettle__charges",
     dag=dag,
 )
-wait_for_migrations >> [stripe_task, zettle_task]
+wait_for_migrations >> [stripe_balances_task, zettle_task]
