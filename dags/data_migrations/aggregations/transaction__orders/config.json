@@ -1,0 +1,22 @@
+{
+  "source_collection": "transactions",
+  "destination_table": "transaction__orders",
+  "jsonschema": "ITransaction.json",
+  "unwind": "orders",
+  "preserve_fields": {
+    "transaction_id": [
+      "string"
+    ],
+    "order_id": [
+      "string"
+    ],
+    "createdAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
+    ],
+    "updatedAt": [
+      "datetime64[ns, UTC]",
+      "date-time"
+    ]
+  }
+}

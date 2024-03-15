@@ -1,0 +1,43 @@
+[
+    {
+        "$match": {
+            "updatedAt": {
+                "$gt": "{{ last_successful_dagrun_ds }}",
+                "$lte": "{{ data_interval_end }}"
+            }
+        }
+    },
+    {
+        "$unwind": {
+            "path": "$orders",
+            "includeArrayIndex": "arrayIndex"
+        }
+    },
+    {
+        "$set": {
+            "transaction_id": "$_id",
+            "order_id": "$orders",
+            "id": {
+                "$concat": [
+                  {"$toString": "$_id"},
+                  "__",
+                  {"$toString": "$arrayIndex"}
+                ]
+            },
+            "updatedAt": "$updatedAt",
+            "createdAt": "$createdAt"
+        }
+    },
+    {
+        "$project": {
+            "order_id": 1,
+            "transaction_id": 1,
+            "id":1,
+            "updatedAt":1,
+            "createdAt":1,
+            "_id":0
+        }
+    },
+    { "$skip": 0 },
+    { "$limit": 5000}
+]

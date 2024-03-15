@@ -1,5 +1,6 @@
 import re
 from pprint import pprint  # noqa
+from typing import Optional
 
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
@@ -21,6 +22,8 @@ class AppendTransientTableDataOperator(BaseOperator):
     :type destination_schema: str
     :param destination_table: Destination Table name
     :type table: str
+    :param delete_template: Pre-Delete SQL template to run before the append
+    :type delete_template: str
     """
 
     ui_color = "#f9c915"
@@ -33,6 +36,17 @@ class AppendTransientTableDataOperator(BaseOperator):
         destination_schema: str,
         source_table: str,
         destination_table: str,
+        delete_template: Optional[
+            str
+        ] = """DELETE FROM {{ destination_schema }}.{{destination_table}}
+            WHERE
+                id IN (
+                    SELECT o.id
+                    FROM {{source_schema}}.{{source_table}} o
+                    WHERE
+                        o.airflow_sync_ds = '{{ ds }}'
+                );
+""",
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -42,6 +56,7 @@ class AppendTransientTableDataOperator(BaseOperator):
         self.destination_schema = destination_schema
         self.source_table = source_table
         self.destination_table = destination_table
+        self.delete_template = delete_template
 
         self.context = {
             "source_schema": source_schema,
@@ -50,15 +65,6 @@ class AppendTransientTableDataOperator(BaseOperator):
             "destination_table": self.destination_table,
         }
 
-        self.delete_template = """DELETE FROM {{ destination_schema }}.{{destination_table}}
-            WHERE
-                id IN (
-                    SELECT o.id
-                    FROM {{source_schema}}.{{source_table}} o
-                    WHERE
-                        o.airflow_sync_ds = '{{ ds }}'
-                );
-"""
         self.columns_template = """SELECT column_name
             FROM information_schema.columns
             WHERE table_schema = '{{source_schema}}'

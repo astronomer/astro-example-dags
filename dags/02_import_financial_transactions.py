@@ -139,7 +139,7 @@ zettle_task = ZettleToPostgresOperator(
     postgres_conn_id="postgres_datalake_conn_id",
     zettle_conn_id="zettle_conn_id",
     destination_schema="transient_data",
-    destination_table="zettle__charges",
+    destination_table="zettle__transactions",
     dag=dag,
 )
 
@@ -181,6 +181,7 @@ zettle_append_transient_table_data = AppendTransientTableDataOperator(
     destination_schema="public",
     destination_table="raw__zettle__transactions",
     dag=dag,
+    delete_template="DELETE FROM {{ destination_schema }}.{{destination_table}} WHERE airflow_sync_ds='{{ ds }}'",
 )
 
 task_id = "zettle_ensure_datalake_table_view"
