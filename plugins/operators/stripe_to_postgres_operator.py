@@ -173,7 +173,7 @@ END $$;
                 )
 
             self.clear_task_vars(conn, context)
-
+        context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
         self.set_last_successful_dagrun_ts(context, context["data_interval_end"].int_timestamp)
         self.log.info("Stripe Charges written to Datalake successfully.")
 

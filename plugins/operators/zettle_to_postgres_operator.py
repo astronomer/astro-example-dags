@@ -155,6 +155,8 @@ END $$;
                     f"CREATE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuid_idx ON {self.destination_schema}.{self.destination_table} (originatingtransactionuuid);"  # noqa
                 )
 
+            context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
+
         context["ti"].xcom_push(
             key=self.last_successful_dagrun_xcom_key,
             value=context["data_interval_end"].to_iso8601_string(),
