@@ -1,9 +1,11 @@
 import re
+from urllib.parse import urlencode
 
-import stripe
+import requests
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
+from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from airflow.utils.session import provide_session
 from airflow.utils.decorators import apply_defaults
@@ -11,31 +13,32 @@ from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
 
+from plugins.operators.mixins.zettle import ZettleMixin
 from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
 from plugins.operators.mixins.dag_run_task_comms_mixin import DagRunTaskCommsMixin
 
 # YOU MUST CREATE THE DESTINATION SPREADSHEET IN ADVANCE MANUALLY IN ORDER FOR THIS TO WORK
 
 
-class StripeToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMixin, BaseOperator):
+class ZettlePurchasesToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMixin, ZettleMixin, BaseOperator):
     @apply_defaults
     def __init__(
         self,
         postgres_conn_id,
-        stripe_conn_id,
+        zettle_conn_id,
         destination_schema,
         destination_table,
         *args,
         **kwargs,
     ):
-        super(StripeToPostgresOperator, self).__init__(*args, **kwargs)
+        super(ZettlePurchasesToPostgresOperator, self).__init__(*args, **kwargs)
         self.destination_schema = destination_schema
         self.destination_table = destination_table
         self.postgres_conn_id = postgres_conn_id
-        self.stripe_conn_id = stripe_conn_id
-        self.discard_fields = ["payment_method_details", "source"]
+        self.zettle_conn_id = zettle_conn_id
+        self.discard_fields = []
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
-        self.last_successful_transaction_key = "last_successful_transaction_id"
+        self.last_successful_purchase_key = "last_successful_zettle_purchase"
         self.separator = "__"
 
         self.context = {
@@ -57,17 +60,22 @@ END $$;
 
         # Fetch data from the database
         hook = BaseHook.get_hook(self.postgres_conn_id)
-        stripe_conn = Connection.get_connection_from_secrets(self.stripe_conn_id)
-        stripe.api_key = stripe_conn.password
+        zettle_conn = Connection.get_connection_from_secrets(self.zettle_conn_id)
+        api_key = zettle_conn.password
+        print(zettle_conn, zettle_conn.extra_dejson)
+        grant_type = zettle_conn.extra_dejson.get("grant_type")
+        client_id = zettle_conn.extra_dejson.get("client_id")
+        token = self.get_zettle_access_token(grant_type, client_id, api_key)
         ds = context["ds"]
         run_id = context["run_id"]
+        lte = context["data_interval_end"].to_iso8601_string()
         last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
 
         engine = self.get_postgres_sqlalchemy_engine(hook)
 
         with engine.connect() as conn:
             self.ensure_task_comms_table_exists(conn)
-            starting_after = self.get_last_successful_transaction_id(conn, context)
+            lastPurchaseHash = self.get_last_successful_purchase_id(conn, context)
             extra_context = {
                 **context,
                 **self.context,
@@ -75,42 +83,55 @@ END $$;
             }
 
             self.log.info(
-                f"Executing StripeToPostgresOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
+                f"Executing ZettlePurchasesToPostgresOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
             )
 
-            if starting_after:
+            if lastPurchaseHash:
                 self.log.info(
-                    f"StripeToPostgresOperator Restarting task for this Dagrun from the last successful transaction_id {starting_after} after last successful dagrun {last_successful_dagrun_ts}"  # noqa
+                    f"ZettlePurchasesToPostgresOperator Restarting task for this Dagrun from the last successful purchase_id {lastPurchaseHash} after last successful dagrun {last_successful_dagrun_ts}"  # noqa
                 )
             else:
                 self.log.info(
-                    f"StripeToPostgresOperator Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}"  # noqa
+                    f"ZettlePurchasesToPostgresOperator Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}"  # noqa
                 )
-                self.log.info("StripeToPostgresOperator Deleting previous Data from this Dagrun")
+                self.log.info("ZettlePurchasesToPostgresOperator Deleting previous Data from this Dagrun")  # noqa
                 self.delete_sql = render_template(self.delete_template, context=extra_context)
                 self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
                 conn.execute(self.delete_sql)
 
-            created = {
-                "gt": last_successful_dagrun_ts or 1690898262,
-                "lte": context["data_interval_end"].int_timestamp,
-            }
+            # Base URL path
+            base_url = "https://purchase.izettle.com/purchases/v2"
+            # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
+
             total_docs_processed = 0
 
             limit = 100
             has_more = True
 
             while has_more:
-                print(created, starting_after, limit)
-                result = stripe.BalanceTransaction.list(
-                    limit=limit,
-                    starting_after=starting_after,
-                    created=created,
-                    expand=["data.source"],
-                )
+                # Dictionary of query parameters
+                query_params = {
+                    "start": start_param,
+                    "end": lte,
+                    "limit": limit,
+                }
+                if lastPurchaseHash:
+                    query_params["lastPurchaseHash"] = lastPurchaseHash
 
-                records = result.data
-                has_more = result.has_more
+                full_url = f"{base_url}?{urlencode(query_params)}"
+                headers = {"Authorization": f"Bearer {token}"}
+
+                print(query_params, limit)
+                response = requests.get(full_url, headers=headers)
+                print(response.json())
+                if response.status_code == 200:
+                    records = response.json()
+                else:
+                    self.log.error("Error Retreiving Zettle transaction: %s", response)
+                    raise AirflowException("Error getting Zettle Transactions")
+
+                print(records)
                 total_docs_processed += len(records)
 
                 df = DataFrame(records)
@@ -119,13 +140,8 @@ END $$;
                     self.log.info("UNEXPECTED EMPTY Balance Transactions to process.")
                     break
 
-                df["source_id"] = df["source"].apply(lambda x: x.get("id") if x is not None else None)
-                df["source_invoice_id"] = df["source"].apply(lambda x: x.get("invoice") if x is not None else None)
-                df["source_charge_id"] = df["source"].apply(lambda x: x.get("charge") if x is not None else None)
-                df.drop(columns=["source"], inplace=True)
-
-                starting_after = records[-1].id
-                self.log.info(f"Processing ResultSet {total_docs_processed} - {starting_after}.")
+                lastPurchaseHash = records[-1].id
+                self.log.info(f"Processing ResultSet {total_docs_processed} - {lastPurchaseHash}.")
                 df["airflow_sync_ds"] = ds
                 print(records[0])
 
@@ -145,7 +161,7 @@ END $$;
                     schema=self.destination_schema,
                     index=False,
                 )
-                self.set_last_successful_transaction_id(conn, context, starting_after)
+                self.set_last_successful_purchase_id(conn, context, lastPurchaseHash)
 
             # Check how many Docs total
             if total_docs_processed > 0:
@@ -188,11 +204,11 @@ END $$;
         conn_uri = re.sub(r"\?.*$", "", conn_uri)
         return create_engine(conn_uri, **engine_kwargs)
 
-    def set_last_successful_transaction_id(self, conn, context, starting_after):
-        return self.set_task_var(conn, context, self.last_successful_transaction_key, starting_after)
+    def set_last_successful_purchase_id(self, conn, context, starting_after):
+        return self.set_task_var(conn, context, self.last_successful_purchase_key, starting_after)
 
-    def get_last_successful_transaction_id(self, conn, context):
-        return self.get_task_var(conn, context, self.last_successful_transaction_key)
+    def get_last_successful_purchase_id(self, conn, context):
+        return self.get_task_var(conn, context, self.last_successful_purchase_key)
 
     def set_last_successful_dagrun_ts(self, context, value):
         context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value=value)

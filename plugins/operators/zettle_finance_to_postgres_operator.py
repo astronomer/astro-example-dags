@@ -1,10 +1,6 @@
 import re
-import json
-import urllib.parse
-from datetime import datetime
 from urllib.parse import urlencode
 
-import pandas as pd
 import requests
 from pandas import DataFrame
 from sqlalchemy import create_engine
@@ -17,10 +13,13 @@ from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
 
+from plugins.operators.mixins.zettle import ZettleMixin
+from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
+
 # YOU MUST CREATE THE DESTINATION SPREADSHEET IN ADVANCE MANUALLY IN ORDER FOR THIS TO WORK
 
 
-class ZettleToPostgresOperator(BaseOperator):
+class ZettleFinanceToPostgresOperator(ZettleMixin, FlattenJsonDictMixin, BaseOperator):
     @apply_defaults
     def __init__(
         self,
@@ -31,7 +30,7 @@ class ZettleToPostgresOperator(BaseOperator):
         *args,
         **kwargs,
     ):
-        super(ZettleToPostgresOperator, self).__init__(*args, **kwargs)
+        super(ZettleFinanceToPostgresOperator, self).__init__(*args, **kwargs)
         self.destination_schema = destination_schema
         self.destination_table = destination_table
         self.postgres_conn_id = postgres_conn_id
@@ -176,82 +175,6 @@ END $$;
         conn_uri = re.sub(r"\?.*$", "", conn_uri)
         return create_engine(conn_uri, **engine_kwargs)
 
-    def flatten_dict(self, d, parent_key="", separator="__"):
-        """Recursively flatten nested dictionaries."""
-        # print("flatten_dict called on ", parent_key, d)
-        items = {}
-        for k, v in d.items():
-            new_key = f"{parent_key}{separator}{k}" if parent_key else k
-            if new_key in self.discard_fields:
-                continue
-            if isinstance(v, list):
-                # Convert lists directly to JSON strings
-                # print("Handling list", new_key, k, v)
-                items[new_key] = json.dumps(v)
-            elif isinstance(v, datetime):
-                # print("Handling datetime", new_key, k, v)
-                items[new_key] = pd.Timestamp(v)
-            elif isinstance(v, dict):
-                # print("Handling dict", new_key, k, v)
-                items.update(
-                    self.flatten_dict(
-                        v,
-                        parent_key=new_key,
-                        separator=separator,
-                    )
-                )
-            else:
-                # print("Handling preserve", new_key, k, v)
-                items[new_key] = v
-        # print("items dict", items)
-        return items
-
-    def flatten_dataframe_columns_precisely(self, df):
-        """Flatten all dictionary columns in a DataFrame and handle non-dict items."""
-        flattened_data = pd.DataFrame()
-        for column in df.columns:
-            # Initialize a container for processed data
-            column_data = []
-            is_dict_column = df[column].apply(lambda x: isinstance(x, dict)).any()
-            is_list_column = df[column].apply(lambda x: isinstance(x, list)).any()
-            is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
-
-            if is_date_column:
-                # print("Handling datetime Top level column")
-                column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
-            elif is_dict_column:
-                for item in df[column]:
-                    # Process dictionary items
-                    if isinstance(item, dict):
-                        # print("COLUMN item dict", column, item)
-                        flattened_item = self.flatten_dict(
-                            item,
-                            separator=self.separator,
-                        )
-                        column_data.append(flattened_item)
-                    else:
-                        # For items that are not dicts (e.g., missing or null values), ensure compatibility
-                        column_data.append({})
-                # Normalize the processed column data
-                column_df = pd.json_normalize(column_data)
-                # Rename columns to ensure they are prefixed correctly
-                column_df.columns = [
-                    (f"{column}{self.separator}{subcol}" if not subcol == "PARENT_COLUMN" else column)
-                    for subcol in column_df.columns
-                ]
-
-            elif is_list_column:
-                # print("COLUMN item list", column)
-                column_df = df[column].apply(json.dumps).to_frame(name=column)
-            else:  # Directly append non-dict and non-list items
-                # print("COLUMN item preserve", column)
-                column_df = df[column].to_frame()
-
-            # Concatenate the new column DataFrame to the flattened_data DataFrame
-            flattened_data = pd.concat([flattened_data, column_df], axis=1)
-
-        return flattened_data
-
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):
         query = XCom.get_many(
@@ -269,23 +192,3 @@ END $$;
             return xcom.value
 
         return None
-
-    def get_zettle_access_token(self, grant_type, client_id, api_key):
-        try:
-            url = "https://oauth.izettle.com/token"
-            data = {
-                "grant_type": grant_type,
-                "client_id": client_id,
-                "assertion": api_key,
-            }
-            headers = {
-                "content-type": "application/x-www-form-urlencoded",
-            }
-            response = requests.post(url, data=urllib.parse.urlencode(data), headers=headers)
-
-            if response.status_code == 200 and response.json():
-                data = response.json()
-                return data.get("access_token")
-        except Exception as e:
-            self.log.error("Error during database operation: %s", e)
-            raise AirflowException(f"Error getting Zettle Access Token: {e}")

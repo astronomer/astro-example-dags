@@ -9,11 +9,12 @@ from plugins.utils.found_records_to_process import found_records_to_process
 from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
 from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
 from plugins.operators.stripe_to_postgres_operator import StripeToPostgresOperator
-from plugins.operators.zettle_to_postgres_operator import ZettleToPostgresOperator
 from plugins.operators.ensure_datalake_table_exists import EnsurePostgresDatalakeTableExistsOperator
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 from plugins.operators.ensure_datalake_table_view_exists import EnsurePostgresDatalakeTableViewExistsOperator
+from plugins.operators.zettle_finance_to_postgres_operator import ZettleFinanceToPostgresOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
+from plugins.operators.zettle_purchases_to_postgres_operator import ZettlePurchasesToPostgresOperator
 
 default_args = {
     "owner": "airflow",
@@ -134,7 +135,7 @@ stripe_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
     >> stripe_ensure_table_view_exists
 )
 
-zettle_task = ZettleToPostgresOperator(
+zettle_task = ZettleFinanceToPostgresOperator(
     task_id="import_zettle_transactions_to_datalake",
     postgres_conn_id="postgres_datalake_conn_id",
     zettle_conn_id="zettle_conn_id",
@@ -143,7 +144,7 @@ zettle_task = ZettleToPostgresOperator(
     dag=dag,
 )
 
-task_id = "zettle_has_records_to_process"
+task_id = "zettle_transactions_has_records_to_process"
 zettle_has_records_to_process = ShortCircuitOperator(
     task_id=task_id,
     python_callable=found_records_to_process,
@@ -153,7 +154,7 @@ zettle_has_records_to_process = ShortCircuitOperator(
     },
 )
 
-task_id = "zettle_ensure_datalake_table_exists"
+task_id = "zettle_transactions_ensure_datalake_table_exists"
 zettle_ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
     task_id=task_id,
     postgres_conn_id="postgres_datalake_conn_id",
@@ -164,7 +165,7 @@ zettle_ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
     dag=dag,
 )
 
-zettle_missing_columns_task_id = "zettle_ensure_public_columns_uptodate"
+zettle_missing_columns_task_id = "zettle_transactions_ensure_public_columns_uptodate"
 zettle_ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
     task_id=zettle_missing_columns_task_id,
     postgres_conn_id="postgres_datalake_conn_id",
@@ -172,7 +173,7 @@ zettle_ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
     destination_table="raw__zettle__transactions",
     dag=dag,
 )
-task_id = "zettle_append_to_datalake"
+task_id = "zettle_transactions_append_to_datalake"
 zettle_append_transient_table_data = AppendTransientTableDataOperator(
     task_id=task_id,
     postgres_conn_id="postgres_datalake_conn_id",
@@ -184,7 +185,7 @@ zettle_append_transient_table_data = AppendTransientTableDataOperator(
     delete_template="DELETE FROM {{ destination_schema }}.{{destination_table}} WHERE airflow_sync_ds='{{ ds }}'",
 )
 
-task_id = "zettle_ensure_datalake_table_view"
+task_id = "zettle_transactions_ensure_datalake_table_view"
 zettle_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
     task_id=task_id,
     postgres_conn_id="postgres_datalake_conn_id",
@@ -205,6 +206,79 @@ zettle_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
     >> zettle_ensure_datalake_table_columns
     >> zettle_append_transient_table_data
     >> zettle_ensure_table_view_exists
+)
+
+zettle_purchases_task = ZettlePurchasesToPostgresOperator(
+    task_id="import_zettle_purchases_to_datalake",
+    postgres_conn_id="postgres_datalake_conn_id",
+    zettle_conn_id="zettle_conn_id",
+    destination_schema="transient_data",
+    destination_table="zettle__transactions",
+    dag=dag,
+)
+
+task_id = "zettle_purchases_has_records_to_process"
+zettle_purchases_has_records_to_process = ShortCircuitOperator(
+    task_id=task_id,
+    python_callable=found_records_to_process,
+    op_kwargs={
+        "parent_task_id": "import_zettle_purchases_to_datalake",
+        "xcom_key": "documents_found",
+    },
+)
+
+task_id = "zettle_purchases_ensure_datalake_table_exists"
+zettle_purchases_ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="transient_data",
+    source_table="zettle__purchases",
+    destination_schema="public",
+    destination_table="raw__zettle__purchases",
+    dag=dag,
+)
+
+zettle_purchases_missing_columns_task_id = "zettle_purchases_ensure_public_columns_uptodate"
+zettle_purchases_ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
+    task_id=zettle_purchases_missing_columns_task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_table="zettle__purchases",
+    destination_table="raw__zettle__purchases",
+    dag=dag,
+)
+task_id = "zettle_purchases_append_to_datalake"
+zettle_purchases_append_transient_table_data = AppendTransientTableDataOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="transient_data",
+    source_table="zettle__purchases",
+    destination_schema="public",
+    destination_table="raw__zettle__purchases",
+    dag=dag,
+    delete_template="DELETE FROM {{ destination_schema }}.{{destination_table}} WHERE airflow_sync_ds='{{ ds }}'",
+)
+
+task_id = "zettle_ensure_datalake_table_view"
+zettle_purchases_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="public",
+    source_table="raw__zettle__purchases",
+    destination_schema="public",
+    destination_table="zettle__purchases",
+    prev_task_id=zettle_missing_columns_task_id,  # not append_transient data!!
+    append_fields=["createdat", "updatedat", "airflow_sync_ds"],
+    prepend_fields=["id"],
+    dag=dag,
+)
+
+(
+    zettle_purchases_task
+    >> zettle_purchases_has_records_to_process
+    >> zettle_purchases_ensure_datalake_table
+    >> zettle_purchases_ensure_datalake_table_columns
+    >> zettle_purchases_append_transient_table_data
+    >> zettle_purchases_ensure_table_view_exists
 )
 
 
