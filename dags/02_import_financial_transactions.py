@@ -135,7 +135,7 @@ stripe_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
     >> stripe_ensure_table_view_exists
 )
 
-zettle_task = ZettleFinanceToPostgresOperator(
+zettle_transactions_task = ZettleFinanceToPostgresOperator(
     task_id="import_zettle_transactions_to_datalake",
     postgres_conn_id="postgres_datalake_conn_id",
     zettle_conn_id="zettle_conn_id",
@@ -200,7 +200,7 @@ zettle_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
 )
 
 (
-    zettle_task
+    zettle_transactions_task
     >> zettle_has_records_to_process
     >> zettle_ensure_datalake_table
     >> zettle_ensure_datalake_table_columns
@@ -213,7 +213,7 @@ zettle_purchases_task = ZettlePurchasesToPostgresOperator(
     postgres_conn_id="postgres_datalake_conn_id",
     zettle_conn_id="zettle_conn_id",
     destination_schema="transient_data",
-    destination_table="zettle__transactions",
+    destination_table="zettle__purchases",
     dag=dag,
 )
 
@@ -287,5 +287,5 @@ zettle_purchases_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExist
     >> transient_schema_exists
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
-    >> [stripe_balances_task, zettle_task]
+    >> [stripe_balances_task, zettle_purchases_task, zettle_transactions_task]
 )

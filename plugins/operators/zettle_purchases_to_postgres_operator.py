@@ -36,10 +36,11 @@ class ZettlePurchasesToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMix
         self.destination_table = destination_table
         self.postgres_conn_id = postgres_conn_id
         self.zettle_conn_id = zettle_conn_id
-        self.discard_fields = []
+        self.discard_fields = ["references"]
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.last_successful_purchase_key = "last_successful_zettle_purchase"
         self.separator = "__"
+        self.preserve_fields = ["gratuityamount", "customamountsale"]
 
         self.context = {
             "destination_schema": destination_schema,
@@ -126,21 +127,24 @@ END $$;
                 response = requests.get(full_url, headers=headers)
                 print(response.json())
                 if response.status_code == 200:
-                    records = response.json()
+                    purchases = response.json()
                 else:
                     self.log.error("Error Retreiving Zettle transaction: %s", response)
                     raise AirflowException("Error getting Zettle Transactions")
 
+                records = purchases.get("purchases")
+                normalised_records = self._normalise_records(records)
                 print(records)
-                total_docs_processed += len(records)
+                total_docs_processed += len(normalised_records)
 
-                df = DataFrame(records)
+                # df = DataFrame.from_records(records)
+                df = DataFrame(normalised_records)
 
                 if df.empty:
                     self.log.info("UNEXPECTED EMPTY Balance Transactions to process.")
                     break
 
-                lastPurchaseHash = records[-1].id
+                lastPurchaseHash = purchases["lastPurchaseHash"]
                 self.log.info(f"Processing ResultSet {total_docs_processed} - {lastPurchaseHash}.")
                 df["airflow_sync_ds"] = ds
                 print(records[0])
@@ -230,3 +234,23 @@ END $$;
             return xcom.value
 
         return None
+
+    def _normalise_records(self, records):
+
+        normalised_records = []
+        for record in records:
+            payments = []
+            for payment in record.get("payments", []):
+                fields = ["uuid", "amount", "type", "gratuityAmount"]
+                normalised_payment = {field: payment.get(field) for field in fields}
+                payments.append(normalised_payment)
+            record["payments"] = payments
+            normalised_records.append(record)
+
+            for field in self.preserve_fields:
+                if field not in record:
+                    record[field] = None  # because zettle is rubbish
+
+            del record["products"]
+            record["id"] = record["purchaseUUID1"]
+        return normalised_records
