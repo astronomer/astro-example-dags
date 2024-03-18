@@ -10,7 +10,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_summary AS
     FROM
         {{ schema }}.orders o
     LEFT JOIN
-        dim__time adt ON o.appointment__date::date = adt.date_id
+        dim__time adt ON o.appointment__date::date = adt.dim_date_id
     LEFT JOIN
         rep__order_item_summary r__ois ON r__ois.order_id = o.id
 WITH NO DATA;
