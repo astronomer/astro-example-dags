@@ -252,6 +252,6 @@ END $$;
                 if field not in record:
                     record[field] = None  # because zettle is rubbish
 
-            del record["products"]
+            # del record["products"]
             record["id"] = record["purchaseUUID1"]
         return normalised_records
