@@ -103,7 +103,7 @@ END $$;
             # Base URL path
             base_url = "https://purchase.izettle.com/purchases/v2"
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2021-04-01T00:00:00.000Z"
 
             total_docs_processed = 0
 
@@ -113,8 +113,8 @@ END $$;
             while has_more:
                 # Dictionary of query parameters
                 query_params = {
-                    "start": start_param,
-                    "end": lte,
+                    "startDate": start_param,
+                    "endDate": lte,
                     "limit": limit,
                 }
                 if lastPurchaseHash:
@@ -191,8 +191,9 @@ END $$;
                 )
 
             self.clear_task_vars(conn, context)
+
         context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
-        self.set_last_successful_dagrun_ts(context, context["data_interval_end"].int_timestamp)
+        self.set_last_successful_dagrun_ts(context, lte)
         self.log.info("Stripe Charges written to Datalake successfully.")
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):

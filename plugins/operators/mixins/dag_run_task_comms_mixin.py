@@ -63,11 +63,11 @@ class DagRunTaskCommsMixin:
         run_id = context["run_id"]
         task_id = self.task_id
 
-        self.log.info("DagRunTaskCommsMixin.clear_task_vars")
+        self.log.info(f"DagRunTaskCommsMixin.clear_task_vars {dag_id}, {task_id}, {run_id}")
         sql = """
         DELETE FROM transient_data.dag_run_task_comms
         WHERE dag_id = %s
         AND task_id = %s
         AND run_id = %s
         """
-        conn.execute(sql, (dag_id, run_id, task_id))
+        conn.execute(sql, (dag_id, task_id, run_id))
