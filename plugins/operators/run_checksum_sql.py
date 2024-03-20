@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         if self.sql_type == "report":
             pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "rep__"
-        elif self.sql_type == "function":
+        elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "fact__"
         elif self.sql_type == "dimension":

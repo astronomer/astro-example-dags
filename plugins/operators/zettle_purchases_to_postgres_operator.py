@@ -125,7 +125,6 @@ END $$;
 
                 print(query_params, limit)
                 response = requests.get(full_url, headers=headers)
-                print(response.json())
                 if response.status_code == 200:
                     purchases = response.json()
                 else:
@@ -134,7 +133,7 @@ END $$;
 
                 records = purchases.get("purchases")
                 normalised_records = self._normalise_records(records)
-                print(records)
+                # print(records)
                 total_docs_processed += len(normalised_records)
 
                 # df = DataFrame.from_records(records)
@@ -147,7 +146,6 @@ END $$;
                 lastPurchaseHash = purchases["lastPurchaseHash"]
                 self.log.info(f"Processing ResultSet {total_docs_processed} - {lastPurchaseHash}.")
                 df["airflow_sync_ds"] = ds
-                print(records[0])
 
                 if self.discard_fields:
                     # keep this because if we're dropping any problematic fields

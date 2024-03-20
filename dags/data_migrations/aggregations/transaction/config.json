@@ -2,6 +2,16 @@
   "source_collection": "transactions",
   "destination_table": "transaction",
   "jsonschema": "ITransaction.json",
+  "discard_fields": [
+    "adjusted_purchases",
+    "adjusted_refunds",
+    "try_ons",
+    "deposits",
+    "discounts",
+    "purchases",
+    "orders",
+    "refunds"
+  ],
   "convert_fields": [
     {
       "function": "convert_epoch",

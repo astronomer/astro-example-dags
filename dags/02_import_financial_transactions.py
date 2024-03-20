@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.python import ShortCircuitOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
+from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
 from plugins.utils.found_records_to_process import found_records_to_process
 
 from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
@@ -32,6 +33,13 @@ dag = DAG(
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
     template_searchpath="/usr/local/airflow/dags",
+)
+
+is_latest_dagrun_task = ShortCircuitOperator(
+    task_id="skip_check",
+    python_callable=is_latest_dagrun,
+    depends_on_past=False,
+    dag=dag,
 )
 
 wait_for_migrations = ExternalTaskSensor(
@@ -284,6 +292,7 @@ zettle_purchases_ensure_table_view_exists = EnsurePostgresDatalakeTableViewExist
 
 (
     wait_for_migrations
+    >> is_latest_dagrun_task
     >> transient_schema_exists
     >> public_schema_exists
     >> ensure_missing_columns_function_exists

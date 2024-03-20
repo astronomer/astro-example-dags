@@ -88,7 +88,7 @@ END $$;
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 100
+            limit = 1000
             offset = 0
 
             # Base URL path
@@ -104,6 +104,7 @@ END $$;
                     "limit": limit,
                     "offset": offset,
                 }
+                self.log.info("Fetching transactions for %s", query_params)
                 full_url = f"{base_url}?{urlencode(query_params)}"
                 headers = {"Authorization": f"Bearer {token}"}
 
@@ -151,7 +152,7 @@ END $$;
             # Check how many Docs total
             if total_docs_processed > 0:
                 conn.execute(
-                    f"CREATE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuid_idx ON {self.destination_schema}.{self.destination_table} (originatingtransactionuuid);"  # noqa
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS {self.destination_table}_originatingtransactionuuidtype_idx ON {self.destination_schema}.{self.destination_table} (originatingtransactionuuid, originatortransactiontype, timestamp);"  # noqa
                 )
 
             context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
