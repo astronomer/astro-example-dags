@@ -261,14 +261,10 @@ END $$;
                 normalised_payment = {field: payment.get(field) for field in fields}
                 payments.append(normalised_payment)
             record["payments"] = payments
-            normalised_records.append(record)
-
-            # for field, datatype in self.preserve_fields:
-            #     if field not in record:
-            #         record[field] = None  # because zettle is rubbish
 
             # del record["products"]
             record["id"] = record["purchaseUUID1"]
+            normalised_records.append(record)
         return normalised_records
 
     def align_to_schema_df(self, df):

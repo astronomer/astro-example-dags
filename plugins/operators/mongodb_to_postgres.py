@@ -56,11 +56,8 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
     :type convert_fields: Optional[List[str]]
     """
 
-    # we manually render the aggregation_query field
-    template_fields = "preoperation"
     template_ext = (".json", ".sql")
 
-    template_fields_renderers = {"preoperation": "sql"}
     ui_color = "#f9c915"
 
     def __init__(
@@ -86,6 +83,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.mongo_conn_id = mongo_conn_id
         self.postgres_conn_id = postgres_conn_id
         self.preoperation = preoperation or "DELETE FROM {{ destination_schema }}.{{destination_table}};"
+
         self.aggregation_query = aggregation_query
         self.source_collection = source_collection
         self.source_database = source_database
@@ -103,19 +101,18 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         # duplicates could exist in older records. We can do this because we only allow 1
         # concurrent task...
 
-        self.delete_template = """DO $$
+        self.delete_template = f"""DO $$
 BEGIN
    IF EXISTS (
     SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
     AND tablename = '{{destination_table}}') THEN
-      {{ preoperation }}
+      { self.preoperation }
    END IF;
 END $$;
-"""
+"""  # noqa
         self.context = {
-            "destination_schema": destination_schema,
-            "destination_table": destination_table,
-            "preoperation": preoperation,
+            "destination_schema": self.destination_schema,
+            "destination_table": self.destination_table,
         }
 
         self.log.info("Initialised MongoDBToPostgresViaDataframeOperator")

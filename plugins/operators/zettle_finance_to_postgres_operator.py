@@ -114,7 +114,7 @@ END $$;
                 headers = {"Authorization": f"Bearer {token}"}
 
                 response = requests.get(full_url, headers=headers)
-                print(response.json())
+                # print(response.json())
 
                 if response.status_code == 200:
                     records = response.json()
@@ -122,11 +122,18 @@ END $$;
                     self.log.error("Error Retreiving Zettle transaction: %s", response)
                     raise AirflowException("Error getting Zettle Transactions")
 
-                print(records)
+                print("TOTAL docs found", len(records))
 
                 total_docs_processed += len(records)
+                for record in records:
+                    if record["originatingTransactionUuid"] == "772ce5c8-7422-11ee-8257-81c971a9d256":
+                        print(
+                            "GOT TRANSACTION RECORD FOR 772ce5c8-7422-11ee-8257-81c971a9d256",
+                            record,
+                        )
 
                 df = DataFrame(records)
+                print("TOTAL Initial DF docs", df.shape)
 
                 if df.empty:
                     self.log.info("No More Charges Data to process.")
@@ -143,7 +150,10 @@ END $$;
                     existing_discard_fields = [col for col in self.discard_fields if col in df.columns]
                     df.drop(existing_discard_fields, axis=1, inplace=True)
 
+                print("TOTAL discarded field docs found", df.shape)
                 df = self.flatten_dataframe_columns_precisely(df)
+                print("TOTAL flattenned docs found", df.shape)
+
                 df.columns = df.columns.str.lower()
 
                 df.to_sql(

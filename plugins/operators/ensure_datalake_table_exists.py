@@ -1,10 +1,13 @@
 import re
 from pprint import pprint  # noqa
+from typing import Optional
 
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
+
+from plugins.utils.render_template import render_template
 
 
 class EnsurePostgresDatalakeTableExistsOperator(BaseOperator):
@@ -31,6 +34,7 @@ class EnsurePostgresDatalakeTableExistsOperator(BaseOperator):
         source_table: str,
         destination_schema: str,
         destination_table: str,
+        primary_key_template: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -40,14 +44,40 @@ class EnsurePostgresDatalakeTableExistsOperator(BaseOperator):
         self.source_table = source_table
         self.destination_schema = destination_schema
         self.destination_table = destination_table
+        self.primary_key_template = (
+            primary_key_template
+            or """
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        JOIN pg_class c ON c.oid = i.indrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_class ic ON ic.oid = i.indexrelid
+        WHERE n.nspname = '{{ destination_schema }}'
+        AND c.relname = '{{ destination_table }}'
+        AND ic.relname = '{{ destination_table }}_idx'
+    ) THEN
+        ALTER TABLE {{ destination_schema }}.{{ destination_table}}
+            ADD CONSTRAINT {{ destination_table }}_idx PRIMARY KEY (id);
+    END IF;
+END $$;
+"""
+        )
 
         self.log.info("Initialised EnsurePostgresDatalakeTableExistsOperator")
         self.template_func = f"""
 CREATE TABLE IF NOT EXISTS  {self.destination_schema}.{self.destination_table} AS
 TABLE {self.source_schema}.{self.source_table}
 WITH NO DATA;
-
 """
+        self.context = {
+            "destination_schema": destination_schema,
+            "destination_table": destination_table,
+            "source_schema": source_schema,
+            "source_table": source_table,
+        }
 
     def execute(self, context):
         try:
@@ -59,6 +89,9 @@ WITH NO DATA;
                 try:
                     self.log.info(f"Executing {self.template_func}")
                     conn.execute(self.template_func)
+                    primary_key_sql = render_template(self.primary_key_template, context=self.context)
+                    conn.execute(primary_key_sql)
+
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)

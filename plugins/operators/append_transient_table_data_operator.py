@@ -43,8 +43,6 @@ class AppendTransientTableDataOperator(BaseOperator):
                 id IN (
                     SELECT o.id
                     FROM {{source_schema}}.{{source_table}} o
-                    WHERE
-                        o.airflow_sync_ds = '{{ ds }}'
                 );
 """,
         **kwargs,

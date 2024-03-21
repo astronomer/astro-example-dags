@@ -170,6 +170,24 @@ zettle_ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
     source_table="zettle__transactions",
     destination_schema="public",
     destination_table="raw__zettle__transactions",
+    primary_key_template="""
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        JOIN pg_class c ON c.oid = i.indrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_class ic ON ic.oid = i.indexrelid
+        WHERE n.nspname = '{{ destination_schema }}'
+        AND c.relname = '{{ destination_table }}'
+        AND ic.relname = '{{ destination_table }}_idx'
+    ) THEN
+        ALTER TABLE {{ destination_schema }}.{{ destination_table}}
+            ADD CONSTRAINT {{ destination_table }}_idx PRIMARY KEY (originatingtransactionuuid, originatortransactiontype, amount, timestamp);
+    END IF;
+END $$;
+""",  # noqa
     dag=dag,
 )
 
