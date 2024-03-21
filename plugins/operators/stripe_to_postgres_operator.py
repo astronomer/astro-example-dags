@@ -42,13 +42,18 @@ class StripeToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMixin, BaseO
             "destination_schema": destination_schema,
             "destination_table": destination_table,
         }
+        # We're removing the WHERE in the DELETE function as if we're playing catchup
+        # duplicates could exist in older records. We can do this because we only allow 1
+        # concurrent task...
+
         self.delete_template = """DO $$
 BEGIN
    IF EXISTS (
     SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
     AND tablename = '{{destination_table}}') THEN
       DELETE FROM {{ destination_schema }}.{{destination_table}}
-        WHERE airflow_sync_ds = '{{ ds }}';
+        -- WHERE airflow_sync_ds = '{{ ds }}'
+      ;
    END IF;
 END $$;
 """

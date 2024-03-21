@@ -1,6 +1,18 @@
--- RUN THIS MANUALLY
---CREATE USER tableau WITH PASSWORD 'xxxxxxxxx';
 {% if is_modified %}
+DO
+$do$
+BEGIN
+    IF EXISTS (
+        SELECT FROM pg_catalog.pg_roles
+        WHERE  rolname = '{{ tableau_username }}') THEN
+        RAISE NOTICE 'Role "{{ tableau_username }}" already exists. Skipping.';
+    ELSE
+        CREATE ROLE {{ tableau_username }} LOGIN PASSWORD '{{ tableau_password }}';
+        -- CREATE USER {{ tableau_username }} WITH PASSWORD '{{ tableau_password }}';
+    END IF;
+END
+$do$;
+
 -- Grant connect on the "datalake" database
 GRANT CONNECT ON DATABASE datalake TO tableau;
 

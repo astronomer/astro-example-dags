@@ -85,7 +85,7 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.log.info("Initialising MongoDBToPostgresViaDataframeOperator")
         self.mongo_conn_id = mongo_conn_id
         self.postgres_conn_id = postgres_conn_id
-        self.preoperation = preoperation
+        self.preoperation = preoperation or "DELETE FROM {{ destination_schema }}.{{destination_table}};"
         self.aggregation_query = aggregation_query
         self.source_collection = source_collection
         self.source_database = source_database
@@ -99,19 +99,23 @@ class MongoDBToPostgresViaDataframeOperator(BaseOperator):
         self.output_encoding = sys.getdefaultencoding()
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.separator = "__"
+        # We're removing the WHERE in the DELETE function as if we're playing catchup
+        # duplicates could exist in older records. We can do this because we only allow 1
+        # concurrent task...
+
         self.delete_template = """DO $$
 BEGIN
    IF EXISTS (
     SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
     AND tablename = '{{destination_table}}') THEN
-      DELETE FROM {{ destination_schema }}.{{destination_table}}
-        WHERE airflow_sync_ds = '{{ ds }}';
+      {{ preoperation }}
    END IF;
 END $$;
 """
         self.context = {
             "destination_schema": destination_schema,
             "destination_table": destination_table,
+            "preoperation": preoperation,
         }
 
         self.log.info("Initialised MongoDBToPostgresViaDataframeOperator")
@@ -335,7 +339,7 @@ END $$;
                 column_df = pd.json_normalize(column_data)
                 # Rename columns to ensure they are prefixed correctly
                 column_df.columns = [
-                    f"{column}{self.separator}{subcol}" if not subcol == "PARENT_COLUMN" else column
+                    (f"{column}{self.separator}{subcol}" if not subcol == "PARENT_COLUMN" else column)
                     for subcol in column_df.columns
                 ]
 

@@ -107,7 +107,7 @@ for config in migrations:
         task_id=task_id,
         mongo_conn_id="mongo_db_conn_id",
         postgres_conn_id="postgres_datalake_conn_id",
-        preoperation=config["preoperation"],
+        preoperation=config.get("preoperation", None),
         aggregation_query=config["aggregation_query"],
         source_collection=config["source_collection"],
         source_database="harper-production",

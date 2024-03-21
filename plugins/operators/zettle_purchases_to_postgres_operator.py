@@ -46,13 +46,18 @@ class ZettlePurchasesToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMix
             "destination_schema": destination_schema,
             "destination_table": destination_table,
         }
+
+        # We're removing the WHERE in the DELETE function as if we're playing catchup
+        # duplicates could exist in older records. We can do this because we only allow 1
+        # concurrent task...
         self.delete_template = """DO $$
 BEGIN
    IF EXISTS (
     SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
     AND tablename = '{{destination_table}}') THEN
       DELETE FROM {{ destination_schema }}.{{destination_table}}
-        WHERE airflow_sync_ds = '{{ ds }}';
+        -- WHERE airflow_sync_ds = '{{ ds }}'
+        ;
    END IF;
 END $$;
 """
@@ -132,7 +137,10 @@ END $$;
                     raise AirflowException("Error getting Zettle Transactions")
 
                 records = purchases.get("purchases")
+                print("TOTAL docs found", len(records))
+
                 normalised_records = self._normalise_records(records)
+                print("TOTAL normalized docs found", len(records))
                 # print(records)
                 total_docs_processed += len(normalised_records)
 
@@ -155,6 +163,7 @@ END $$;
 
                 df = self.flatten_dataframe_columns_precisely(df)
                 df.columns = df.columns.str.lower()
+                print("TOTAL flattenned docs found", len(df.shape))
 
                 df.to_sql(
                     self.destination_table,

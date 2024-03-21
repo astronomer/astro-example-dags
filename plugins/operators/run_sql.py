@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
+from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
 
@@ -51,6 +52,9 @@ class RunSQLPostgresOperator(BaseOperator):
     def execute(self, context):
         try:
             hook = BaseHook.get_hook(self.postgres_conn_id)
+            tableau_user = Connection.get_connection_from_secrets("tableau_user_id")
+            self.context["tableau_username"] = tableau_user.login
+            self.context["tableau_password"] = tableau_user.password
 
             self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
 
