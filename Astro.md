@@ -34,14 +34,14 @@ This command will spin up 4 Docker containers on your machine, each for a differ
 
 Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either stop your existing Docker containers or change the port.
 
-1. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+1. Access the Airflow UI for your local Airflow project. To do so, go to <http://localhost:8080/> and log in with 'admin' for both your Username and Password.
 
 You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
 
 Deploy Your Project to Astronomer
 =================================
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
+If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: <https://docs.astronomer.io/cloud/deploy-code/>
 
 Contact
 =======
