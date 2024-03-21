@@ -40,7 +40,12 @@ class ZettlePurchasesToPostgresOperator(DagRunTaskCommsMixin, FlattenJsonDictMix
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.last_successful_purchase_key = "last_successful_zettle_purchase"
         self.separator = "__"
-        self.preserve_fields = ["gratuityamount", "customamountsale"]
+        self.preserve_fields = [
+            ("gratuityamount", "Float64"),
+            ("customamountsale", "bool"),
+            ("refundedbypurchaseuuids", "string"),
+            ("refundedByPurchaseUUIDs1", "string"),
+        ]
 
         self.context = {
             "destination_schema": destination_schema,
@@ -147,6 +152,7 @@ END $$;
                 # df = DataFrame.from_records(records)
                 df = DataFrame(normalised_records)
 
+                print("TOTAL Initial DF docs", df.shape)
                 if df.empty:
                     self.log.info("UNEXPECTED EMPTY Balance Transactions to process.")
                     break
@@ -163,7 +169,9 @@ END $$;
 
                 df = self.flatten_dataframe_columns_precisely(df)
                 df.columns = df.columns.str.lower()
-                print("TOTAL flattenned docs found", len(df.shape))
+                print("TOTAL flattenned docs found", df.shape)
+                df = self.align_to_schema_df(df)
+                print("TOTAL Aligned docs found", df.shape)
 
                 df.to_sql(
                     self.destination_table,
@@ -255,10 +263,19 @@ END $$;
             record["payments"] = payments
             normalised_records.append(record)
 
-            for field in self.preserve_fields:
-                if field not in record:
-                    record[field] = None  # because zettle is rubbish
+            # for field, datatype in self.preserve_fields:
+            #     if field not in record:
+            #         record[field] = None  # because zettle is rubbish
 
             # del record["products"]
             record["id"] = record["purchaseUUID1"]
         return normalised_records
+
+    def align_to_schema_df(self, df):
+        for field, dtype in self.preserve_fields:
+            if field not in df.columns:
+                df[field] = None  # because zettle is rubbish
+            print(f"aligning column {field} as type {dtype}")
+            df[field] = df[field].astype(dtype)
+
+        return df
