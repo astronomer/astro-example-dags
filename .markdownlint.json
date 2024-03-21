@@ -1,0 +1,16 @@
+{
+  "comment": "This is used by vim coc-lint-markdown and probably by vscode",
+  "default": true,
+  "MD007": {
+    "indent": 4
+  },
+  "MD013": {
+    "code_blocks ": false,
+    "tables ": false,
+    "code_block_line_length": 370,
+    "line_length": 260
+  },
+  "MD046": false,
+  "no-hard-tabs": true,
+  "whitespace": false
+}
