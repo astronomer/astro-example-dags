@@ -65,6 +65,7 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
             checksum=config["checksum"],
             sql=config["sql"],
             sql_type="report",
+            add_table_columns_to_context=["dim__time"],
             dag=dag,
         )
         # Add the current task to the array

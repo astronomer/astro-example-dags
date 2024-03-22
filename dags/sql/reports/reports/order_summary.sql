@@ -6,7 +6,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_summary AS
         o.*,
         get_halo_url(o.id, o.order_type) AS halo_link,
         r__ois.*,
-        {{ dim_time_columns | prefix_columns('adt', 'appointment__date') }}
+        {{ dim__time_columns | prefix_columns('adt', 'appointment__date') }}
     FROM
         {{ schema }}.orders o
     LEFT JOIN

@@ -1,5 +1,6 @@
 import re
 from pprint import pprint  # noqa
+from typing import List, Optional
 
 from sqlalchemy import create_engine
 from airflow.models import BaseOperator
@@ -26,6 +27,9 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     :type sql: str
     :param sql_type: type of sql [report|function|index|dimension|user]
     :type sql_type: str
+    :param add_table_columns_to_context: A list of tablenames to be added to context for use in template filters
+    :type add_table_columns_to_context: Optional[List[str]]
+
     """
 
     ui_color = "#f9c915"
@@ -39,6 +43,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
         checksum: str,
         sql: str,
         sql_type: str,
+        add_table_columns_to_context: Optional[List[str]] = [],
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -49,6 +54,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
         self.checksum = checksum
         self.sql_type = sql_type
         self.sql_template = sql
+        self.add_table_columns_to_context = add_table_columns_to_context or []
         self.context = {
             "schema": schema,
             "filename": filename,
@@ -79,7 +85,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
-                    self.context["dim_time_columns"] = self.get_columns_from_table(conn, "public", "dim__time")
+                    self._add_table_columns_to_context(conn)
                     self.preoperation_sql = render_template(
                         self.preoperation_template,
                         context=context,
@@ -177,3 +183,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     raise AirflowException(
                         f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.sql_type}'."  # noqa
                     )
+
+    def _add_table_columns_to_context(self, conn):
+        for table in self.add_table_columns_to_context:
+            self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
