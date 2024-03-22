@@ -14,9 +14,9 @@ FROM
         SELECT
             p.id || '__' || (value ->> 'uuid')::text AS id,
             (value ->> 'uuid')::text AS uuid,
-            (value ->> 'amount')::text AS amount,
+            (value ->> 'amount')::bigint AS amount,
             (value ->> 'type')::text AS "type",
-            (value ->> 'gratuityAmount')::text AS gratuityAmount
+            (value ->> 'gratuityAmount')::bigint AS gratuityAmount
         FROM
             json_array_elements(CAST(p.payments AS JSON))
     ) AS x
