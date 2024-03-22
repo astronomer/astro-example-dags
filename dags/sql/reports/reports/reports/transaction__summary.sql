@@ -5,7 +5,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transaction__summary AS
     SELECT
     t.*,
     tis.*,
-    dt.*
+    {{ dim_time_columns | prefix_columns('dt', 'payment_at') }}
 FROM
     {{ schema }}.transaction t
 LEFT JOIN {{ schema }}.rep__transaction__item__summary tis ON tis.transaction_id=t.id

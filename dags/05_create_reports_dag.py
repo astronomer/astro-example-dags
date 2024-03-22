@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
+# from plugins.utils.prefix_columns import prefix_columns
 from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 
 from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
@@ -29,6 +30,8 @@ dag = DAG(
     max_active_runs=1,  # This ensures sequential execution
     template_searchpath="/usr/local/airflow/dags",
 )
+
+# dag.user_defined_filters = {"prefix_columns": prefix_columns}
 
 wait_for_functions = ExternalTaskSensor(
     task_id="wait_for_functions_to_complete",

@@ -9,8 +9,10 @@ from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
 
+from plugins.operators.mixins.get_columns_from_table import GetColumnsFromTableMixin
 
-class RunChecksumSQLPostgresOperator(BaseOperator):
+
+class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     """
     :param postgres_conn_id: postgres connection id
     :type postgres_conn_id: str
@@ -77,7 +79,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             with engine.connect() as conn:
                 transaction = conn.begin()
                 try:
-
+                    self.context["dim_time_columns"] = self.get_columns_from_table(conn, "public", "dim__time")
                     self.preoperation_sql = render_template(
                         self.preoperation_template,
                         context=context,
