@@ -1,0 +1,43 @@
+name: Check Quay.io astro-runtime updates
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    
+    - name: Install requests
+      run: |
+        pip install requests
+
+    - name: Check for updates and update Dockerfile
+      env:
+        QUAY_REPO: 'astronomer/astro-runtime'
+      run: python .github/scripts/check_astro_runtime_version.py
+
+    - name: Create and push branch if Dockerfile is outdated
+      if: steps.check-updates.outputs.updated == 'true'
+      run: |
+        git checkout -b update-dockerfile-${{ github.run_id }}
+        git push -u origin update-dockerfile-${{ github.run_id }}
+
+    - name: Create Pull Request
+      if: steps.check-updates.outputs.updated == 'true'
+      uses: repo-sync/pull-request@v2
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        pr_title: "Update Dockerfile to version ${{ steps.check-updates.outputs.new_version }}"
+        pr_body: "This PR updates the Dockerfile to the latest version."
+        pr_branch: update-dockerfile-${{ github.run_id }}
+        target_branch: main
+
