@@ -2134,6 +2134,18 @@
                 }
             }
         },
+        "partner_pid": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "partner_platform_api_client_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"
@@ -2154,8 +2166,6 @@
         }
     },
     "required": [
-        "appointment_length",
-        "delivery_fee_frontend_value",
         "reference",
         "name",
         "partner_platform"

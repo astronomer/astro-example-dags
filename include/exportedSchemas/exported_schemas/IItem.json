@@ -525,6 +525,12 @@
                 "string"
             ]
         },
+        "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"
@@ -548,7 +554,7 @@
     "required": [
         "_id",
         "price",
-        "discount",
-        "qty"
+        "qty",
+        "variant_id"
     ]
 }

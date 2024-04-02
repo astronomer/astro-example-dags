@@ -622,6 +622,12 @@
                             "string"
                         ]
                     },
+                    "partner_item_id": {
+                        "type": "string",
+                        "bsonType": [
+                            "string"
+                        ]
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -645,8 +651,8 @@
                 "required": [
                     "_id",
                     "price",
-                    "discount",
-                    "qty"
+                    "qty",
+                    "variant_id"
                 ]
             }
         },
@@ -1183,6 +1189,12 @@
                             "string"
                         ]
                     },
+                    "partner_item_id": {
+                        "type": "string",
+                        "bsonType": [
+                            "string"
+                        ]
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -1206,8 +1218,8 @@
                 "required": [
                     "_id",
                     "price",
-                    "discount",
-                    "qty"
+                    "qty",
+                    "variant_id"
                 ]
             }
         },
@@ -1744,6 +1756,12 @@
                             "string"
                         ]
                     },
+                    "partner_item_id": {
+                        "type": "string",
+                        "bsonType": [
+                            "string"
+                        ]
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -1767,8 +1785,8 @@
                 "required": [
                     "_id",
                     "price",
-                    "discount",
-                    "qty"
+                    "qty",
+                    "variant_id"
                 ]
             }
         },
@@ -1848,6 +1866,7 @@
     "additionalProperties": false,
     "required": [
         "internal_partner_id",
-        "cart_id"
+        "cart_id",
+        "items"
     ]
 }
