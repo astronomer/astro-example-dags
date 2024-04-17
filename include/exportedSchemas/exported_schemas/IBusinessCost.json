@@ -39,6 +39,7 @@
             ],
             "enum": [
                 "add_to_order",
+                "inspire_me",
                 "ship_direct",
                 "second_appointment",
                 "new_appointment"

@@ -140,6 +140,7 @@
                 "shippingFeeRefundedByWarehouse",
                 "triggerPlatformOrderCreation",
                 "addToOrderCreated",
+                "inspireMeOrderCreated",
                 "harperTryOrderCreated",
                 "newAppointmentOrderCreated",
                 "orderCreated",

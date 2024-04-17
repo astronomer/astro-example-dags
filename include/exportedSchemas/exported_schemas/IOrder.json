@@ -30,6 +30,12 @@
                 "string"
             ]
         },
+        "pid": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "partner": {
             "type": "string",
             "bsonType": [
@@ -2991,13 +2997,13 @@
             },
             "additionalProperties": false
         },
-        "cart_id": {
+        "partner_cart_id": {
             "type": "string",
             "bsonType": [
                 "string"
             ]
         },
-        "internal_cart_id": {
+        "harper_cart_id": {
             "type": "string",
             "bsonType": [
                 "string"
@@ -4614,6 +4620,7 @@
             ],
             "enum": [
                 "add_to_order",
+                "inspire_me",
                 "ship_direct",
                 "second_appointment",
                 "new_appointment",
@@ -4919,6 +4926,45 @@
             "tsType": "Date",
             "bsonType": [
                 "date"
+            ]
+        },
+        "trial_period_actually_started_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "trial_period_started": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "trial_period_actually_ended_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "trial_period_ended": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "trial_period_actually_reconciled_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "trial_period_reconciled": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
             ]
         },
         "checkout_id": {

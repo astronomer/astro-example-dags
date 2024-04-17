@@ -24,7 +24,7 @@
                 "string"
             ]
         },
-        "cart_id": {
+        "partner_cart_id": {
             "type": "string",
             "bsonType": [
                 "string"
@@ -1856,6 +1856,12 @@
             ],
             "type": "string"
         },
+        "cart_pid": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"
@@ -1866,7 +1872,7 @@
     "additionalProperties": false,
     "required": [
         "internal_partner_id",
-        "cart_id",
+        "partner_cart_id",
         "items"
     ]
 }
