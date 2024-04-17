@@ -30,6 +30,12 @@
                 "string"
             ]
         },
+        "cart_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "internal_partner_id": {
             "type": "string",
             "bsonType": [
