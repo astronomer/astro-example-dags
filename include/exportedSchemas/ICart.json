@@ -24,6 +24,12 @@
         "string"
       ]
     },
+    "partner_cart_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
     "cart_id": {
       "type": "string",
       "bsonType": [
@@ -610,6 +616,24 @@
               "string"
             ]
           },
+          "product_tags": {
+            "type": "array",
+            "bsonType": [
+              "array"
+            ]
+          },
+          "product_type": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
           "__v": {
             "bsonType": [
               "int"
@@ -633,8 +657,8 @@
         "required": [
           "_id",
           "price",
-          "discount",
-          "qty"
+          "qty",
+          "variant_id"
         ]
       }
     },
@@ -1159,6 +1183,24 @@
               "string"
             ]
           },
+          "product_tags": {
+            "type": "array",
+            "bsonType": [
+              "array"
+            ]
+          },
+          "product_type": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
           "__v": {
             "bsonType": [
               "int"
@@ -1182,8 +1224,8 @@
         "required": [
           "_id",
           "price",
-          "discount",
-          "qty"
+          "qty",
+          "variant_id"
         ]
       }
     },
@@ -1708,6 +1750,24 @@
               "string"
             ]
           },
+          "product_tags": {
+            "type": "array",
+            "bsonType": [
+              "array"
+            ]
+          },
+          "product_type": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
           "__v": {
             "bsonType": [
               "int"
@@ -1731,8 +1791,8 @@
         "required": [
           "_id",
           "price",
-          "discount",
-          "qty"
+          "qty",
+          "variant_id"
         ]
       }
     },
@@ -1802,6 +1862,12 @@
       ],
       "type": "string"
     },
+    "cart_pid": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
     "__v": {
       "bsonType": [
         "int"
@@ -1812,6 +1878,7 @@
   "additionalProperties": false,
   "required": [
     "internal_partner_id",
-    "cart_id"
+    "partner_cart_id",
+    "items"
   ]
 }

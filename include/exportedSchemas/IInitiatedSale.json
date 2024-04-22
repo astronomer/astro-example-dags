@@ -1,0 +1,64 @@
+{
+  "title": "IInitiatedSaleSchema",
+  "type": "object",
+  "bsonType": [
+    "object"
+  ],
+  "properties": {
+    "initiated_sale_type": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "original_order_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "user_email": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "user_role": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "inspire_me_option_selected": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "inspire_me_description": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

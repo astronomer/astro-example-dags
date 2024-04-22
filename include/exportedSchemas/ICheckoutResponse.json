@@ -1,0 +1,162 @@
+{
+  "title": "ICheckoutResponseSchema",
+  "type": "object",
+  "bsonType": [
+    "object"
+  ],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ],
+      "tsType": "MongooseObjectId"
+    },
+    "checkout_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ],
+      "tsType": "string"
+    },
+    "order_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ],
+      "tsType": "string"
+    },
+    "status": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ],
+      "enum": [
+        "pending",
+        "success",
+        "error",
+        "awaiting_client_action"
+      ]
+    },
+    "status_type": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ],
+      "enum": [
+        "appointment",
+        "stock",
+        "items",
+        "payment",
+        "general",
+        "risk",
+        "catastrophic",
+        "fatal",
+        "system",
+        "active_order_exists"
+      ]
+    },
+    "risk": {
+      "title": "risk",
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "risk_instruction": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            },
+            "amount": {
+              "type": "number",
+              "bsonType": [
+                "double"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "payment": {
+      "title": "payment",
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "client_secret": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "payment_intent_id": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "customer_notification": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "items_in_error": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "bsonType": [
+          "object"
+        ],
+        "tsType": "unknown",
+        "additionalProperties": false
+      }
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "checkout_id"
+  ]
+}

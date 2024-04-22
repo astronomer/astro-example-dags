@@ -1,0 +1,62 @@
+{
+  "title": "IGoogleAnalyticsSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "medium": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "key": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "domains": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "medium",
+    "key",
+    "domains"
+  ],
+  "additionalProperties": false
+}

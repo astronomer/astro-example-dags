@@ -2131,8 +2131,27 @@
               "string"
             ]
           }
+        },
+        "website": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ],
+          "default": "https://www.harperconcierge.com/contact"
         }
       }
+    },
+    "partner_pid": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "partner_platform_api_client_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
     },
     "__v": {
       "bsonType": [
@@ -2154,8 +2173,6 @@
     }
   },
   "required": [
-    "appointment_length",
-    "delivery_fee_frontend_value",
     "reference",
     "name",
     "partner_platform"

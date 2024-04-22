@@ -1,0 +1,80 @@
+{
+  "title": "IShippingSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "price": {
+      "type": "integer",
+      "bsonType": [
+        "double"
+      ]
+    },
+    "currency": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "currency_symbol": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "carrier": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "handle": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "partner_shipping_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
