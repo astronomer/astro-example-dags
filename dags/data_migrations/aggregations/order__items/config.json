@@ -6,6 +6,9 @@
   "preserve_fields": {
     "order_id": [
       "string"
+    ],
+    "item_id": [
+      "string"
     ]
   }
 }
