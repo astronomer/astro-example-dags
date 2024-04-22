@@ -1,0 +1,88 @@
+{
+  "title": "IBusinessCostSchema",
+  "type": "object",
+  "bsonType": [
+    "object"
+  ],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ],
+      "tsType": "MongooseObjectId"
+    },
+    "label": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "valid_from": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "valid_to": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "order_type": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ],
+      "enum": [
+        "add_to_order",
+        "inspire_me",
+        "ship_direct",
+        "second_appointment",
+        "new_appointment"
+      ]
+    },
+    "cost_total": {
+      "type": "number",
+      "bsonType": [
+        "double"
+      ]
+    },
+    "vat_percentage": {
+      "type": "number",
+      "bsonType": [
+        "double"
+      ]
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "vat_percentage",
+    "cost_total",
+    "order_type",
+    "valid_to",
+    "valid_from",
+    "label"
+  ]
+}

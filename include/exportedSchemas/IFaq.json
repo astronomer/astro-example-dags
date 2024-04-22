@@ -1,0 +1,76 @@
+{
+  "title": "IFaqSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "question": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "answer": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "condition": {
+      "type": "integer",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "order": {
+      "type": "number",
+      "bsonType": [
+        "int"
+      ]
+    },
+    "service_type": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "type": "string",
+        "bsonType": [
+          "string"
+        ]
+      }
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "question",
+    "answer",
+    "condition",
+    "description",
+    "order",
+    "service_type"
+  ],
+  "additionalProperties": false
+}

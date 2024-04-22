@@ -1,0 +1,48 @@
+{
+  "title": "IOrderNameSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "is_set": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "prefix": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "start": {
+      "type": "integer",
+      "bsonType": [
+        "int",
+        "null"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "is_set"
+  ],
+  "additionalProperties": false
+}

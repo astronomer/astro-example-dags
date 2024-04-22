@@ -92,6 +92,33 @@
           "bsonType": [
             "object"
           ]
+        },
+        "links": {
+          "type": "array",
+          "bsonType": [
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "bsonType": [
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "bsonType": [
+                  "string"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "bsonType": [
+                  "string"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false
@@ -140,6 +167,7 @@
         "shippingFeeRefundedByWarehouse",
         "triggerPlatformOrderCreation",
         "addToOrderCreated",
+        "inspireMeOrderCreated",
         "harperTryOrderCreated",
         "newAppointmentOrderCreated",
         "orderCreated",

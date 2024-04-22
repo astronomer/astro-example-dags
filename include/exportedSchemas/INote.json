@@ -1,0 +1,75 @@
+{
+  "title": "INoteSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "created_by": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "author_id": {
+      "bsonType": [
+        "objectId"
+      ],
+      "type": "string",
+      "tsType": "string"
+    },
+    "status": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "note": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "user_role": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "mongo_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "integration_order_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "order_name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

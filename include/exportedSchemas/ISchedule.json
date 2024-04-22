@@ -1,0 +1,826 @@
+{
+  "title": "IScheduleSchema",
+  "type": "object",
+  "bsonType": "object",
+  "properties": {
+    "day_0": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_1": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "change_timekit_time_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "change_timekit_time_from",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_2": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_3": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_4": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_5": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "day_6": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "day_name": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "day_number": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "offset_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "additional_offset_from_in_days": {
+          "type": "integer",
+          "bsonType": [
+            "int"
+          ]
+        },
+        "available_from_before_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "available_from_after_cutoff": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "before_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        },
+        "after_offset": {
+          "type": "object",
+          "bsonType": [
+            "object"
+          ],
+          "properties": {
+            "offset_days": {
+              "type": "integer",
+              "bsonType": [
+                "int"
+              ]
+            },
+            "available_from": {
+              "type": "string",
+              "bsonType": [
+                "string"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "offset_days",
+            "available_from"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "day_name",
+        "day_number",
+        "offset_days",
+        "additional_offset_from",
+        "additional_offset_from_in_days",
+        "available_from_before_cutoff",
+        "available_from_after_cutoff",
+        "before_offset",
+        "after_offset"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "day_0",
+    "day_1",
+    "day_2",
+    "day_3",
+    "day_4",
+    "day_5",
+    "day_6"
+  ]
+}

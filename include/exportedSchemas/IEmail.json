@@ -1,0 +1,75 @@
+{
+  "title": "IEmailSchema",
+  "type": "object",
+  "bsonType": [
+    "object"
+  ],
+  "properties": {
+    "subject": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "recipient": {
+      "tsType": "MongooseObjectId",
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ]
+    },
+    "order_id": {
+      "tsType": "MongooseObjectId",
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ]
+    },
+    "sender": {
+      "tsType": "MongooseObjectId",
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "content_html": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    }
+  },
+  "required": [
+    "subject",
+    "recipient",
+    "order_id",
+    "sender",
+    "content",
+    "content_html"
+  ],
+  "additionalProperties": false
+}

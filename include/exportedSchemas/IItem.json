@@ -1,0 +1,560 @@
+{
+  "title": "IItemSchema",
+  "bsonType": [
+    "object"
+  ],
+  "type": "object",
+  "properties": {
+    "_id": {
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ],
+      "tsType": "MongooseObjectId"
+    },
+    "id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "available_for_appointment": {
+      "bsonType": [
+        "bool"
+      ],
+      "type": "boolean"
+    },
+    "product_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "price": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "number"
+    },
+    "name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "original_name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "sku": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "discount": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "number"
+    },
+    "discount_percent": {
+      "bsonType": [
+        "double"
+      ],
+      "type": "number"
+    },
+    "discounted_price": {
+      "bsonType": [
+        "double"
+      ],
+      "type": "number"
+    },
+    "size": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "width": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "colour": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "qty": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "number"
+    },
+    "billed_qty": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "number"
+    },
+    "variant_id": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "purchased": {
+      "bsonType": [
+        "bool"
+      ],
+      "type": "boolean"
+    },
+    "not_available": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "faulty": {
+      "bsonType": [
+        "bool"
+      ],
+      "type": "boolean"
+    },
+    "missing": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "out_of_stock": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "missing_reason": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "return_reason": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "received": {
+      "bsonType": [
+        "bool"
+      ],
+      "type": "boolean"
+    },
+    "partner_item": {
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "additionalProperties": false
+    },
+    "images": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ],
+      "items": {
+        "title": "IImageSchema",
+        "bsonType": [
+          "object"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "bsonType": [
+              "string"
+            ],
+            "type": "string"
+          },
+          "size": {
+            "bsonType": [
+              "string"
+            ],
+            "type": "string"
+          },
+          "__v": {
+            "bsonType": [
+              "int"
+            ],
+            "type": "integer"
+          },
+          "createdAt": {
+            "bsonType": [
+              "date"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "bsonType": [
+              "date"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "size"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "feedback": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "number"
+    },
+    "feedback_text": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "preorder": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "preorder_estimated_delivery": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "internal_order_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "integration_order_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "mongo_id": {
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ],
+      "tsType": "MongooseObjectId"
+    },
+    "order_name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "commission": {
+      "title": "ICommissionSchema",
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "commission_type": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ],
+          "enum": [
+            "standard",
+            "initiated",
+            "harper_try",
+            "harper_try_initiated"
+          ]
+        },
+        "percentage": {
+          "type": "number",
+          "bsonType": [
+            "double"
+          ]
+        },
+        "__v": {
+          "bsonType": [
+            "int"
+          ],
+          "type": "integer"
+        },
+        "createdAt": {
+          "bsonType": [
+            "date"
+          ],
+          "type": "string"
+        },
+        "updatedAt": {
+          "bsonType": [
+            "date"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "commission_type",
+        "percentage"
+      ],
+      "additionalProperties": false
+    },
+    "delivery_message": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "fulfilled": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "fulfilled_at": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "initiated_sale": {
+      "title": "IInitiatedSaleSchema",
+      "type": "object",
+      "bsonType": [
+        "object"
+      ],
+      "properties": {
+        "initiated_sale_type": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "original_order_id": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "user_email": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "user_role": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "inspire_me_option_selected": {
+          "type": "boolean",
+          "bsonType": [
+            "bool"
+          ]
+        },
+        "inspire_me_description": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "__v": {
+          "bsonType": [
+            "int"
+          ],
+          "type": "integer"
+        },
+        "createdAt": {
+          "bsonType": [
+            "date"
+          ],
+          "type": "string"
+        },
+        "updatedAt": {
+          "bsonType": [
+            "date"
+          ],
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "is_initiated_sale": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "is_linked": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "is_split": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "order_type": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "original_order_name": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "returned": {
+      "bsonType": [
+        "bool"
+      ],
+      "type": "boolean"
+    },
+    "parcel_number": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "received_at": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "received_by_warehouse": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "received_by_warehouse_at": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "zettle_uuid": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "tracking_number": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "tracking_url": {
+      "bsonType": [
+        "string"
+      ],
+      "type": "string"
+    },
+    "return_requested_by_customer": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "return_requested_by_customer_at": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "return_sent_by_customer": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "return_sent_by_customer_at": {
+      "type": "string",
+      "tsType": "Date",
+      "bsonType": [
+        "date"
+      ]
+    },
+    "stripe_purchase_invoice_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "stripe_invoice_lineitem_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "product_tags": {
+      "type": "array",
+      "bsonType": [
+        "array"
+      ]
+    },
+    "product_type": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "partner_item_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "__v": {
+      "bsonType": [
+        "int"
+      ],
+      "type": "integer"
+    },
+    "createdAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    },
+    "updatedAt": {
+      "bsonType": [
+        "date"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "_id",
+    "price",
+    "qty",
+    "variant_id"
+  ]
+}
