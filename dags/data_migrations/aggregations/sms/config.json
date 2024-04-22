@@ -1,0 +1,10 @@
+{
+  "source_collection": "sms",
+  "destination_table": "sms",
+  "jsonschema": "ISms.json",
+  "preserve_fields": {
+    "customer_id": [
+      "string"
+    ]
+  }
+}
