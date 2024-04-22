@@ -10,7 +10,7 @@
     {
       "$set": {
         "id": "$_id",
-        "customer_id": "$receipient"
+        "customer_id": "$recipient"
       }
     },
     {
