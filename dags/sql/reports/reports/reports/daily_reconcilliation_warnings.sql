@@ -9,13 +9,14 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_reconcilliation_w
         o.halo_link,
         o.delivery_tracking_urls,
         p.trial_reconciliation_period,
-        o.trial_period_actually_ended_at,
         o.num_return_requested_by_customer,
         o.num_return_sent_by_customer,
         o.num_received_by_partner_warehouse,
         o.return_status,
+        o.trial_period_actually_ended_at,
         CURRENT_DATE as current_date,
-        (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') as trial_period_reconciliation_due_at
+        (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') as trial_period_reconciliation_due_at,
+        (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') - INTERVAL '2 days' as trial_period_reconciliation_warning_due_at
     FROM public.rep__order_summary o
     LEFT JOIN public.partner p ON o.partner_id = p.id
     WHERE
