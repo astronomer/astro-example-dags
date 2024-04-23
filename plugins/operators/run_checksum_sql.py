@@ -30,7 +30,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     :param sql_type: type of sql [report|function|index|dimension|user]
     :type sql_type: str
     :param json_schema_file_dir: Directory of Exported Json Schema Files
-    :type json_schema_file_dir: str
+    :type json_schema_file_dir: Optional[str]
     :param add_table_columns_to_context: A list of tablenames to be added to context for use in template filters
     :type add_table_columns_to_context: Optional[List[str]]
 
@@ -47,7 +47,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
         checksum: str,
         sql: str,
         sql_type: str,
-        json_schema_file_dir: str,
+        json_schema_file_dir: str = "",
         add_table_columns_to_context: Optional[List[str]] = [],
         **kwargs,
     ) -> None:
