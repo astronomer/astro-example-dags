@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                 transaction = conn.begin()
                 try:
                     self._add_table_columns_to_context(conn)
+                    self._add_event_name_ids_to_context()
                     self.preoperation_sql = render_template(
                         self.preoperation_template,
                         context=context,
@@ -205,7 +206,11 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             event_name_ids = event_name_id.get("enum", None)
             if not event_name_ids:
                 raise AirflowException(f"Schema {self.schema_file_path} does not contain event_name_id enums")
-            return [event for event in event_name_ids if event and event != "statusUpdated"]
+            return [
+                event
+                for event in event_name_ids
+                if event and event not in ["statusUpdated", "sentCustomerEmail", "paymentReceived"]
+            ]
 
     def _add_event_name_ids_to_context(self):
         self.context["event_name_ids"] = self._get_event_name_ids()

@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from urllib.parse import urlencode
 
 import requests
@@ -8,6 +9,7 @@ from airflow.models import XCom, BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from airflow.utils.session import provide_session
+from dateutil.relativedelta import relativedelta
 from airflow.utils.decorators import apply_defaults
 from airflow.models.connection import Connection
 
@@ -113,7 +115,12 @@ END $$;
             # Base URL path
             base_url = "https://purchase.izettle.com/purchases/v2"
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2021-04-01T00:00:00.000Z"
+            if last_successful_dagrun_ts:
+                start_param = last_successful_dagrun_ts
+            else:
+                three_years_back = datetime.now() - relativedelta(years=2)
+                start_param = three_years_back.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            print("start_param", start_param)
 
             total_docs_processed = 0
 
