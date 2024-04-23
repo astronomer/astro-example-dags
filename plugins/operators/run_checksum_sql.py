@@ -196,21 +196,24 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
 
     def _get_event_name_ids(self):
-        schema_path = os.path.join(self.json_schema_file_dir, "IOrderEvent.json")
 
-        with open(schema_path, "r") as file:
-            schema = json.load(file)
-            event_name_id = schema["properties"].get("event_name_id", None)
-            if not event_name_id:
-                raise AirflowException(f"Schema {self.schema_file_path} does not contain event_name_id")
-            event_name_ids = event_name_id.get("enum", None)
-            if not event_name_ids:
-                raise AirflowException(f"Schema {self.schema_file_path} does not contain event_name_id enums")
-            return [
-                event
-                for event in event_name_ids
-                if event and event not in ["statusUpdated", "sentCustomerEmail", "paymentReceived"]
-            ]
+        if self.json_schema_file_dir:
+            schema_path = os.path.join(self.json_schema_file_dir, "IOrderEvent.json")
+
+            with open(schema_path, "r") as file:
+                schema = json.load(file)
+                event_name_id = schema["properties"].get("event_name_id", None)
+                if not event_name_id:
+                    raise AirflowException(f"Schema {self.schema_file_path} does not contain event_name_id")
+                event_name_ids = event_name_id.get("enum", None)
+                if not event_name_ids:
+                    raise AirflowException(f"Schema {self.schema_file_path} does not contain event_name_id enums")
+                return [
+                    event
+                    for event in event_name_ids
+                    if event and event not in ["statusUpdated", "sentCustomerEmail", "paymentReceived"]
+                ]
+        return []
 
     def _add_event_name_ids_to_context(self):
         self.context["event_name_ids"] = self._get_event_name_ids()
