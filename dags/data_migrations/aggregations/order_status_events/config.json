@@ -1,0 +1,8 @@
+{
+  "source_collection": "orderevents",
+  "destination_table": "orderevents",
+  "jsonschema": "IOrderEvent.json",
+  "discard_fields": [
+    "context_data"
+  ]
+}

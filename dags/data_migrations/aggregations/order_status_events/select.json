@@ -1,0 +1,23 @@
+[
+    {
+        "$match": {
+            "updatedAt": {
+                "$gt": "{{ last_successful_dagrun_ds }}",
+                "$lte": "{{ data_interval_end }}"
+            }
+        }
+    },
+    {
+        "$set": {
+            "id": "$_id"
+        }
+    },
+    {
+        "$project": {
+            "_id": 0,
+            "context_data": 0
+        }
+    },
+    { "$skip": 0 },
+    { "$limit": 5000 }
+]
