@@ -11,7 +11,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_item_summary AS
         COUNT(CASE WHEN oi.purchased = TRUE AND oi.returned = FALSE THEN 1 END) AS num_bought,
         COUNT(CASE WHEN oi.preorder = TRUE THEN 1 END) AS num_preorder,
         COUNT(CASE WHEN oi.received = TRUE THEN 1 END) AS num_received_by_harper_warehouse,
-        COUNT(CASE WHEN oi.received_by_warehouse = TRUE THEN 1 END) AS num_received_by_partner_warehouse
+        COUNT(CASE WHEN oi.received_by_warehouse = TRUE THEN 1 END) AS num_received_by_partner_warehouse,
+        COUNT(CASE WHEN oi.return_requested_by_customer = TRUE THEN 1 END) AS num_return_requested_by_customer,
+        COUNT(CASE WHEN oi.return_sent_by_customer = TRUE THEN 1 END) AS num_return_sent_by_customer,
+        array_agg(DISTINCT(oi.tracking_url)) AS delivery_tracking_urls
+
     FROM
         {{ schema }}.orders o
     JOIN
