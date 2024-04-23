@@ -10,6 +10,9 @@ from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_li
 
 from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
 
+exported_schemas_path = "../include/exportedSchemas/"
+exported_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), exported_schemas_path)
+
 default_args = {
     "owner": "airflow",
     "start_date": datetime(2019, 7, 14),
@@ -65,6 +68,7 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
             checksum=config["checksum"],
             sql=config["sql"],
             sql_type="report",
+            json_schema_file_dir=exported_schemas_abspath,
             add_table_columns_to_context=["dim__time"],
             dag=dag,
         )
