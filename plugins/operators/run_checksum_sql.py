@@ -27,7 +27,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     :type checksum: str
     :param sql: sql
     :type sql: str
-    :param sql_type: type of sql [report|function|index|dimension|user]
+    :param sql_type: type of sql [report|function|index|dimension|user|sanitiser]
     :type sql_type: str
     :param json_schema_file_dir: Directory of Exported Json Schema Files
     :type json_schema_file_dir: Optional[str]
@@ -171,6 +171,9 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         if self.sql_type == "report":
             pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "rep__"
+        elif self.sql_type == "sanitiser":
+            pattern = r"CREATE VIEW IF NOT EXISTS (\w+)\.(\w+)"
+            expected_prefix = "san__"
         elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "fact__"
