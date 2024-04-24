@@ -1,4 +1,5 @@
 import re
+import datetime
 
 import pandas as pd
 from pandas import DataFrame
@@ -53,8 +54,16 @@ class PostgresToGoogleSheetOperator(BaseOperator):
 
             # Ensure datetime columns are converted to string in ISO format
             for col, dtype in df.dtypes.items():
-                if dtype.kind == "M":
+                if dtype.kind in ("M", "m"):  # 'M' for datetime-like, 'm' for timedelta
                     df[col] = df[col].apply(lambda x: x.isoformat() if not pd.isnull(x) else None)
+                elif dtype.kind == "O":  # Check for 'object' dtype which might include dates
+                    try:
+                        # Attempt to convert any standard date or datetime objects to string
+                        if isinstance(df[col].iloc[0], (datetime.date, datetime.datetime)):
+                            df[col] = df[col].apply(lambda x: x.isoformat() if not pd.isnull(x) else None)
+                    except (TypeError, AttributeError):
+                        # If conversion fails, it's not a date/datetime, ignore or log if needed
+                        self.log.info(f"Column {col} contains non-datetime data that was not converted.")
 
             # Convert DataFrame to a list of lists (Google Sheets format)
             data = [df.columns.tolist()] + df.values.tolist()
