@@ -52,6 +52,8 @@ class PostgresToGoogleSheetOperator(BaseOperator):
                 self.log.info("No data to write to Google Sheet.")
                 return
 
+            self.log.info(f"Number of rows in DataFrame Before processing: {len(df)}")
+
             # Ensure datetime columns are converted to string in ISO format
             for col, dtype in df.dtypes.items():
                 if dtype.kind in ("M", "m"):  # 'M' for datetime-like, 'm' for timedelta
@@ -66,6 +68,8 @@ class PostgresToGoogleSheetOperator(BaseOperator):
                     except (TypeError, AttributeError):
                         # If conversion fails, it's not a date/datetime, ignore or log if needed
                         self.log.info(f"Column {col} contains non-datetime data that was not converted.")
+
+            self.log.info(f"Number of rows in DataFrame after processing: {len(df)}")
 
             # Convert DataFrame to a list of lists (Google Sheets format)
             data = [df.columns.tolist()] + df.values.tolist()
