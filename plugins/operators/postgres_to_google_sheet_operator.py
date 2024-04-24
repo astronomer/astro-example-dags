@@ -56,6 +56,8 @@ class PostgresToGoogleSheetOperator(BaseOperator):
             for col, dtype in df.dtypes.items():
                 if dtype.kind in ("M", "m"):  # 'M' for datetime-like, 'm' for timedelta
                     df[col] = df[col].apply(lambda x: x.isoformat() if not pd.isnull(x) else None)
+                elif isinstance(df[col].iloc[0], list):  # Handle list data
+                    df[col] = df[col].apply(lambda x: ", ".join(map(str, x)) if x else None)
                 elif dtype.kind == "O":  # Check for 'object' dtype which might include dates
                     try:
                         # Attempt to convert any standard date or datetime objects to string
