@@ -107,12 +107,18 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
 
                     self.log.info(self.sql_template)
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
+                    if not self.sql.isspace():
 
-                    # Validate the SQL to make sure it follows our naming convention
-                    self._validate_sql_convention(self.sql)
+                        # Validate the SQL to make sure it follows our naming convention
+                        self._validate_sql_convention(self.sql)
 
-                    self.log.info(f"Executing {self.sql}")
-                    conn.execute(self.sql)
+                        self.log.info(f"Executing {self.sql}")
+                        conn.execute(self.sql)
+                    else:
+                        self.log.info(
+                            f"Query is empty, assuming its an unmodified view, therefore skipping execution {self.sql}"
+                        )
+
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)

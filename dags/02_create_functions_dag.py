@@ -23,36 +23,26 @@ default_args = {
 
 
 dag = DAG(
-    "04_create_functions_dag",
+    "02_create_functions_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
     template_searchpath="/usr/local/airflow/dags",
 )
 
-wait_for_cleansers = ExternalTaskSensor(
-    task_id="wait_for_cleansers_to_complete",
-    external_dag_id="03_create_cleansers_dag",  # The ID of the DAG you're waiting for
+wait_for_migrations = ExternalTaskSensor(
+    task_id="wait_for_migrations_to_complete",
+    external_dag_id="01_mongo_migrations_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
 )
-
-wait_for_dimensions = ExternalTaskSensor(
-    task_id="wait_for_dimensions_to_complete",
-    external_dag_id="03_create_dimensions_dag",  # The ID of the DAG you're waiting for
-    external_task_id=None,  # Set to None to wait for the entire DAG to complete
-    allowed_states=["success"],  # You might need to customize this part
-    dag=dag,
-)
-
 
 functions = "./sql/functions"
 functions_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), functions)
 
 functions_sql_files = get_recursive_sql_file_lists(functions_abspath, subdir="functions")
-wait_for_cleansers >> wait_for_dimensions
-last_function_task = wait_for_dimensions
+last_function_task = wait_for_migrations
 for group_index, group_list in enumerate(functions_sql_files, start=1):
     function_task = DummyOperator(task_id=f"functions_{group_index}", dag=dag)
     function_task_complete = DummyOperator(task_id=f"functions_{group_index}_complete", dag=dag)

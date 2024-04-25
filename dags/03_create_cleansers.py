@@ -30,9 +30,17 @@ dag = DAG(
     template_searchpath="/usr/local/airflow/dags",
 )
 
-wait_for_migrations = ExternalTaskSensor(
+wait_for_financials = ExternalTaskSensor(
     task_id="wait_for_finance_to_complete",
     external_dag_id="02_import_financial_transactions_dag",  # The ID of the DAG you're waiting for
+    external_task_id=None,  # Set to None to wait for the entire DAG to complete
+    allowed_states=["success"],  # You might need to customize this part
+    dag=dag,
+)
+
+wait_for_dimensions = ExternalTaskSensor(
+    task_id="wait_for_dimensions_to_complete",
+    external_dag_id="02_create_dimensions_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
@@ -41,9 +49,14 @@ wait_for_migrations = ExternalTaskSensor(
 cleansers = "./sql/cleansers"
 cleansers_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), cleansers)
 
+exported_schemas_path = "../include/exportedSchemas/"
+exported_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), exported_schemas_path)
+
 sql_files = get_recursive_sql_file_lists(cleansers_abspath, subdir="cleansers")
 
-last_index_task = wait_for_migrations
+wait_for_financials >> wait_for_dimensions
+
+last_index_task = wait_for_dimensions
 for group_index, group_list in enumerate(sql_files, start=1):
     index_task = DummyOperator(task_id=f"cleansers_{group_index}", dag=dag)
     index_task_complete = DummyOperator(task_id=f"cleansers_{group_index}_complete", dag=dag)
@@ -62,6 +75,8 @@ for group_index, group_list in enumerate(sql_files, start=1):
             checksum=config["checksum"],
             sql=config["sql"],
             sql_type="cleanser",
+            json_schema_file_dir=exported_schemas_abspath,
+            add_table_columns_to_context=["dim__time"],
             dag=dag,
         )
         # Add the current task to the array

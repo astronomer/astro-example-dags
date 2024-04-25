@@ -36,9 +36,9 @@ dag = DAG(
 
 # dag.user_defined_filters = {"prefix_columns": prefix_columns}
 
-wait_for_functions = ExternalTaskSensor(
-    task_id="wait_for_functions_to_complete",
-    external_dag_id="04_create_functions_dag",  # The ID of the DAG you're waiting for
+wait_for_indexes = ExternalTaskSensor(
+    task_id="wait_for_indexes_to_complete",
+    external_dag_id="04_create_indexes_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
@@ -49,7 +49,7 @@ reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), repor
 
 reports_sql_files = get_recursive_sql_file_lists(reports_abspath, subdir="reports")
 
-last_report_task = wait_for_functions
+last_report_task = wait_for_indexes
 for group_index, group_list in enumerate(reports_sql_files, start=1):
     report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
     report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
