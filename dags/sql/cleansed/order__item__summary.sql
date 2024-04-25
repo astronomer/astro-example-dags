@@ -1,14 +1,26 @@
 {% if is_modified %}
-DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__order_item_summary CASCADE;
+DROP VIEW IF EXISTS {{ schema }}.clean__order__item__summary CASCADE;
 {% endif %}
-CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_item_summary AS
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM pg_catalog.pg_class c
+        JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE  n.nspname = '{{ schema }}'
+        AND    c.relname = 'order__status_events'
+        AND    c.relkind = 'v' -- 'v' stands for view
+    ) THEN
+        EXECUTE '
+
+CREATE OR REPLACE VIEW {{ schema }}.clean__order__item__summary AS
     SELECT
         o.id AS order_id,
         COUNT(oi.id) AS total_items,
         COUNT(CASE WHEN oi.fulfilled = TRUE THEN 1 END) AS num_items_fulfilled,
         COUNT(CASE WHEN oi.purchased = TRUE THEN 1 END) AS num_purchased,
         COUNT(CASE WHEN oi.returned = TRUE THEN 1 END) AS num_returned,
-        COUNT(CASE WHEN oi.purchased = TRUE AND oi.returned = FALSE THEN 1 END) AS num_bought,
+        COUNT(CASE WHEN oi.purchased = TRUE AND oi.returned = FALSE THEN 1 END) AS num_kept,
         COUNT(CASE WHEN oi.preorder = TRUE THEN 1 END) AS num_preorder,
         COUNT(CASE WHEN oi.received = TRUE THEN 1 END) AS num_received_by_harper_warehouse,
         COUNT(CASE WHEN oi.received_by_warehouse = TRUE THEN 1 END) AS num_received_by_partner_warehouse,
@@ -21,9 +33,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__order_item_summary AS
     JOIN
         order__items oi ON o.id = oi.order_id
     GROUP BY
-        o.id
-WITH NO DATA;
-{% if is_modified %}
-CREATE UNIQUE INDEX IF NOT EXISTS order_item_summary_idx ON {{ schema }}.rep__order_item_summary (order_id);
-{% endif %}
-REFRESH MATERIALIZED VIEW {{ schema }}.rep__order_item_summary;
+        o.id;
+
+';
+    END IF;
+END
+$$;
