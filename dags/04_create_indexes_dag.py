@@ -30,9 +30,9 @@ dag = DAG(
     template_searchpath="/usr/local/airflow/dags",
 )
 
-wait_for_sanitisers = ExternalTaskSensor(
-    task_id="wait_for_sanitisers_to_complete",
-    external_dag_id="03_create_sanitisers_dag",  # The ID of the DAG you're waiting for
+wait_for_cleansers = ExternalTaskSensor(
+    task_id="wait_for_cleansers_to_complete",
+    external_dag_id="03_create_cleansers_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
@@ -50,7 +50,7 @@ indexes_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), index
 
 indexes_sql_files = get_recursive_sql_file_lists(indexes_abspath, subdir="indexes")
 
-wait_for_sanitisers >> wait_for_dimensions
+wait_for_cleansers >> wait_for_dimensions
 last_index_task = wait_for_dimensions
 for group_index, group_list in enumerate(indexes_sql_files, start=1):
     index_task = DummyOperator(task_id=f"indexes_{group_index}", dag=dag)

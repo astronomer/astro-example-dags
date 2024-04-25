@@ -23,7 +23,7 @@ default_args = {
 
 
 dag = DAG(
-    "03_create_sanitisers_dag",
+    "03_create_cleansers_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
@@ -38,15 +38,15 @@ wait_for_migrations = ExternalTaskSensor(
     dag=dag,
 )
 
-sanitisers = "./sql/sanitisers"
-sanitisers_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), sanitisers)
+cleansers = "./sql/cleansers"
+cleansers_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), cleansers)
 
-sql_files = get_recursive_sql_file_lists(sanitisers_abspath, subdir="sanitisers")
+sql_files = get_recursive_sql_file_lists(cleansers_abspath, subdir="cleansers")
 
 last_index_task = wait_for_migrations
 for group_index, group_list in enumerate(sql_files, start=1):
-    index_task = DummyOperator(task_id=f"sanitisers_{group_index}", dag=dag)
-    index_task_complete = DummyOperator(task_id=f"sanitisers_{group_index}_complete", dag=dag)
+    index_task = DummyOperator(task_id=f"cleansers_{group_index}", dag=dag)
+    index_task_complete = DummyOperator(task_id=f"cleansers_{group_index}_complete", dag=dag)
     last_index_task >> index_task
 
     # Initialize an array to hold all tasks in the current group
@@ -61,7 +61,7 @@ for group_index, group_list in enumerate(sql_files, start=1):
             filename=config["filename"],
             checksum=config["checksum"],
             sql=config["sql"],
-            sql_type="sanitiser",
+            sql_type="cleanser",
             dag=dag,
         )
         # Add the current task to the array
