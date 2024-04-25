@@ -1,18 +1,4 @@
 {% if is_modified %}
-DROP VIEW IF EXISTS {{ schema }}.clean__order__item__summary CASCADE;
-{% endif %}
-
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT FROM pg_catalog.pg_class c
-        JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-        WHERE  n.nspname = '{{ schema }}'
-        AND    c.relname = 'order__status_events'
-        AND    c.relkind = 'v' -- 'v' stands for view
-    ) THEN
-        EXECUTE '
-
 CREATE OR REPLACE VIEW {{ schema }}.clean__order__item__summary AS
     SELECT
         o.id AS order_id,
@@ -34,8 +20,4 @@ CREATE OR REPLACE VIEW {{ schema }}.clean__order__item__summary AS
         order__items oi ON o.id = oi.order_id
     GROUP BY
         o.id;
-
-';
-    END IF;
-END
-$$;
+{% endif %}
