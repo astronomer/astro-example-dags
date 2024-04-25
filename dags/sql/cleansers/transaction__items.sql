@@ -1,5 +1,5 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.transaction__items AS
+CREATE OR REPLACE VIEW {{ schema }}.clean__transaction__items AS
     SELECT
         tp.transaction_id,
         tp.transactionitem_id,

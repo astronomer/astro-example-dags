@@ -19,7 +19,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_warehouse_list AS
             o.airflow_sync_ds
     FROM orders o
     LEFT JOIN useraccount ua ON ua.id = o.style_concierge
-    LEFT JOIN rep__order_item_summary r_ois ON r_ois.order_id = o.id
+    LEFT JOIN clean__order__item__summary r_ois ON r_ois.order_id = o.id
     WHERE o.appointment__date::date = CURRENT_DATE
       AND o.order_type NOT IN ('add_to_order', 'ship_direct', 'harper_try')
 WITH NO DATA;
