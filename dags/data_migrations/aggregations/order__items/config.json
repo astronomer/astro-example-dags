@@ -7,6 +7,9 @@
     "order_id": [
       "string"
     ],
+    "idx": [
+      "int32"
+    ],
     "item_id": [
       "string"
     ]

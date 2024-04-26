@@ -36,6 +36,7 @@
                 {"$toString": "$arrayIndex"}
             ]
         },
+        "idx": "$arrayIndex",
         "item_id": "$_id",
         "discount": {
                 "$convert": {
