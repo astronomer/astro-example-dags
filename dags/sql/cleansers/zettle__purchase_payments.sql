@@ -1,8 +1,6 @@
 {% if is_modified %}
-DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__zettle__purchase_payments CASCADE;
-{% endif %}
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__zettle__purchase_payments AS
+CREATE OR REPLACE VIEW {{ schema }}.clean__zettle__purchase_payments AS
 SELECT
     p.id AS purchase_id,
     p.created,
@@ -19,9 +17,5 @@ FROM
             (value ->> 'gratuityAmount')::bigint AS gratuityAmount
         FROM
             json_array_elements(CAST(p.payments AS JSON))
-    ) AS x
-WITH NO DATA;
-{% if is_modified %}
-CREATE UNIQUE INDEX IF NOT EXISTS zettle__purchase_payments_idx ON {{ schema }}.rep__zettle__purchase_payments (id);
+    ) AS x;
 {% endif %}
-REFRESH MATERIALIZED VIEW {{ schema }}.rep__zettle__purchase_payments;

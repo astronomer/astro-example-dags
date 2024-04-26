@@ -27,7 +27,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     :type checksum: str
     :param sql: sql
     :type sql: str
-    :param sql_type: type of sql [report|function|index|dimension|user]
+    :param sql_type: type of sql [report|function|index|dimension|user|cleanser]
     :type sql_type: str
     :param json_schema_file_dir: Directory of Exported Json Schema Files
     :type json_schema_file_dir: Optional[str]
@@ -107,12 +107,18 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
 
                     self.log.info(self.sql_template)
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
+                    if not self.sql.isspace():
 
-                    # Validate the SQL to make sure it follows our naming convention
-                    self._validate_sql_convention(self.sql)
+                        # Validate the SQL to make sure it follows our naming convention
+                        self._validate_sql_convention(self.sql)
 
-                    self.log.info(f"Executing {self.sql}")
-                    conn.execute(self.sql)
+                        self.log.info(f"Executing {self.sql}")
+                        conn.execute(self.sql)
+                    else:
+                        self.log.info(
+                            f"Query is empty, assuming its an unmodified view, therefore skipping execution {self.sql}"
+                        )
+
                     transaction.commit()
                 except Exception as e:
                     self.log.error("Error during database operation: %s", e)
@@ -171,6 +177,9 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         if self.sql_type == "report":
             pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "rep__"
+        elif self.sql_type == "cleanser":
+            pattern = r"CREATE VIEW IF NOT EXISTS (\w+)\.(\w+)"
+            expected_prefix = "clean__"
         elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
             expected_prefix = "fact__"

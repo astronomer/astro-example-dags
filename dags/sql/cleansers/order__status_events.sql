@@ -5,8 +5,10 @@
     {% endfor %}
 {% endmacro %}
 
-CREATE OR REPLACE VIEW public.order__status_events AS
+{% if is_modified %}
+CREATE OR REPLACE VIEW {{ schema }}.order__status_events AS
 SELECT order_id,
     {{ generate_sql_parts(event_name_ids) }}
 FROM orderevents
 GROUP BY order_id;
+{% endif %}
