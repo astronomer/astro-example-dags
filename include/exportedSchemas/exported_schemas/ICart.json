@@ -520,6 +520,15 @@
                         "type": "string",
                         "bsonType": [
                             "string"
+                        ],
+                        "enum": [
+                            "add_to_order",
+                            "inspire_me",
+                            "ship_direct",
+                            "second_appointment",
+                            "new_appointment",
+                            "old_initiated_sale",
+                            "harper_try"
                         ]
                     },
                     "original_order_name": {
@@ -1087,6 +1096,15 @@
                         "type": "string",
                         "bsonType": [
                             "string"
+                        ],
+                        "enum": [
+                            "add_to_order",
+                            "inspire_me",
+                            "ship_direct",
+                            "second_appointment",
+                            "new_appointment",
+                            "old_initiated_sale",
+                            "harper_try"
                         ]
                     },
                     "original_order_name": {
@@ -1654,6 +1672,15 @@
                         "type": "string",
                         "bsonType": [
                             "string"
+                        ],
+                        "enum": [
+                            "add_to_order",
+                            "inspire_me",
+                            "ship_direct",
+                            "second_appointment",
+                            "new_appointment",
+                            "old_initiated_sale",
+                            "harper_try"
                         ]
                     },
                     "original_order_name": {

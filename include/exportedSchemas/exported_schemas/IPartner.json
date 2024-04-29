@@ -2175,7 +2175,8 @@
     "required": [
         "reference",
         "name",
-        "partner_platform"
+        "partner_platform",
+        "timezone"
     ],
     "additionalProperties": false
 }
