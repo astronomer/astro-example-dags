@@ -17,8 +17,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_reconcilliation_w
         CURRENT_DATE as current_date,
         (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') as trial_period_reconciliation_due_at,
         (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') - INTERVAL '2 days' as trial_period_reconciliation_warning_due_at
-    FROM public.clean__order__summary o
-    LEFT JOIN public.partner p ON o.partner_id = p.id
+    FROM {{ schema }}.clean__order__summary o
+    LEFT JOIN {{ schema }}.partner p ON o.partner_id = p.id
     WHERE
         o.trial_period_actually_ended_at IS NOT NULL
         AND o.num_return_requested_by_customer > 0
