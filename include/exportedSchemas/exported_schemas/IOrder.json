@@ -637,6 +637,13 @@
                             "string"
                         ]
                     },
+                    "track17_courier_code": {
+                        "type": "number",
+                        "bsonType": [
+                            "int"
+                        ],
+                        "tsType": "number | null"
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -1218,6 +1225,13 @@
                             "string"
                         ]
                     },
+                    "track17_courier_code": {
+                        "type": "number",
+                        "bsonType": [
+                            "int"
+                        ],
+                        "tsType": "number | null"
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -1792,6 +1806,13 @@
                         "bsonType": [
                             "string"
                         ]
+                    },
+                    "track17_courier_code": {
+                        "type": "number",
+                        "bsonType": [
+                            "int"
+                        ],
+                        "tsType": "number | null"
                     },
                     "__v": {
                         "bsonType": [
@@ -2381,6 +2402,13 @@
                         "bsonType": [
                             "string"
                         ]
+                    },
+                    "track17_courier_code": {
+                        "type": "number",
+                        "bsonType": [
+                            "int"
+                        ],
+                        "tsType": "number | null"
                     },
                     "__v": {
                         "bsonType": [
@@ -4358,6 +4386,13 @@
                     "bsonType": [
                         "string"
                     ]
+                },
+                "track17_courier_code": {
+                    "type": "number",
+                    "bsonType": [
+                        "int"
+                    ],
+                    "tsType": "number | null"
                 },
                 "__v": {
                     "bsonType": [

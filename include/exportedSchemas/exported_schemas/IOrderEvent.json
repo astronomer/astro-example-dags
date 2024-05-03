@@ -32,6 +32,7 @@
             "enum": [
                 "event",
                 "note",
+                "function",
                 ""
             ]
         },
@@ -84,7 +85,8 @@
                         "email",
                         "sms",
                         "data",
-                        "note"
+                        "note",
+                        "function"
                     ]
                 },
                 "data": {
