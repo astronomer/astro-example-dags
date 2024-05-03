@@ -153,6 +153,13 @@
             "type": "object",
             "bsonType": "object",
             "properties": {
+                "_id": {
+                    "type": "string",
+                    "bsonType": [
+                        "objectId"
+                    ],
+                    "tsType": "MongooseObjectId"
+                },
                 "name": {
                     "type": "string",
                     "bsonType": [
@@ -1745,6 +1752,13 @@
             "type": "object",
             "bsonType": "object",
             "properties": {
+                "_id": {
+                    "type": "string",
+                    "bsonType": [
+                        "objectId"
+                    ],
+                    "tsType": "MongooseObjectId"
+                },
                 "name": {
                     "type": "string",
                     "bsonType": [
@@ -1951,6 +1965,13 @@
                 "type": "object",
                 "bsonType": "object",
                 "properties": {
+                    "_id": {
+                        "type": "string",
+                        "bsonType": [
+                            "objectId"
+                        ],
+                        "tsType": "MongooseObjectId"
+                    },
                     "name": {
                         "type": "string",
                         "bsonType": [
