@@ -1,0 +1,17 @@
+name: Astronomer CI - Update Astro Runtime Version
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: "0 16 * * *" # Once a day at noon ET
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Commit all changed files back to the repository
+      - uses: stefanzweifel/git-auto-commit-action@v5
