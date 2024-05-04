@@ -13,5 +13,25 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      # Commit all changed files back to the repository
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Get latest Astronomer Runtime version
+        id: get_latest_runtime
+        run: |
+          # Fetch the latest runtime version from updates.astronomer.io
+          response=$(curl -s https://updates.astronomer.io/astronomer-runtime)
+          
+          # Extract the latest runtime version using jq
+          latest_version=$(echo $response | jq -r '.runtimeVersions | keys | sort_by(. | split(".") | map(tonumber)) | last')
+          
+          # Set the latest runtime version as an output
+          echo "::set-output name=latest_runtime::$latest_version"
+
+      - name: Update Dockerfile with latest runtime version
+        run: |
+          # Get the latest runtime version from the previous step
+          latest_runtime=${{ steps.get_latest_runtime.outputs.latest_runtime }}
+          
+          # Update the Dockerfile with the latest runtime version
+          sed -i "s/FROM quay.io\/astronomer\/astro-runtime:.*/FROM quay.io\/astronomer\/astro-runtime:$latest_runtime/" Dockerfile
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
