@@ -6,7 +6,7 @@
 {% endmacro %}
 
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.order__status_events AS
+CREATE OR REPLACE VIEW {{ schema }}.clean__order__status_events AS
 SELECT order_id,
     {{ generate_sql_parts(event_name_ids) }}
 FROM orderevents

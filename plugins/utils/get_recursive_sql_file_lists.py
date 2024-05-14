@@ -2,6 +2,8 @@ import os
 import re
 import hashlib
 
+from airflow.exceptions import AirflowException
+
 # Define regex pattern to match different SQL types
 pattern = r"""
 CREATE\s+MATERIALIZED VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
@@ -42,6 +44,10 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
                     entity_name = next(filter(None, match[1:]), None)  # Filter out empty matches and get the name
                     if entity_name:
                         print(f"Matched {entity_name}")
+                        if f"{filename_without_extension}" != entity_name:
+                            raise AirflowException(
+                                f"SQL filename {full_path} doesn't match its Entity Name {entity_name}"  # noqa
+                            )
                         current_level_entities.append(entity_name)
                     else:
                         print(f"Failed to match for {filename_without_extension}")
