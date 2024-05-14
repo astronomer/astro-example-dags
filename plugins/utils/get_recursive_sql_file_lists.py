@@ -5,17 +5,27 @@ import hashlib
 from airflow.exceptions import AirflowException
 
 # Define regex pattern to match different SQL types
-pattern = r"""
-CREATE\s+MATERIALIZED VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+# pattern = r"""
+# CREATE\s+MATERIALIZED VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+# CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
+# CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+# CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
+# """
+
+pattern = re.compile(
+    r"""
+CREATE\s+MATERIALIZED\s+VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+{{\s*schema\s*}}\.(\w+)
-"""
+CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
+""",
+    re.IGNORECASE | re.VERBOSE,
+)
 
 
 def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", add_table_columns_to_context=[]):
     grouped_file_info = []
-    print("Current Working Directory:", os.getcwd())
+    print(f"Current Directory: {directory}")
 
     # Extract the last directory name from the root directory path
     last_dir_name = os.path.basename(os.path.normpath(directory))
@@ -39,9 +49,10 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
                 modified_filepath = os.sep.join(path_parts[last_dir_index:])
                 sql_string = content.decode("utf-8")
                 # Extract entity names from the SQL string using the pattern
-                matches = re.findall(pattern, sql_string, re.IGNORECASE)
+                matches = re.findall(pattern, sql_string)
+                print(matches)
                 for match in matches:
-                    entity_name = next(filter(None, match[1:]), None)  # Filter out empty matches and get the name
+                    entity_name = next((m for m in match if m), None)
                     if entity_name:
                         print(f"Matched {entity_name}")
                         if f"{filename_without_extension}" != entity_name:

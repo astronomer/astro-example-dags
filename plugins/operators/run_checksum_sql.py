@@ -27,7 +27,7 @@ class RunChecksumSQLPostgresOperator(GetColumnsFromTableMixin, BaseOperator):
     :type checksum: str
     :param sql: sql
     :type sql: str
-    :param sql_type: type of sql [report|function|index|dimension|user|cleanser]
+    :param sql_type: type of sql [reports|functions|indexes|dimensions|users|cleansers]
     :type sql_type: str
     :param json_schema_file_dir: Directory of Exported Json Schema Files
     :type json_schema_file_dir: Optional[str]
@@ -171,27 +171,27 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             return False
 
     def _validate_sql_convention(self, sql):
-        if self.sql_type == "index":
+        if self.sql_type == "indexes":
             return
-        elif self.sql_type == "user":
+        elif self.sql_type == "users":
             return
         pattern = ""
         expected_prefix = ""
-        if self.sql_type == "report":
+        if self.sql_type == "reports":
             pattern = r"CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "rep__"
-        elif self.sql_type == "cleanser":
+        elif self.sql_type == "cleansers":
             pattern = r"CREATE VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "clean__"
         elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "fact__"
-        elif self.sql_type == "dimension":
+        elif self.sql_type == "dimensions":
             pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "dim__"
-        elif self.sql_type == "function":  # This is the new case for SQL functions
-            pattern = r"CREATE (OR REPLACE )?FUNCTION {{ schema }}\.(\w+)"
-            expected_prefix = "fn__"
+        elif self.sql_type == "functions":  # This is the new case for SQL functions
+            pattern = r"CREATE OR REPLACE FUNCTION {{ schema }}\.(\w+)"
+            expected_prefix = ""
 
         if pattern:
             matches = re.findall(pattern, sql, re.IGNORECASE)
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                 view_or_table_name = match[-1]  # This gets the last element of the match tuple
                 if not view_or_table_name.startswith(expected_prefix):
                     raise AirflowException(
-                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for report type '{self.sql_type}'."  # noqa
+                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for Entity type '{self.sql_type}'."  # noqa
                     )
 
     def _add_table_columns_to_context(self, conn):
