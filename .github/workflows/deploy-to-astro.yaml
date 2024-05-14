@@ -13,7 +13,7 @@ on:
         type: string
   push:
     branches:
-      - main
+      - kmt-airflow-handson-lab
 
 env:
   ASTRO_API_TOKEN: ${{ inputs.apiToken || secrets.ASTRO_API_TOKEN }}
