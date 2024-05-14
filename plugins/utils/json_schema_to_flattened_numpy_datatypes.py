@@ -73,7 +73,7 @@ def map_bson_type_to_dtype(bson_type, ts_type=None, comment=None):
         "array": "object",  # BSON array maps to pandas object (for mixed types)
         "binData": "object",  # BSON binary data maps to pandas object (for arbitrary binary data)
         "objectId": "string",  # BSON ObjectId maps to pandas object (for unique object identifiers)
-        "bool": "bool",  # BSON boolean maps to pandas/numpy boolean
+        "bool": "Int32",  # BSON boolean maps to pandas/numpy boolean
         # "date": "datetime64[ns]",  # BSON date maps to pandas datetime64[ns]
         "int": "Int32",  # BSON 32-bit integer maps to pandas/numpy int32
         "timestamp": "datetime64[ns]",  # BSON timestamp maps to pandas datetime64[ns] (with note on precision)

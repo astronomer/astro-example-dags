@@ -47,7 +47,11 @@ wait_for_indexes = ExternalTaskSensor(
 reports = "./sql/reports"
 reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
 
-reports_sql_files = get_recursive_sql_file_lists(reports_abspath, subdir="reports")
+reports_sql_files = get_recursive_sql_file_lists(
+    reports_abspath,
+    subdir="reports",
+    add_table_columns_to_context=["dim__time", "clean__order__item__summary"],
+)
 
 last_report_task = wait_for_indexes
 for group_index, group_list in enumerate(reports_sql_files, start=1):
@@ -69,7 +73,8 @@ for group_index, group_list in enumerate(reports_sql_files, start=1):
             sql=config["sql"],
             sql_type="report",
             json_schema_file_dir=exported_schemas_abspath,
-            add_table_columns_to_context=["dim__time"],
+            # add_table_columns_to_context=["dim__time", "clean__order__item__summary"],
+            add_table_columns_to_context=config["add_table_columns_to_context"],
             dag=dag,
         )
         # Add the current task to the array

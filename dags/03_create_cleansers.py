@@ -52,11 +52,15 @@ cleansers_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), cle
 exported_schemas_path = "../include/exportedSchemas/"
 exported_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), exported_schemas_path)
 
-sql_files = get_recursive_sql_file_lists(cleansers_abspath, subdir="cleansers")
+sql_files = get_recursive_sql_file_lists(
+    cleansers_abspath, subdir="cleansers", add_table_columns_to_context=["dim__time"]
+)
 
 wait_for_financials >> wait_for_dimensions
 
 last_index_task = wait_for_dimensions
+
+
 for group_index, group_list in enumerate(sql_files, start=1):
     index_task = DummyOperator(task_id=f"cleansers_{group_index}", dag=dag)
     index_task_complete = DummyOperator(task_id=f"cleansers_{group_index}_complete", dag=dag)
@@ -76,7 +80,7 @@ for group_index, group_list in enumerate(sql_files, start=1):
             sql=config["sql"],
             sql_type="cleanser",
             json_schema_file_dir=exported_schemas_abspath,
-            add_table_columns_to_context=["dim__time"],
+            add_table_columns_to_context=config["add_table_columns_to_context"],
             dag=dag,
         )
         # Add the current task to the array

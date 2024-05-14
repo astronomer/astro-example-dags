@@ -107,8 +107,11 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
 
                     self.log.info(self.sql_template)
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
-                    if not self.sql.isspace():
-
+                    self.log.info(f"SQL='{self.sql}'")
+                    self.log.info(f"isspace='{self.sql.isspace()}'")
+                    if self.sql.isspace():
+                        self.log.info("isspace is true")
+                    if not (self.sql.isspace() or self.sql == ""):
                         # Validate the SQL to make sure it follows our naming convention
                         self._validate_sql_convention(self.sql)
 
@@ -175,19 +178,19 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         pattern = ""
         expected_prefix = ""
         if self.sql_type == "report":
-            pattern = r"CREATE (MATERIALIZED )?VIEW IF NOT EXISTS (\w+)\.(\w+)"
+            pattern = r"CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "rep__"
         elif self.sql_type == "cleanser":
-            pattern = r"CREATE VIEW IF NOT EXISTS (\w+)\.(\w+)"
+            pattern = r"CREATE VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "clean__"
         elif self.sql_type == "fact":
-            pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
+            pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "fact__"
         elif self.sql_type == "dimension":
-            pattern = r"CREATE TABLE IF NOT EXISTS (\w+)\.(\w+)"
+            pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "dim__"
         elif self.sql_type == "function":  # This is the new case for SQL functions
-            pattern = r"CREATE (OR REPLACE )?FUNCTION (\w+)\.(\w+)"
+            pattern = r"CREATE (OR REPLACE )?FUNCTION {{ schema }}\.(\w+)"
             expected_prefix = "fn__"
 
         if pattern:
@@ -201,6 +204,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     )
 
     def _add_table_columns_to_context(self, conn):
+        self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context}")
         for table in self.add_table_columns_to_context:
             self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
 

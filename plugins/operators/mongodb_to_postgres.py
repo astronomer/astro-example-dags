@@ -312,10 +312,15 @@ END $$;
             is_list_column = df[column].apply(lambda x: isinstance(x, list)).any()
             is_objectid_column = df[column].apply(lambda x: isinstance(x, ObjectId)).any()
             is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
+            is_bool_column = df[column].apply(lambda x: isinstance(x, bool)).any()
 
             if is_objectid_column:
                 # print("Handling ObjectId Top level column")
                 column_df = df[column].apply(str).to_frame(name=column)
+            elif is_bool_column:
+                # print("Handling bool Top level column")
+                column_df = df[column].apply(lambda x: 1 if str(x).lower() == "true" else 0).to_frame(name=column)
+
             elif is_date_column:
                 # print("Handling datetime Top level column")
                 column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
@@ -427,6 +432,10 @@ END $$;
             column = column.lower()
             print(f"column lower_name = {column}")
             if column in insert_df.columns:
+                # Set the default values we want for where column is undef
+                if insert_df[column].dtype == "bool":
+                    self.log.info(f"Filling NA for bool for column {column} {insert_df['id']}, {insert_df[column]}")
+                    insert_df[column] = insert_df[column].fillna(0)
                 print(f"aligning column {column} as type {dtype}")
                 insert_df[column] = insert_df[column].astype(dtype)
 
