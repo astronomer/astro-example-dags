@@ -20,5 +20,7 @@ CREATE OR REPLACE VIEW {{ schema }}.clean__order__summary AS
         dim__time tar ON o.trial_period_actually_reconciled_at::date = tar.dim_date_id
     LEFT JOIN
         clean__order__item__summary clean__ois ON clean__ois.order_id = o.id
+    LEFT JOIN
+        clean__order__status_events ose ON ose.order_id = o.id
     ;
 {% endif %}
