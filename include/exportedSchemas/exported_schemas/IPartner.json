@@ -2201,6 +2201,12 @@
                 "bool"
             ]
         },
+        "partner_send_email_receipt": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"
