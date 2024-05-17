@@ -73,9 +73,9 @@ class HarperSlackSuccessNotifier(SlackNotifier):
                 {
                     "type": "context",
                     "elements": [
-                        {"type": "mrkdwn", "text": f"System: {device_name}"},
                         {"type": "mrkdwn", "text": "Dag: {{ dag.dag_id }}"},
                         {"type": "mrkdwn", "text": "DagRun: {{ run_id }}"},
+                        {"type": "mrkdwn", "text": f"System: {device_name}"},
                     ],
                 },
             ],
@@ -138,7 +138,7 @@ class HarperSlackFailureNotifier(SlackNotifier):
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": ":red_circle: Dag Run Failed",
+                        "text": ":red_circle: {{ dag.dag_id }} Failed",
                         "emoji": True,
                     },
                 },
@@ -150,37 +150,21 @@ class HarperSlackFailureNotifier(SlackNotifier):
                     },
                 },
                 {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "{{ exception }}",
+                    },
+                },
+                {
                     "type": "context",
                     "elements": [
-                        {"type": "mrkdwn", "text": f"System: {device_name}"},
                         {"type": "mrkdwn", "text": "Dag: {{ dag.dag_id }}"},
                         {"type": "mrkdwn", "text": "DagRun: {{ run_id }}"},
+                        {"type": "mrkdwn", "text": f"System: {device_name}"},
+                        {"type": "mrkdwn", "text": "<{{ task_instance.log_url }}|Log>"},
                     ],
                 },
-                # {
-                #     "type": "header",
-                #     "text": {
-                #         "type": "plain_text",
-                #         "text": ":red_circle: Task {{ task_instance.id }} Failed",
-                #         "emoji": True,
-                #     },
-                # },
-                # {
-                #     "type": "section",
-                #     "text": {
-                #         "type": "mrkdwn",
-                #         "text": "{{ exception | truncate(3000) }}",
-                #     },
-                # },
-                # {
-                #     "type": "context",
-                #     "elements": [
-                #         {"type": "mrkdwn", "text": f"System: { device_name }"},
-                #         {"type": "mrkdwn", "text": "<{{ task_instance.log_url }}|Log>"},
-                #         {"type": "mrkdwn", "text": "Dag: {{ dag.id }}"},
-                #         {"type": "mrkdwn", "text": "DagRun: {{ run_id }}"},
-                #     ],
-                # },
             ],
             base_url=base_url,
             proxy=proxy,
