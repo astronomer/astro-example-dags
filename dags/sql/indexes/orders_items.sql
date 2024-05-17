@@ -1,3 +1,12 @@
 CREATE INDEX IF NOT EXISTS raw__order_items_order_id_idx ON {{ schema }}.raw__order__items (order_id);
 CREATE INDEX IF NOT EXISTS raw__order_items_name_idx ON {{ schema }}.raw__order__items (name);
 CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (order_name);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (order_type);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (fulfilled);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (is_initiated_sale);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (original_order_name);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (preorder);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (purchased);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (returned);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (received_by_warehouse);
+CREATE INDEX IF NOT EXISTS raw__order_items_order_name_idx ON {{ schema }}.raw__order__items (commission__commission_type);
