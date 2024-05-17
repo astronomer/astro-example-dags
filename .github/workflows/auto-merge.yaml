@@ -1,0 +1,34 @@
+name: Auto Merge to the Lab Branch
+
+on:
+  push:
+    branches:
+      - feature/*
+      - feat/*
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Common Branch
+        uses: actions/checkout@v2
+        with:
+          ref: kmt-airflow-handson-lab
+          persist-credentials: false
+
+      - name: Merge Feature Branch into kmt-airflow-handson-lab
+        run: |
+          git config --local user.name github-actions
+          git config --local user.email github-actions@github.com
+          git fetch origin ${{ github.ref_name }}:${{ github.ref_name }}
+          git merge --no-edit --allow-unrelated-histories ${{ github.ref_name }}
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PIPELINE_AUTO_MERGE_TOKEN }}
+          branch: kmt-airflow-handson-lab
+
+        
