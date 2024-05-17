@@ -6,6 +6,7 @@ from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
 from plugins.utils.found_records_to_process import found_records_to_process
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.ensure_schema_exists import EnsurePostgresSchemaExistsOperator
 from plugins.operators.ensure_missing_columns import EnsureMissingPostgresColumnsOperator
@@ -24,6 +25,7 @@ default_args = {
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
+    "on_failure_callback": [send_harper_failure_notification()],
 }
 
 

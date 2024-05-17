@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.load_sheet_configs import load_sheet_configs
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.postgres_to_google_sheet_operator import PostgresToGoogleSheetOperator
 
@@ -15,6 +16,7 @@ default_args = {
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
+    "on_failure_callback": [send_harper_failure_notification()],
 }
 
 

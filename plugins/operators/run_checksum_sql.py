@@ -203,10 +203,48 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                         f"{view_or_table_name} does not start with '{expected_prefix}' as required for Entity type '{self.sql_type}'."  # noqa
                     )
 
+    # def _add_table_columns_to_context(self, conn):
+    #     self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context}")
+    #     for table in self.add_table_columns_to_context:
+    #         self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
+
     def _add_table_columns_to_context(self, conn):
-        self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context}")
+        self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context} for {self.sql_type}")
+
+        if self.sql_type == "reports":
+            # Add all the clean__* views
+            # Query to find tables, views, and materialized views starting with 'clean__'
+            # remember %% escapes the % Bloody crazy syntax.
+            query = f"""
+                SELECT n.nspname AS schema_name,
+                       c.relname AS object_name,
+                       CASE c.relkind
+                           WHEN 'r' THEN 'table'
+                           WHEN 'v' THEN 'view'
+                           WHEN 'm' THEN 'materialized view'
+                           ELSE 'other'
+                       END AS object_type
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relname LIKE 'clean__%%' AND c.relkind IN ('r', 'v', 'm')
+                AND n.nspname = '{self.schema}';
+            """
+
+            # Execute the query
+            self.log.info(f"_add_table_columns_to_context: Loading cleansers {query}")
+            result = conn.execute(query)
+            clean_objects = result.fetchall()
+
+            # Add 'clean__' tables to context
+            for schema_name, object_name, object_type in clean_objects:
+                # You can customize the storage format as needed
+                key = f"{object_name}_columns"
+                self.context[key] = self.get_columns_from_table(conn, schema_name, object_name)
+                self.log.info(f"Added {object_type} '{object_name}' from schema '{schema_name}' to context")
+
+        # Process each table from the initial list
         for table in self.add_table_columns_to_context:
-            self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
+            self.context[f"{table}_columns"] = self.get_columns_from_table(conn, self.schema, table)
 
     def _get_event_name_ids(self):
 

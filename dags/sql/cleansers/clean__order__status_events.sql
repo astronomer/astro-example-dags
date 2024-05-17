@@ -1,7 +1,7 @@
 {% macro generate_sql_parts(event_names) %}
     {% for event_name in event_names %}
         {% if not loop.first %}, {% endif %}
-        MAX(CASE WHEN event_name_id = '{{ event_name }}' THEN createdat ELSE NULL END) AS "{{ event_name }}_at"
+        MAX(CASE WHEN event_name_id = '{{ event_name }}' THEN createdat ELSE NULL END) AS "{{ event_name | lower }}_at"
     {% endfor %}
 {% endmacro %}
 
