@@ -3,7 +3,6 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__daily_reconcilliation_warning
 {% endif %}
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_reconcilliation_warnings AS
     SELECT
-        o.id,
         o.order_name,
         o.order_status,
         o.halo_link,
