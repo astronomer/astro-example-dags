@@ -2153,8 +2153,7 @@
                     "type": "string",
                     "bsonType": [
                         "string"
-                    ],
-                    "default": "+443339398123"
+                    ]
                 },
                 "email": {
                     "type": "string",
