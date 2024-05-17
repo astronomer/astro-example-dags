@@ -144,25 +144,36 @@ class HarperSlackFailureNotifier(SlackNotifier):
                 },
                 {
                     "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "{{ run_id }}",
-                    },
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "{{ run_id }}",
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "{{ task.task_id }}",
+                        },
+                    ],
                 },
+                {"type": "divider"},
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "{{ exception }}",
+                        "text": "```{{ exception }}```",
                     },
                 },
+                {"type": "divider"},
                 {
                     "type": "context",
                     "elements": [
                         {"type": "mrkdwn", "text": "Dag: {{ dag.dag_id }}"},
                         {"type": "mrkdwn", "text": "DagRun: {{ run_id }}"},
                         {"type": "mrkdwn", "text": f"System: {device_name}"},
-                        {"type": "mrkdwn", "text": "<{{ task_instance.log_url }}|Log>"},
+                        {
+                            "type": "mrkdwn",
+                            "text": "<{{ task_instance.log_url }}| View Log>",
+                        },
                     ],
                 },
             ],
