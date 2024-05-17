@@ -6,6 +6,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
 
@@ -13,12 +14,10 @@ default_args = {
     "owner": "airflow",
     "start_date": datetime(2019, 7, 14),
     "schedule_interval": "@daily",
-    # "email": ["martin@harperconcierge.com"],
-    # "email_on_failure": True,
-    # "email_on_retry": False,
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
+    "on_failure_callback": [send_harper_failure_notification()],
 }
 
 

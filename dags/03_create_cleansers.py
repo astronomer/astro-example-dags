@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.run_dynamic_sql_task import run_dynamic_sql_task
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 default_args = {
     "owner": "airflow",
@@ -12,6 +13,7 @@ default_args = {
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
+    "on_failure_callback": [send_harper_failure_notification()],
 }
 
 

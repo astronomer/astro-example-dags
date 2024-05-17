@@ -4,14 +4,12 @@ from airflow import DAG
 from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.run_dynamic_sql_task import run_dynamic_sql_task
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 default_args = {
     "owner": "airflow",
     "start_date": datetime(2019, 7, 14),
     "schedule_interval": "@daily",
-    # "email": ["martin@harperconcierge.com"],
-    # "email_on_failure": True,
-    # "email_on_retry": False,
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
@@ -34,6 +32,7 @@ wait_for_task = ExternalTaskSensor(
     external_dag_id="04_create_indexes_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
+    on_failure_callback=[send_harper_failure_notification()],
     dag=dag,
 )
 

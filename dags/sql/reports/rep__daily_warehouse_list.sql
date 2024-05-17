@@ -21,7 +21,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_warehouse_list AS
     LEFT JOIN useraccount ua ON ua.id = o.style_concierge
     LEFT JOIN clean__order__item__summary r_ois ON r_ois.order_id = o.id
     WHERE o.appointment__date::date = CURRENT_DATE
-      AND o.order_type NOT IN ('add_to_order', 'ship_direct', 'harper_try')
+      AND o.order_type NOT IN ('ship_direct', 'harper_try')
 WITH NO DATA;
 
 {% if is_modified %}

@@ -3,6 +3,7 @@ import os
 from airflow.operators.dummy import DummyOperator
 
 from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
+from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
 
@@ -41,6 +42,7 @@ def run_dynamic_sql_task(dag, wait_for_task, sql_type, add_table_columns_to_cont
                 sql_type=sql_type,
                 json_schema_file_dir=exported_schemas_abspath,
                 add_table_columns_to_context=config["add_table_columns_to_context"],
+                on_failure_callback=[send_harper_failure_notification()],
                 dag=dag,
             )
             # Add the current task to the array
