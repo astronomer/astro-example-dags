@@ -3,14 +3,16 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__daily_reconcilliation_warning
 {% endif %}
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_reconcilliation_warnings AS
     SELECT
+        o.id,
         o.order_name,
+        o.brand_name,
         o.order_status,
         o.halo_link,
-        o.delivery_tracking_urls,
+        o.itemsummary__delivery_tracking_urls as delivery_tracking_urls,
         p.trial_reconciliation_period,
-        o.num_return_requested_by_customer,
-        o.num_return_sent_by_customer,
-        o.num_received_by_partner_warehouse,
+        o.itemsummary__num_return_requested_by_customer,
+        o.itemsummary__num_return_sent_by_customer,
+        o.itemsummary__num_received_by_partner_warehouse,
         o.return_status,
         o.trial_period_actually_ended_at,
         CURRENT_DATE as current_date,
@@ -20,8 +22,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__daily_reconcilliation_w
     LEFT JOIN {{ schema }}.partner p ON o.partner_id = p.id
     WHERE
         o.trial_period_actually_ended_at IS NOT NULL
-        AND o.num_return_requested_by_customer > 0
-        AND o.num_received_by_partner_warehouse=0
+        AND o.itemsummary__num_return_requested_by_customer > 0
+        AND o.itemsummary__num_received_by_partner_warehouse=0
         AND CURRENT_DATE >= (o.trial_period_actually_ended_at::date + p.trial_reconciliation_period * INTERVAL '1 day') - INTERVAL '4 days'
 
     ORDER BY o.trial_period_actually_ended_at DESC

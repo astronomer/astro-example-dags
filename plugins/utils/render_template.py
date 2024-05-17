@@ -1,6 +1,7 @@
 from jinja2 import BaseLoader, Environment
 
 from plugins.utils.prefix_columns import prefix_columns
+from plugins.utils.unprefix_columns import unprefix_columns
 
 
 def render_template(template, context, extra_context={}):
@@ -13,6 +14,7 @@ def render_template(template, context, extra_context={}):
     pprint(combined_context)
     env = Environment(loader=BaseLoader())
     env.filters["prefix_columns"] = prefix_columns
+    env.filters["unprefix_columns"] = unprefix_columns
 
     # Manually render the template with the combined context
     # jinja_template = Template(template)

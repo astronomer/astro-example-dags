@@ -7,7 +7,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__zettle_and_transactionl
         t.*
     FROM {{ schema }}.clean__zettle__transaction__summary z
     FULL OUTER JOIN {{ schema }}.clean__transaction__summary t ON t.payment_reference_id = z.zettle_purchase_id AND z.zettle_originatortransactiontype='PAYMENT'
-    WHERE (z.zettle_purchase_created_dim_date >= '2023-08-01' OR t.payment_at_dim_date >= '2023-08-01' )
+    WHERE (z.zettle_purchase_created_dim_date >= '2023-08-01' OR t.payment_at__dim_date >= '2023-08-01' )
     AND z.zettle_originatortransactiontype='PAYMENT'
 
 WITH NO DATA;

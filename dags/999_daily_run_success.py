@@ -53,4 +53,6 @@ wait_for_task = ExternalTaskSensor(
     dag=dag,
 )
 
-user_task = DummyOperator(task_id="all_dagruns_completed", dag=dag)
+dags_completed = DummyOperator(task_id="all_dagruns_completed", dag=dag)
+
+wait_for_task >> dags_completed
