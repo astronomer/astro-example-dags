@@ -18,9 +18,9 @@ except KeyError:
 
 sql_type = "reports"
 if device_name != "Production":
-    external_dag_id = f"05_create_{sql_type}_dag"
+    external_dag_id = f"55_create_{sql_type}_dag"
 else:
-    external_dag_id = "06_create_google_sheets_dag"
+    external_dag_id = "60_create_google_sheets_dag"
 
 default_args = {
     "owner": "airflow",

@@ -16,11 +16,10 @@ default_args = {
     "on_failure_callback": [send_harper_failure_notification()],
 }
 
-
-sql_type = "functions"
+sql_type = "indexes"
 
 dag = DAG(
-    "02_create_functions_dag",
+    f"45_create_{sql_type}_dag",
     catchup=False,
     default_args=default_args,
     max_active_runs=1,  # This ensures sequential execution
@@ -28,11 +27,15 @@ dag = DAG(
 )
 
 wait_for_task = ExternalTaskSensor(
-    task_id="wait_for_migrations_to_complete",
-    external_dag_id="01_mongo_migrations_dag",  # The ID of the DAG you're waiting for
+    task_id="wait_for_functions_to_complete",
+    external_dag_id="40_create_functions_dag",  # The ID of the DAG you're waiting for
     external_task_id=None,  # Set to None to wait for the entire DAG to complete
     allowed_states=["success"],  # You might need to customize this part
     dag=dag,
 )
 
-run_dynamic_sql_task(dag, wait_for_task, sql_type)
+run_dynamic_sql_task(
+    dag,
+    wait_for_task,
+    sql_type=sql_type,
+)
