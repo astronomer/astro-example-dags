@@ -517,6 +517,10 @@ END $$;
             else:
                 if "$gt" in aggregation_query[0]["$match"]["updatedAt"]:
                     del aggregation_query[0]["$match"]["updatedAt"]["$gt"]
+                # in theory if we're importing data for the very first time, then
+                # We should include all records...
+                if "$lte" in aggregation_query[0]["$match"]["updatedAt"]:
+                    del aggregation_query[0]["$match"]["updatedAt"]["$lte"]
 
             if (
                 "$gt" not in aggregation_query[0]["$match"]["updatedAt"]
@@ -524,6 +528,7 @@ END $$;
             ):
                 aggregation_query[0]["$match"] = {}
 
+        self.log.info(f"Actual aggregation_query ${aggregation_query}")
         return aggregation_query
 
     def _convert_fieldname_to_flattened_name(self, field_name):
