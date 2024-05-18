@@ -68,11 +68,19 @@ class PostgresToGoogleSheetOperator(BaseOperator):
                     except (TypeError, AttributeError):
                         # If conversion fails, it's not a date/datetime, ignore or log if needed
                         self.log.info(f"Column {col} contains non-datetime data that was not converted.")
+                elif dtype.kind in (
+                    "i",
+                    "u",
+                    "f",
+                ):  # 'i' for integer, 'u' for unsigned integer, 'f' for float
+                    df[col] = df[col].apply(lambda x: x if pd.notnull(x) else None)
 
             self.log.info(f"Number of rows in DataFrame after processing: {len(df)}")
 
             # Convert DataFrame to a list of lists (Google Sheets format)
-            data = [df.columns.tolist()] + df.values.tolist()
+            data = [df.columns.tolist()] + df.fillna("").values.tolist()
+            # Stack overflow answer suggests to_numpy is useful. But stashing this as so far all works....
+            # df.fillna("").to_numpy().tolist()
 
             # Initialize Google Sheets hook
             sheets_hook = GSheetsHook(gcp_conn_id=self.google_conn_id)
@@ -99,6 +107,7 @@ class PostgresToGoogleSheetOperator(BaseOperator):
                 else:
                     raise
 
+            print(data)
             # Write data to the sheet
             sheets_hook.update_values(
                 spreadsheet_id=self.spreadsheet_id,
