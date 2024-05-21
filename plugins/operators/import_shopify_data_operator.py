@@ -190,7 +190,7 @@ END $$;
             key=self.last_successful_dagrun_xcom_key,
             value=context["data_interval_end"].to_iso8601_string(),
         )
-        self.log.info("Zettle Charges written to Datalake successfully.")
+        self.log.info("Shopify Data Written to Datalake successfully.")
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
