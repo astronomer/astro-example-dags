@@ -1,20 +1,15 @@
-import os
 import re
 import json
-import logging
 from pprint import pprint  # noqa
-from typing import List, Optional
-from datetime import timedelta
+from urllib.parse import urlencode
 
-import pandas as pd
 import requests
+from pandas import DataFrame
 from sqlalchemy import create_engine
-from airflow.models import DAG, BaseOperator
+from airflow.models import XCom, BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
-from airflow.utils.dates import days_ago
-from airflow.models.connection import Connection
-from airflow.operators.python_operator import PythonOperator
+from airflow.utils.session import provide_session
 
 from plugins.utils.render_template import render_template
 
@@ -31,6 +26,8 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
     :type schema: str
     :param destination_schema: Schema name
     :type destination_schema: str
+    :param destination_table: Table name
+    :type destination_table: st
     :param partner_ref: partner reference
     :type partner_ref: str
     """
@@ -43,6 +40,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         postgres_conn_id: str = "postgres_conn_id",
         schema: str,
         destination_schema: str,
+        destination_table: str,
         partner_ref: str,
         **kwargs,
     ) -> None:
@@ -51,10 +49,17 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.postgres_conn_id = postgres_conn_id
         self.schema = schema
         self.destination_schema = destination_schema
+        self.destination_table = destination_table
         self.partner_ref = partner_ref
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
+        self.discard_fields = []
 
-        self.context = {"schema": schema, "destination_schema": destination_schema, "partner_ref": partner_ref}
+        self.context = {
+            "schema": schema,
+            "destination_schema": destination_schema,
+            "destination_table": destination_table,
+            "partner_ref": partner_ref,
+        }
         self.get_partner_config_template = f"""
 SELECT
     reference,
@@ -81,41 +86,110 @@ END $$;
         self.log.info("Initialised ImportShopifyPartnerDataOperator")
 
     def execute(self, context):
-        try:
-            hook = BaseHook.get_hook(self.postgres_conn_id)
-            engine = self.get_postgres_sqlalchemy_engine(hook)
-            ds = context["ds"]
-            run_id = context["run_id"]
-            last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
-            extra_context = {
-                **context,
-                **self.context,
-                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
+        hook = BaseHook.get_hook(self.postgres_conn_id)
+        engine = self.get_postgres_sqlalchemy_engine(hook)
+        ds = context["ds"]
+        run_id = context["run_id"]
+        last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
+
+        extra_context = {
+            **context,
+            **self.context,
+            f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
+        }
+
+        self.delete_sql = render_template(self.delete_template, context=extra_context)
+
+        self.log.info(
+            f"Executing ImportShopifyPartnerDataOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
+        )
+
+        engine = self.get_postgres_sqlalchemy_engine(hook)
+        with engine.connect() as conn:
+
+            self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+            conn.execute(self.delete_sql)
+
+            lte = context["data_interval_end"].to_iso8601_string()
+            total_docs_processed = 0
+            limit = 250
+
+            # Base URL path
+            base_url = f"{self.base_url}/admin/api/2024-04/orders.json"
+            # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
+
+            headers = {"X-Shopify-Access-Token": self.api_access_token}
+            # Dictionary of query parameters
+            query_params = {
+                "created_at_min": start_param,
+                "created_at_max": lte,
+                "limit": limit,
             }
+            self.log.info("Fetching transactions for %s", query_params)
 
-            with engine.connect() as conn:
-                transaction = conn.begin()
-                try:
-                    self._get_partner_config(conn, context)
-                    self.fetch_all_orders(limit, since_date)
-                    total_docs_process = 0
+            url = f"{base_url}?{urlencode(query_params)}"
+            while url:
+                self.log.info("Fetching orders from URL: %s", url)
+                response = requests.get(url, headers=headers)
+                if response.status_code != 200:
+                    error_message = response.json()
+                    self.log.error("Error fetching orders: %s", error_message)
+                    raise AirflowException(f"Error {error_message} {response}")
 
-                    transaction.commit()
-                except Exception as e:
-                    self.log.error("Error during database operation: %s", e)
-                    transaction.rollback()
-                    raise AirflowException(f"Database operation failed Rolling Back: {e}")
+                url = self.get_next_page_url(response)
+                data = response.json()
+                orders = data.get("orders", [])
+                records = [order for order in orders if self._check_province_code(order)]
 
-                context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
+                # print(response.json())
 
-            context["ti"].xcom_push(
-                key=self.last_successful_dagrun_xcom_key,
-                value=context["data_interval_end"].to_iso8601_string(),
-            )
-            return f"Run SQL for {self.schema}, {self.partner_ref}"
-        except Exception as e:
-            self.log.error(f"An error occurred: {e}")
-            raise AirflowException(e)
+                print("Filter total Batch docs found", len(records))
+
+                total_docs_processed += len(records)
+
+                df = DataFrame(records)
+                print("TOTAL Initial DF docs", df.shape)
+
+                if not df.empty:
+                    self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
+                    df["airflow_sync_ds"] = ds
+
+                    if self.discard_fields:
+                        # keep this because if we're dropping any problematic fields
+                        # from the top level we might want to do this before Flattenning
+                        existing_discard_fields = [col for col in self.discard_fields if col in df.columns]
+                        df.drop(existing_discard_fields, axis=1, inplace=True)
+
+                    print("TOTAL discarded field docs found", df.shape)
+                    df = self.flatten_dataframe_columns_precisely(df)
+                    print("TOTAL flattenned docs found", df.shape)
+
+                    df.columns = df.columns.str.lower()
+
+                    df.to_sql(
+                        self.destination_table,
+                        conn,
+                        if_exists="append",
+                        schema=self.destination_schema,
+                        index=False,
+                    )
+                else:
+                    self.log.info("All Records Filtered to zero in this batch.")
+
+            # Check how many Docs total
+            if total_docs_processed > 0:
+                conn.execute(
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS {self.destination_table}_idx ON {self.destination_schema}.{self.destination_table} (id);"  # noqa
+                )
+
+            context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
+
+        context["ti"].xcom_push(
+            key=self.last_successful_dagrun_xcom_key,
+            value=context["data_interval_end"].to_iso8601_string(),
+        )
+        self.log.info("Zettle Charges written to Datalake successfully.")
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
@@ -153,78 +227,15 @@ END $$;
             else:
                 raise AirflowException(f"Error: Please add '{province}' to region_lookup.")
 
-    def check_province_code(self, order):
-        shipping_address = order.get("shipping_address")
+    def _check_province_code(self, order):
+        shipping_address = order.get("shipping_address", None)
         if shipping_address:
             province_code = shipping_address.get("province_code")
             if province_code in self.provinces:
                 return True
         return False
 
-    def fetch_and_process_data(self, **kwargs):
-        try:
-            all_orders = []
-            for store, creds in STORE_CREDENTIALS.items():
-                store_name = creds["store_name"]
-                access_token = creds["access_token"]
-                orders = fetch_all_orders(store_name, access_token, since_date=since_date, until_date=until_date)
-                filtered_orders = [order for order in orders if self.check_province_code(order)]
-                all_orders.extend(filtered_orders)
-
-            if all_orders:
-                fields = list(all_orders[0].keys())
-                logging.info("Fields: %s", fields)
-            else:
-                logging.info("No orders found.")
-
-            all_orders_df = pd.DataFrame(all_orders)
-
-            df = self.flatten_dataframe_columns_precisely(all_orders_df)
-            print("TOTAL flattened docs found", df.shape)
-
-            df.columns = df.columns.str.lower()
-
-            hook = BaseHook.get_hook(self.postgres_conn_id)
-            engine = self.get_postgres_sqlalchemy_engine(hook)
-            with engine.connect() as conn:
-                df.to_sql(
-                    self.destination_table,
-                    conn,
-                    if_exists="append",
-                    schema=self.destination_schema,
-                    index=False,
-                )
-        except Exception as e:
-            logging.error("An error occurred: %s", str(e))
-            raise
-
-    def fetch_all_orders(self, limit=250, since_date=None, until_date=None):
-        url = f"{self.base_url}/admin/api/2024-04/orders.json?limit={limit}"
-        if since_date:
-            url += f"&created_at_min={since_date}"
-        if until_date:
-            url += f"&created_at_max={until_date}"
-
-        headers = {"X-Shopify-Access-Token": self.api_access_token}
-        all_orders = []
-
-        while url:
-            self.log.info("Fetching orders from URL: %s", url)
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                orders = data.get("orders", [])
-                filtered_orders = [order for order in orders if check_province_code(order)]
-                all_orders.extend(filtered_orders)
-                url = get_next_page_url(response)
-            else:
-                error_message = response.json()
-                self.log.error("Error fetching orders: %s", error_message)
-                raise Exception(f"Error {response}")
-
-        return all_orders
-
-    def get_next_page_url(response):
+    def _get_next_page_url(self, response):
         link_header = response.headers.get("Link")
         if link_header:
             links = link_header.split(",")
