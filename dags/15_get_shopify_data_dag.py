@@ -182,13 +182,13 @@ for partner in partners:
         >> base_tables_completed
     )
     # append_transient_table_data >> base_tables_completed
-    migration_tasks.append(drop_transient_table)
+    migration_tasks.append(shopify_task)
 
 (
     start_task
-    >> drop_transient_table
     >> transient_schema_exists
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
+    >> drop_transient_table
     >> migration_tasks
 )
