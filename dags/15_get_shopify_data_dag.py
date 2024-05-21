@@ -97,8 +97,9 @@ for partner in partners:
         postgres_conn_id="postgres_datalake_conn_id",
         schema="public",
         destination_schema="transient_data",
-        table=destination_table,
+        destination_table=destination_table,
         partner_ref=partner,
+        dag=dag,
     )
 
     previous_task_id = task_id
