@@ -51,6 +51,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.destination_schema = destination_schema
         self.destination_table = destination_table
         self.partner_ref = partner_ref
+        self.separator = "__"
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.discard_fields = []
 
@@ -106,16 +107,16 @@ END $$;
 
         engine = self.get_postgres_sqlalchemy_engine(hook)
         with engine.connect() as conn:
-
+            self._get_partner_config(conn, context)
             self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
             conn.execute(self.delete_sql)
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 250
+            limit = 25
 
             # Base URL path
-            base_url = f"{self.base_url}/admin/api/2024-04/orders.json"
+            base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
             start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
 
@@ -137,7 +138,7 @@ END $$;
                     self.log.error("Error fetching orders: %s", error_message)
                     raise AirflowException(f"Error {error_message} {response}")
 
-                url = self.get_next_page_url(response)
+                url = self._get_next_page_url(response)
                 data = response.json()
                 orders = data.get("orders", [])
                 records = [order for order in orders if self._check_province_code(order)]
@@ -237,12 +238,15 @@ END $$;
 
     def _get_next_page_url(self, response):
         link_header = response.headers.get("Link")
+        print("_get_next_page_url", link_header)
         if link_header:
             links = link_header.split(",")
+            print("_get_next_page_url", links)
             for link in links:
-                if 'rel="next"' in link:
-                    next_url = link.split(";")[0].strip("<>")
-                    return next_url
+                if link.find("next") > 0:
+                    next_url = link
+                    print("_get_next_page_url", next_url)
+                    return next_url.replace("<", "").split(">")[0]
         return None
 
     @provide_session

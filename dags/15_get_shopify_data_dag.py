@@ -7,7 +7,6 @@ from airflow.utils.trigger_rule import TriggerRule
 
 from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
 from plugins.utils.found_records_to_process import found_records_to_process
-from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.drop_table import DropPostgresTableOperator
 from plugins.operators.analyze_table import RefreshPostgresTableStatisticsOperator
@@ -19,6 +18,9 @@ from plugins.operators.ensure_missing_columns_function import EnsureMissingColum
 from plugins.operators.ensure_datalake_table_view_exists import EnsurePostgresDatalakeTableViewExistsOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
 
+# from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
+
+
 default_args = {
     "owner": "airflow",
     "start_date": datetime(2019, 7, 14),
@@ -26,7 +28,7 @@ default_args = {
     "depends_on_past": True,
     "retry_delay": timedelta(minutes=5),
     "retries": 0,
-    "on_failure_callback": [send_harper_failure_notification()],
+    # "on_failure_callback": [send_harper_failure_notification()],
 }
 
 
@@ -56,7 +58,7 @@ start_task.doc = doc
 partners = [
     # 'rixo',
     # 'thefold',
-    "harper_uat_shopify"
+    "harper_production"
 ]
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(
