@@ -27,7 +27,7 @@ import requests
 
 #Define the basic parameters of the DAG, like schedule and start_date
 @dag(
-    start_date=datetime(2024, 1, 1),
+    start_date=datetime(2025, 1, 1),
     schedule="@daily",
     catchup=False,
     doc_md=__doc__,
