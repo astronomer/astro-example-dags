@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -19,8 +18,6 @@ from plugins.operators.import_shopify_data_operator import ImportShopifyPartnerD
 from plugins.operators.ensure_missing_columns_function import EnsureMissingColumnsPostgresFunctionOperator
 from plugins.operators.ensure_datalake_table_view_exists import EnsurePostgresDatalakeTableViewExistsOperator
 from plugins.operators.append_transient_table_data_operator import AppendTransientTableDataOperator
-
-from data_migrations.aggregation_loader import load_aggregation_configs
 
 default_args = {
     "owner": "airflow",
@@ -57,8 +54,8 @@ start_task = ShortCircuitOperator(
 start_task.doc = doc
 
 partners = [
-    #'rixo',
-    #'thefold',
+    # 'rixo',
+    # 'thefold',
     "harper_uat_shopify"
 ]
 
@@ -85,7 +82,7 @@ ensure_missing_columns_function_exists = EnsureMissingColumnsPostgresFunctionOpe
 
 destination_table = "shopify_partner_orders"
 drop_transient_table = DropPostgresTableOperator(
-    task_id=f"drop_shopify_partner_orders_transient_table",
+    task_id="drop_shopify_partner_orders_transient_table",
     postgres_conn_id="postgres_datalake_conn_id",
     schema="transient_data",
     table=destination_table,
@@ -168,8 +165,8 @@ for partner in partners:
         destination_schema="public",
         destination_table=destination_table,
         prev_task_id=missing_columns_task_id,
-        append_fields=config.get("append_fields", ["createdat", "updatedat", "airflow_sync_ds"]),
-        prepend_fields=config.get("prepend_fields", ["id"]),
+        append_fields=["createdat", "updatedat", "airflow_sync_ds"],
+        prepend_fields=["id"],
         dag=dag,
     )
     (
