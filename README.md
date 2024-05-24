@@ -1,50 +1,48 @@
-# Datalake
+Overview
+========
 
-## Astro Docs are here
+Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
 
-[Here](Astro.md)
+Project Contents
+================
 
-## Running locally
+Your Astro project contains the following files and folders:
 
-[https://docs.astronomer.io/astro/cli/local-connections](Astro Docs)
+- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
+    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://docs.astronomer.io/learn/get-started-with-airflow).
+- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
+- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
+- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
+- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
+- plugins: Add custom or community plugins for your project to this file. It is empty by default.
+- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
 
-```shell
+Deploy Your Project Locally
+===========================
 
-astro config set -g disable_env_objects false
-astro workspace list
-# NAME         ID
-# DataLake     clr9qwhbn033u01qzg6shab5j
+1. Start Airflow on your local machine by running 'astro dev start'.
 
-astro dev start|restart --workspace-id <workspace_id>
+This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
 
-```
+- Postgres: Airflow's Metadata Database
+- Webserver: The Airflow component responsible for rendering the Airflow UI
+- Scheduler: The Airflow component responsible for monitoring and triggering tasks
+- Triggerer: The Airflow component responsible for triggering deferred tasks
 
-## References
+2. Verify that all 4 Docker containers were created by running 'docker ps'.
 
-### .env
+Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either stop your existing Docker containers or change the port.
 
-cp .env.example .env
-Set your correct AIRFLOW_VAR_DEVICE_NAME
+3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
 
-### Data Types used
+You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
 
-Currently these are the data type mappings used to map from our schemas to NumPy datatypes, which are then mapped to SQL field types. <https://numpy.org/doc/stable/user/basics.types.html>
+Deploy Your Project to Astronomer
+=================================
 
-The subset we use are:-
+If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
 
-``` python
-bson_pandas_numpy_mapping = {
-          "double": "Float64",  # BSON double maps to a 64-bit floating point
-          "string": "string",  # BSON string maps to pandas object (for string data)
-          "object": "object",  # BSON object maps to pandas object (for mixed types)
-          "array": "object",  # BSON array maps to pandas object (for mixed types)
-          "binData": "object",  # BSON binary data maps to pandas object (for arbitrary binary data)
-          "objectId": "string",  # BSON ObjectId maps to pandas object (for unique object identifiers)
-          "bool": "bool",  # BSON boolean maps to pandas/numpy boolean
-          # "date": "datetime64[ns]",  # BSON date maps to pandas datetime64[ns]
-          "int": "Int32",  # BSON 32-bit integer maps to pandas/numpy int32
-          "timestamp": "datetime64[ns]",  # BSON timestamp maps to pandas datetime64[ns] (with note on precision)
-          "long": "Int64",  # BSON 64-bit integer maps to pandas/numpy int64
-          "decimal": "Float64",  # BSON Decimal128 maps to pandas/numpy float64 (considerations for precision apply)
-      }
-```
+Contact
+=======
+
+The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
