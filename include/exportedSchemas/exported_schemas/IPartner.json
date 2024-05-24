@@ -2200,7 +2200,13 @@
                 "bool"
             ]
         },
-        "partner_send_email_receipt": {
+        "send_platform_order_confirmation_email": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "add_harper_contact_details": {
             "type": "boolean",
             "bsonType": [
                 "bool"

@@ -155,7 +155,7 @@
                 "paymentPreAuthed",
                 "paymentFailed",
                 "orderCompleted",
-                "orderAdjusted",
+                "orderPPR",
                 "orderProblem",
                 "orderRejected",
                 "sentCustomerSMS",
@@ -176,6 +176,8 @@
                 "platformOrderPartialCreated",
                 "secondAppointmentOrderCreated",
                 "shipDirectOrderCreated",
+                "orderFinalised",
+                "triggerPlatformOrderFunction",
                 ""
             ]
         },
