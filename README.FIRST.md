@@ -7,7 +7,7 @@
 ## Running locally
 
 ```shell
-
+touch airflow_settings.yaml
 astro config set -g disable_env_objects false
 astro workspace list
 # NAME         ID
