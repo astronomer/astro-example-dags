@@ -4,7 +4,27 @@
 
 [Here](Astro.md)
 
+## Running locally
+
+[https://docs.astronomer.io/astro/cli/local-connections](Astro Docs)
+
+```shell
+
+astro config set -g disable_env_objects false
+astro workspace list
+# NAME         ID
+# DataLake     clr9qwhbn033u01qzg6shab5j
+
+astro dev start|restart --workspace-id <workspace_id>
+
+```
+
 ## References
+
+### .env
+
+cp .env.example .env
+Set your correct AIRFLOW_VAR_DEVICE_NAME
 
 ### Data Types used
 
