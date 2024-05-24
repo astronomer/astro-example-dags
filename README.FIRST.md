@@ -6,6 +6,8 @@
 
 ## Running locally
 
+Do this once, the first time you setup your local docker, or after every astro dev kill
+
 ```shell
 touch airflow_settings.yaml
 astro config set -g disable_env_objects false
@@ -13,8 +15,16 @@ astro workspace list
 # NAME         ID
 # DataLake     clr9qwhbn033u01qzg6shab5j
 
-astro dev start|restart --workspace-id <workspace_id>
+astro dev start|restart --workspace-id clr9qwhbn033u01qzg6shab5j
 
+```
+
+Now in admin->connections edit the 'mongo_db_conn_id' connection and change its type from Generic to MongoDB and save.
+
+## restarting your local environment to pickup code changes outside of your plugins/operators directory
+
+``` shell
+astro dev restart
 ```
 
 ## References
