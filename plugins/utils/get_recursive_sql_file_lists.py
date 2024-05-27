@@ -16,7 +16,9 @@ pattern = re.compile(
     r"""
 CREATE\s+MATERIALIZED\s+VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
+CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+CREATE\s+TABLE\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
 """,
     re.IGNORECASE | re.VERBOSE,

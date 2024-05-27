@@ -57,6 +57,12 @@
         "string"
       ]
     },
+    "locate2u_stop_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
     "rescheduling_reason": {
       "type": "string",
       "bsonType": [

@@ -520,6 +520,15 @@
             "type": "string",
             "bsonType": [
               "string"
+            ],
+            "enum": [
+              "add_to_order",
+              "inspire_me",
+              "ship_direct",
+              "second_appointment",
+              "new_appointment",
+              "old_initiated_sale",
+              "harper_try"
             ]
           },
           "original_order_name": {
@@ -629,6 +638,12 @@
             ]
           },
           "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "track17_courier_code": {
             "type": "string",
             "bsonType": [
               "string"
@@ -1087,6 +1102,15 @@
             "type": "string",
             "bsonType": [
               "string"
+            ],
+            "enum": [
+              "add_to_order",
+              "inspire_me",
+              "ship_direct",
+              "second_appointment",
+              "new_appointment",
+              "old_initiated_sale",
+              "harper_try"
             ]
           },
           "original_order_name": {
@@ -1196,6 +1220,12 @@
             ]
           },
           "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "track17_courier_code": {
             "type": "string",
             "bsonType": [
               "string"
@@ -1654,6 +1684,15 @@
             "type": "string",
             "bsonType": [
               "string"
+            ],
+            "enum": [
+              "add_to_order",
+              "inspire_me",
+              "ship_direct",
+              "second_appointment",
+              "new_appointment",
+              "old_initiated_sale",
+              "harper_try"
             ]
           },
           "original_order_name": {
@@ -1763,6 +1802,12 @@
             ]
           },
           "partner_item_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "track17_courier_code": {
             "type": "string",
             "bsonType": [
               "string"

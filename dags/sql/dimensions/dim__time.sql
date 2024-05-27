@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP TABLE IF EXISTS {{ schema}}.dim__time CASCADE;
+DROP TABLE IF EXISTS {{ schema }}.dim__time CASCADE;
 {% endif %}
 DO $$
 DECLARE
@@ -7,9 +7,9 @@ DECLARE
     table_was_created BOOLEAN := FALSE;
 BEGIN
     -- Check if the table exists
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'dim__time') THEN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_tables WHERE schemaname = '{{ schema }}' AND tablename = 'dim__time') THEN
         -- Create the table if it does not exist
-        CREATE TABLE public.dim__time (
+        CREATE TABLE {{ schema }}.dim__time (
             dim_date_id DATE PRIMARY KEY,
             dim_date DATE,
             dim_year INT,
@@ -36,12 +36,12 @@ BEGIN
         table_was_created := TRUE;
 
         -- Create an index on the id column if the table was just created
-        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON public.dim__time(dim_date_id);
+        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON {{ schema }}.dim__time(dim_date_id);
     END IF;
 
     -- If the table was just created, perform the INSERT operation
     IF table_was_created THEN
-        INSERT INTO dim__time (
+        INSERT INTO {{ schema }}.dim__time (
             dim_date_id,
             dim_date,
             dim_year,

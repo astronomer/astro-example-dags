@@ -32,6 +32,7 @@
       "enum": [
         "event",
         "note",
+        "function",
         ""
       ]
     },
@@ -84,7 +85,8 @@
             "email",
             "sms",
             "data",
-            "note"
+            "note",
+            "function"
           ]
         },
         "data": {
@@ -153,7 +155,7 @@
         "paymentPreAuthed",
         "paymentFailed",
         "orderCompleted",
-        "orderAdjusted",
+        "orderPPR",
         "orderProblem",
         "orderRejected",
         "sentCustomerSMS",
@@ -174,6 +176,9 @@
         "platformOrderPartialCreated",
         "secondAppointmentOrderCreated",
         "shipDirectOrderCreated",
+        "triggerModuleFunction",
+        "orderFinalised",
+        "triggerPlatformOrderFunction",
         ""
       ]
     },
