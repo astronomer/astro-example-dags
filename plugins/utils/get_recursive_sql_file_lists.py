@@ -77,6 +77,7 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
 
     # Cumulatively pass the filenames
     cumulative_entity_names = add_table_columns_to_context + current_level_entities
+    print("cumulative_entity_names", cumulative_entity_names)
 
     # Recursively process subdirectories, focusing on "subreports" if not the first call
     for item in os.listdir(directory):
@@ -93,4 +94,5 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
                 if subdirectory_files:
                     grouped_file_info.extend(subdirectory_files)
 
+    print("grouped_file_info", grouped_file_info)
     return grouped_file_info
