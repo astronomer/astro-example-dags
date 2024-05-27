@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP VIEW IF EXISTS {{ schema }}.clean__order__summary AS
+DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,

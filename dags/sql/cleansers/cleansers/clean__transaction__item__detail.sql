@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP VIEW IF EXISTS {{ schema }}.clean__transaction__item__detail;
+DROP VIEW IF EXISTS {{ schema }}.clean__transaction__item__detail CASCADE;
 CREATE VIEW {{ schema }}.clean__transaction__item__detail AS
     SELECT
         ti.*,

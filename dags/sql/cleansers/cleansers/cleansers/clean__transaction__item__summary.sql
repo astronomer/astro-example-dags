@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP VIEW IF EXISTS {{ schema }}.clean__transaction__item__summary AS
+DROP VIEW IF EXISTS {{ schema }}.clean__transaction__item__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__transaction__item__summary AS
     SELECT
     transaction_id,

@@ -6,7 +6,7 @@
 {% endmacro %}
 
 {% if is_modified %}
-DROP VIEW IF EXISTS {{ schema }}.clean__order__status_events AS;
+DROP VIEW IF EXISTS {{ schema }}.clean__order__status_events CASCADE;
 CREATE VIEW {{ schema }}.clean__order__status_events AS
 SELECT order_id,
     {{ generate_sql_parts(event_name_ids) }}

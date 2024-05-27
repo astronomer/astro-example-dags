@@ -1,6 +1,6 @@
 {% if is_modified %}
 
-DROP VIEW IF EXISTS {{ schema }}.clean__zettle__purchase_payments AS
+DROP VIEW IF EXISTS {{ schema }}.clean__zettle__purchase_payments CASCADE;
 CREATE VIEW {{ schema }}.clean__zettle__purchase_payments AS
 SELECT
     p.id AS purchase_id,

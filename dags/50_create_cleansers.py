@@ -41,7 +41,5 @@ run_dynamic_sql_task(
     sql_type=sql_type,
     add_table_columns_to_context=[
         "dim__time",
-        "clean__order__summary",
-        "clean__order__items",
     ],
 )
