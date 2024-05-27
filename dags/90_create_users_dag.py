@@ -40,7 +40,7 @@ wait_for_reports = ExternalTaskSensor(
 users = "./sql/users"
 users_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), users)
 
-users_sql_files = get_recursive_sql_file_lists(users_abspath, subdir="users")
+users_sql_files = get_recursive_sql_file_lists(users_abspath, subdir="users", check_entity_pattern=False)
 
 last_user_task = wait_for_reports
 for group_index, group_list in enumerate(users_sql_files, start=1):

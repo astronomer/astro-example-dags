@@ -38,4 +38,5 @@ run_dynamic_sql_task(
     dag,
     wait_for_task,
     sql_type=sql_type,
+    check_entity_pattern=False,
 )

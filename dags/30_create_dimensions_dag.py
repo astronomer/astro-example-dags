@@ -34,4 +34,4 @@ wait_for_task = ExternalTaskSensor(
     dag=dag,
 )
 
-run_dynamic_sql_task(dag, wait_for_task, sql_type)
+run_dynamic_sql_task(dag, wait_for_task, sql_type, check_entity_pattern=False)
