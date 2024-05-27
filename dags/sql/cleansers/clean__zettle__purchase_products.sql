@@ -1,5 +1,6 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.clean__zettle__purchase_products AS
+DROP VIEW IF EXISTS {{ schema }}.clean__zettle__purchase_products AS
+CREATE VIEW {{ schema }}.clean__zettle__purchase_products AS
     SELECT
         p.id AS purchase_id,
         p.created,

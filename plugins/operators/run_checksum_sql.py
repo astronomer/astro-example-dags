@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             pattern = r"CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "rep__"
         elif self.sql_type == "cleansers":
-            pattern = r"CREATE VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
+            pattern = r"CREATE VIEW {{ schema }}\.(\w+)"
             expected_prefix = "clean__"
         elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"

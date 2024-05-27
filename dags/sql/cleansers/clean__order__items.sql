@@ -1,5 +1,6 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.clean__order__items AS
+DROP VIEW IF EXISTS {{ schema }}.clean__order__items AS
+CREATE VIEW {{ schema }}.clean__order__items AS
   SELECT
 	oi.*,
 	oi.order_type AS item__order_type,

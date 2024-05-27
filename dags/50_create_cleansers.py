@@ -39,5 +39,9 @@ run_dynamic_sql_task(
     dag,
     wait_for_task=wait_for_task,
     sql_type=sql_type,
-    add_table_columns_to_context=["dim__time"],
+    add_table_columns_to_context=[
+        "dim__time",
+        "clean__order__summary",
+        "clean__order__items",
+    ],
 )

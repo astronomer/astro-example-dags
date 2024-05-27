@@ -1,5 +1,6 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.clean__zettle__transaction__summary AS
+DROP VIEW IF EXISTS {{ schema }}.clean__zettle__transaction__summary AS
+CREATE VIEW {{ schema }}.clean__zettle__transaction__summary AS
     select
         zt.amount as zettle_amount,
         zt.originatingtransactionuuid as zettle_originatingtransactionuuid,

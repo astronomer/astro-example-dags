@@ -2,6 +2,7 @@ from jinja2 import BaseLoader, Environment
 
 from plugins.utils.prefix_columns import prefix_columns
 from plugins.utils.unprefix_columns import unprefix_columns
+from plugins.utils.truncate_exception import truncate_exception
 
 
 def render_template(template, context, extra_context={}):
@@ -15,6 +16,7 @@ def render_template(template, context, extra_context={}):
     env = Environment(loader=BaseLoader())
     env.filters["prefix_columns"] = prefix_columns
     env.filters["unprefix_columns"] = unprefix_columns
+    env.filters["truncate_exception"] = truncate_exception
 
     # Manually render the template with the combined context
     # jinja_template = Template(template)

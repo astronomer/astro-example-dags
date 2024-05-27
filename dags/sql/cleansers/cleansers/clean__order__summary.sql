@@ -1,5 +1,6 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.clean__order__summary AS
+DROP VIEW IF EXISTS {{ schema }}.clean__order__summary AS
+CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
         get_halo_url(o.id, o.order_type) AS halo_link,
