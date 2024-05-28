@@ -17,6 +17,45 @@ from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
 
 region_lookup = {"england": "ENG", "wales": "WLS", "scotland": "SCT", "northern ireland": "NIR"}
 
+columns_to_drop = [
+    "billing_address__address1",
+    "billing_address__address2",
+    "billing_address__first_name",
+    "billing_address__last_name",
+    "billing_address__latitude",
+    "billing_address__longitude",
+    "billing_address__name",
+    "billing_address__phone",
+    "billing_address__zip",
+    "browser_ip",
+    "customer__admin_graphql_api_id",
+    "customer__default_address__address1",
+    "customer__default_address__address2",
+    "customer__default_address__country_name",
+    "customer__default_address__first_name",
+    "customer__default_address__last_name",
+    "customer__default_address__name",
+    "customer__default_address__phone",
+    "customer__default_address__zip",
+    "customer__first_name",
+    "customer__last_name",
+    "customer__multipass_identifier",
+    "customer__phone",
+    "customer_locale",
+    "device_id",
+    "location_id",
+    "phone",
+    "shipping_address__address1",
+    "shipping_address__address2",
+    "shipping_address__first_name",
+    "shipping_address__last_name",
+    "shipping_address__latitude",
+    "shipping_address__longitude",
+    "shipping_address__name",
+    "shipping_address__phone",
+    "shipping_address__zip",
+]
+
 
 class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
     """
@@ -167,6 +206,8 @@ END $$;
                     print("TOTAL flattenned docs found", df.shape)
 
                     df.columns = df.columns.str.lower()
+
+                    df = df.drop(columns=columns_to_drop)
 
                     df.to_sql(
                         self.destination_table,
