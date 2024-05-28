@@ -8,6 +8,11 @@
         }
     },
     {
+        "$addFields": {
+            "items.link_order_child": "$link_order_child"
+        }
+    },
+    {
         "$unwind": {
             "path": "$items",
             "includeArrayIndex": "arrayIndex"
@@ -39,20 +44,28 @@
         "idx": "$arrayIndex",
         "item_id": "$_id",
         "discount": {
-                "$convert": {
-                    "input": "$discount",
-                    "to": "int",
-                    "onError": 0,
-                    "onNull": 0
-                }
+            "$convert": {
+                "input": "$discount",
+                "to": "int",
+                "onError": 0,
+                "onNull": 0
             }
+        },
+        "is_link_order_child_item": {
+              "$cond": {
+                  "if": {"$eq": ["$link_order_child", true]},
+                  "then": 1,
+                  "else": 0
+              }
+        }
       }
     },
     {
         "$project": {
             "items": 0,
             "_id": 0,
-            "request_detail": 0
+            "request_detail": 0,
+            "parent_order_name":0
         }
     },
     { "$skip": 0 },

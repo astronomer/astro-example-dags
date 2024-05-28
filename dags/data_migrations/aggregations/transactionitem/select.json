@@ -7,10 +7,15 @@
             }
         }
     },
-    { "$set": { "id": "$_id"}},
+    { "$set": {
+        "id": "$_id",
+        "order_id": "$order"
+      }
+    },
     {
         "$project": {
             "_id": 0,
+            "order": 0,
             "old_id": 0
         }
     },

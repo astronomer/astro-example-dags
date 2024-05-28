@@ -11,5 +11,10 @@
       "function_args": [],
       "aggregation_stage": 1
     }
-  ]
+  ],
+  "preserve_fields": {
+    "order_id": [
+      "string"
+    ]
+  }
 }

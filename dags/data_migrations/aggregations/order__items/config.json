@@ -12,6 +12,9 @@
     ],
     "item_id": [
       "string"
+    ],
+    "is_link_order_child_item": [
+      "int32"
     ]
   }
 }
