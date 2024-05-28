@@ -113,7 +113,7 @@ END $$;
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 25
+            limit = 250
 
             # Base URL path
             base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
