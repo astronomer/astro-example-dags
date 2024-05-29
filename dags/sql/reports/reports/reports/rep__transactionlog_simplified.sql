@@ -6,7 +6,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog_simplifi
 SELECT
     t.transaction_info__payment_at__dim_date,
     t.transaction_info__payment_at__dim_yearcalendarweek_sc,
-    -- t.transaction_info__payment_at__dim_dim_yearmonth_sc,
+    t.transaction_info__payment_at__dim_yearmonth_sc,
     t.transaction_info__payment_reference,
     t.transaction_info__payment_reference_id,
     t.transaction_info__payment_provider,
@@ -20,9 +20,9 @@ SELECT
     t.harper_order_name,
     t.partner_order_name,
     t.harper_order__createdat,
-    --t.harper_order__createdat__dim_date,
-    --t.harper_order__createdat__dim_yearcalendarweek_sc,
-    --dim_yearmonth_sc
+    t.harper_order__createdat__dim_date,
+    t.harper_order__createdat__dim_yearcalendarweek_sc,
+    t.harper_order__createdat__dim_yearmonth_sc,
     t.harper_order__customer__first_name,
     t.harper_order__customer__last_name,
     t.transaction_info__total_amount,
@@ -46,10 +46,12 @@ SELECT
     t.harper_order__style_concierge_name,
     t.try_commission_chargeable,
     t.try_commission_chargeable_at,
-    --t.try_commission_chargeable_at__dim_date,
-    --t.try_commission_chargeable_at__dim_yearcalendarweek_sc,
-    --dim_yearmonth_sc
+    t.try_chargeable_at__dim_date,
+    t.try_chargeable_at__dim_yearcalendarweek_sc,
+    t.try_chargeable_at__dim_yearmonth_sc,
     t.transaction_info__payment_at,
+    t.stripe_customer_link,
+    t.halo_link,
     t.id
 
 FROM

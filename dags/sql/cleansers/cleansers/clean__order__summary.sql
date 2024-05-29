@@ -16,7 +16,9 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         {{ dim__time_columns | prefix_columns('adt', 'appointment__date') }},
         {{ dim__time_columns | prefix_columns('tas', 'tp_actually_started') }},
         {{ dim__time_columns | prefix_columns('tae', 'tp_actually_ended') }},
-        {{ dim__time_columns | prefix_columns('tar', 'tp_actually_reconciled') }}
+        {{ dim__time_columns | prefix_columns('tar', 'tp_actually_reconciled') }},
+        {{ dim__time_columns | prefix_columns('tcc', 'try_chargeable_at') }},
+        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
     FROM
         {{ schema }}.orders o
     LEFT JOIN
@@ -27,6 +29,10 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         dim__time tae ON o.trial_period_actually_ended_at::date = tae.dim_date_id
     LEFT JOIN
         dim__time tar ON o.trial_period_actually_reconciled_at::date = tar.dim_date_id
+    LEFT JOIN
+        dim__time tcc ON o.try_commission_chargeable_at::date = tcc.dim_date_id
+    LEFT JOIN
+        dim__time oc ON o.createdat::date = oc.dim_date_id
     LEFT JOIN
         clean__order__item__summary clean__ois ON clean__ois.order_id = o.id
     LEFT JOIN
