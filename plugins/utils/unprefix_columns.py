@@ -20,7 +20,9 @@ def unprefix_columns(columns, alias, prefix, exclude_columns=[]):
             f"Column list is empty for {alias} {prefix} given to unprefix_columns. Should it end in _columns?"
         )
 
+    if prefix != "":
+        prefix = f"{prefix}__"
     # Filter out excluded columns before applying the prefix
     filtered_columns = [col for col in columns if col not in exclude_columns]
-    prefixed_columns = ",\n\t".join([f'{alias}."{prefix}__{col}"' for col in filtered_columns])
+    prefixed_columns = ",\n\t".join([f'{alias}."{prefix}{col}"' for col in filtered_columns])
     return prefixed_columns

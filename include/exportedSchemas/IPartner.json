@@ -153,6 +153,13 @@
       "type": "object",
       "bsonType": "object",
       "properties": {
+        "_id": {
+          "type": "string",
+          "bsonType": [
+            "objectId"
+          ],
+          "tsType": "MongooseObjectId"
+        },
         "name": {
           "type": "string",
           "bsonType": [
@@ -202,6 +209,12 @@
           ]
         },
         "partner_shipping_id": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "track17_courier_code": {
           "type": "string",
           "bsonType": [
             "string"
@@ -1738,6 +1751,13 @@
       "type": "object",
       "bsonType": "object",
       "properties": {
+        "_id": {
+          "type": "string",
+          "bsonType": [
+            "objectId"
+          ],
+          "tsType": "MongooseObjectId"
+        },
         "name": {
           "type": "string",
           "bsonType": [
@@ -1787,6 +1807,12 @@
           ]
         },
         "partner_shipping_id": {
+          "type": "string",
+          "bsonType": [
+            "string"
+          ]
+        },
+        "track17_courier_code": {
           "type": "string",
           "bsonType": [
             "string"
@@ -1937,6 +1963,13 @@
         "type": "object",
         "bsonType": "object",
         "properties": {
+          "_id": {
+            "type": "string",
+            "bsonType": [
+              "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+          },
           "name": {
             "type": "string",
             "bsonType": [
@@ -1986,6 +2019,12 @@
             ]
           },
           "partner_shipping_id": {
+            "type": "string",
+            "bsonType": [
+              "string"
+            ]
+          },
+          "track17_courier_code": {
             "type": "string",
             "bsonType": [
               "string"
@@ -2111,8 +2150,7 @@
           "type": "string",
           "bsonType": [
             "string"
-          ],
-          "default": "+443339398123"
+          ]
         },
         "email": {
           "type": "string",
@@ -2153,6 +2191,24 @@
         "string"
       ]
     },
+    "track_shipments": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "send_platform_order_confirmation_email": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
+    "add_harper_contact_details": {
+      "type": "boolean",
+      "bsonType": [
+        "bool"
+      ]
+    },
     "__v": {
       "bsonType": [
         "int"
@@ -2175,7 +2231,8 @@
   "required": [
     "reference",
     "name",
-    "partner_platform"
+    "partner_platform",
+    "timezone"
   ],
   "additionalProperties": false
 }

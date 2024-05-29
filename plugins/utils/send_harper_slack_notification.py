@@ -8,8 +8,13 @@ from airflow.models import Variable
 from airflow.providers.slack.hooks.slack import SlackHook
 from airflow.providers.slack.notifications.slack import SlackNotifier
 
+from plugins.utils.truncate_exception import truncate_exception
+
 if TYPE_CHECKING:
+    import jinja2
     from slack_sdk.http_retry import RetryHandler
+    from airflow.utils.context import Context
+
 
 ICON_URL: str = "https://raw.githubusercontent.com/apache/airflow/2.5.0/airflow/www/static/pin_100.png"
 
@@ -160,7 +165,7 @@ class HarperSlackFailureNotifier(SlackNotifier):
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "```{{ exception }}```",
+                        "text": "```{{ exception | truncate_exception(2000) }}```",
                     },
                 },
                 {"type": "divider"},
@@ -182,6 +187,22 @@ class HarperSlackFailureNotifier(SlackNotifier):
             timeout=timeout,
             retry_handlers=retry_handlers,
         )
+
+    def render_template_fields(
+        self,
+        context: Context,
+        jinja_env: jinja2.Environment | None = None,
+    ) -> None:
+        """Add our custom macro
+
+        :param context: Context dict with values to apply on content.
+        :param jinja_env: Jinja environment to use for rendering.
+        """
+        dag = context["dag"]
+        if not jinja_env:
+            jinja_env = self.get_template_env(dag=dag)
+        jinja_env.filters["truncate_exception"] = truncate_exception
+        self._do_render_template_fields(self, self.template_fields, context, jinja_env, set())
 
 
 send_harper_failure_notification = HarperSlackFailureNotifier

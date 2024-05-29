@@ -5,6 +5,7 @@ from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.run_dynamic_sql_task import run_dynamic_sql_task
 from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
+from plugins.utils.get_recursive_entities_for_sql_types import get_recursive_entities_for_sql_types
 
 default_args = {
     "owner": "airflow",
@@ -16,6 +17,7 @@ default_args = {
 }
 
 sql_type = "reports"
+add_table_columns_to_context = get_recursive_entities_for_sql_types(["dimensions", "cleansers"])
 
 dag = DAG(
     f"55_create_{sql_type}_dag",
@@ -40,5 +42,5 @@ run_dynamic_sql_task(
     dag,
     wait_for_task,
     sql_type,
-    add_table_columns_to_context=["dim__time", "clean__order__item__summary"],
+    add_table_columns_to_context=add_table_columns_to_context,
 )

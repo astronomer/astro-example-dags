@@ -8,7 +8,13 @@ from plugins.utils.send_harper_slack_notification import send_harper_failure_not
 from plugins.operators.run_checksum_sql import RunChecksumSQLPostgresOperator
 
 
-def run_dynamic_sql_task(dag, wait_for_task, sql_type, add_table_columns_to_context=[]):
+def run_dynamic_sql_task(
+    dag,
+    wait_for_task,
+    sql_type,
+    add_table_columns_to_context=[],
+    check_entity_pattern=True,
+):
     sql_dir = f"../../dags/sql/{sql_type}"
     sql_dir_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), sql_dir)
 
@@ -19,6 +25,7 @@ def run_dynamic_sql_task(dag, wait_for_task, sql_type, add_table_columns_to_cont
         sql_dir_abspath,
         subdir=sql_type,
         add_table_columns_to_context=add_table_columns_to_context,
+        check_entity_pattern=check_entity_pattern,
     )
     last_task = wait_for_task
 

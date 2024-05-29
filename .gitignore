@@ -6,3 +6,4 @@
 airflow_settings.yaml
 __pycache__/
 astro
+.env

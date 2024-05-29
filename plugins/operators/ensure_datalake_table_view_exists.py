@@ -92,9 +92,6 @@ class EnsurePostgresDatalakeTableViewExistsOperator(BaseOperator):
                 END IF;
             END
 $$;
-        {% if is_modified %}
-        CREATE UNIQUE INDEX IF NOT EXISTS {{ destination_table }}_uidx ON {{ destination_schema }}.{{ destination_table }} (id);
-        {% endif %}
 """  # noqa
         # REFRESH MATERIALIZED VIEW {{ destination_schema }}.{{ destination_table }};
 

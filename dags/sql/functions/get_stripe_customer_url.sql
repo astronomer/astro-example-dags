@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP FUNCTION IF EXISTS {{ schema}}.get_stripe_customer_url(TEXT, TEXT);
+DROP FUNCTION IF EXISTS {{ schema}}.get_stripe_customer_url(TEXT, TEXT) CASCADE;
 {% endif %}
 CREATE OR REPLACE FUNCTION {{ schema}}.get_stripe_customer_url(stripe_customer_id TEXT) RETURNS TEXT AS $$
 BEGIN

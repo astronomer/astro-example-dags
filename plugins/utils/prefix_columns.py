@@ -19,6 +19,9 @@ def prefix_columns(columns, alias, prefix, exclude_columns=[]):
         )
 
     # Filter out excluded columns before applying the prefix
+    if prefix != "":
+        prefix = f"{prefix}__"
+
     filtered_columns = [col for col in columns if col not in exclude_columns]
-    prefixed_columns = ",\n\t".join([f'{alias}."{col}" AS {prefix}__{col}' for col in filtered_columns])
+    prefixed_columns = ",\n\t".join([f'{alias}."{col}" AS {prefix}{col}' for col in filtered_columns])
     return prefixed_columns

@@ -3,6 +3,13 @@
   "type": "object",
   "bsonType": "object",
   "properties": {
+    "_id": {
+      "type": "string",
+      "bsonType": [
+        "objectId"
+      ],
+      "tsType": "MongooseObjectId"
+    },
     "name": {
       "type": "string",
       "bsonType": [
@@ -52,6 +59,12 @@
       ]
     },
     "partner_shipping_id": {
+      "type": "string",
+      "bsonType": [
+        "string"
+      ]
+    },
+    "track17_courier_code": {
       "type": "string",
       "bsonType": [
         "string"

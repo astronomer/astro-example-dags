@@ -1,5 +1,6 @@
 {% if is_modified %}
-CREATE OR REPLACE VIEW {{ schema }}.clean__order__item__summary AS
+DROP VIEW IF EXISTS {{ schema }}.clean__order__item__summary CASCADE;
+CREATE VIEW {{ schema }}.clean__order__item__summary AS
     SELECT
         o.id AS order_id,
         COUNT(oi.id) AS total_items,

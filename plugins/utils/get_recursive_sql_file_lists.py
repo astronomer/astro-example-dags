@@ -15,15 +15,23 @@ from airflow.exceptions import AirflowException
 pattern = re.compile(
     r"""
 CREATE\s+MATERIALIZED\s+VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+CREATE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
+CREATE\s+TABLE\s+{{\s*schema\s*}}\.(\w+)\s*|
 CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
 """,
     re.IGNORECASE | re.VERBOSE,
 )
 
 
-def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", add_table_columns_to_context=[]):
+def get_recursive_sql_file_lists(
+    directory,
+    first_call=True,
+    subdir="reports",
+    add_table_columns_to_context=[],
+    check_entity_pattern=True,
+):
     grouped_file_info = []
     print(f"Current Directory: {directory}")
 
@@ -51,6 +59,10 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
                 # Extract entity names from the SQL string using the pattern
                 matches = re.findall(pattern, sql_string)
                 print(matches)
+                if len(matches) < 1 and check_entity_pattern:
+                    raise AirflowException(
+                        f"SQL filename {full_path} doesn't contain a string which matches a doublecheck pattern {pattern}"  # noqa
+                    )
                 for match in matches:
                     entity_name = next((m for m in match if m), None)
                     if entity_name:
@@ -77,6 +89,7 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
 
     # Cumulatively pass the filenames
     cumulative_entity_names = add_table_columns_to_context + current_level_entities
+    print("cumulative_entity_names", cumulative_entity_names)
 
     # Recursively process subdirectories, focusing on "subreports" if not the first call
     for item in os.listdir(directory):
@@ -93,4 +106,5 @@ def get_recursive_sql_file_lists(directory, first_call=True, subdir="reports", a
                 if subdirectory_files:
                     grouped_file_info.extend(subdirectory_files)
 
+    print("grouped_file_info", grouped_file_info)
     return grouped_file_info

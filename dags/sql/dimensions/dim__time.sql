@@ -1,5 +1,5 @@
 {% if is_modified %}
-DROP TABLE IF EXISTS {{ schema}}.dim__time CASCADE;
+DROP TABLE IF EXISTS {{ schema }}.dim__time CASCADE;
 {% endif %}
 DO $$
 DECLARE
@@ -7,9 +7,9 @@ DECLARE
     table_was_created BOOLEAN := FALSE;
 BEGIN
     -- Check if the table exists
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'dim__time') THEN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_tables WHERE schemaname = '{{ schema }}' AND tablename = 'dim__time') THEN
         -- Create the table if it does not exist
-        CREATE TABLE public.dim__time (
+        CREATE TABLE {{ schema }}.dim__time (
             dim_date_id DATE PRIMARY KEY,
             dim_date DATE,
             dim_year INT,
@@ -21,9 +21,9 @@ BEGIN
             dim_quartal TEXT,
             dim_yearquartal TEXT,
             dim_yearmonth TEXT,
-            dim_yearmonth_sheets_compatible TEXT,
+            dim_yearmonth_sc TEXT,
             dim_yearcalendarweek TEXT,
-            dim_yearcalendarweek_sheets_compatible TEXT,
+            dim_yearcalendarweek_sc TEXT,
             dim_dayofweek TEXT,
             dim_dayofweek_num INT,
             dim_isodayofweek_num INT,
@@ -36,12 +36,12 @@ BEGIN
         table_was_created := TRUE;
 
         -- Create an index on the id column if the table was just created
-        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON public.dim__time(dim_date_id);
+        CREATE INDEX IF NOT EXISTS idx_dim__time_id ON {{ schema }}.dim__time(dim_date_id);
     END IF;
 
     -- If the table was just created, perform the INSERT operation
     IF table_was_created THEN
-        INSERT INTO dim__time (
+        INSERT INTO {{ schema }}.dim__time (
             dim_date_id,
             dim_date,
             dim_year,
@@ -53,9 +53,9 @@ BEGIN
             dim_quartal,
             dim_yearquartal,
             dim_yearmonth,
-            dim_yearmonth_sheets_compatible,
+            dim_yearmonth_sc,
             dim_yearcalendarweek,
-            dim_yearcalendarweek_sheets_compatible,
+            dim_yearcalendarweek_sc,
             dim_dayofweek,
             dim_dayofweek_num,
             dim_isodayofweek_num,
@@ -75,9 +75,9 @@ BEGIN
             'q' || TO_CHAR(datum, 'q') as dim_quartal,
             TO_CHAR(datum, 'yyyy/"q"q') as dim_yearquartal,
             TO_CHAR(datum, 'yyyy/mm') as dim_yearmonth,
-            TO_CHAR(datum, 'yyyymm') as dim_yearmonth_sheets_compatible,
+            TO_CHAR(datum, 'yyyymm') as dim_yearmonth_sc,
             TO_CHAR(datum, 'iyyy/iw') as dim_yearcalendarweek,
-            TO_CHAR(datum, 'iyyyiw') as dim_yearcalendarweek_sheets_compatible,
+            TO_CHAR(datum, 'iyyyiw') as dim_yearcalendarweek_sc,
             TO_CHAR(datum, 'DY') as dim_dayofweek,
             EXTRACT(DOW FROM datum) as dim_dayofweek_num,
             EXTRACT(ISODOW FROM datum) as dim_isodayofweek_num,

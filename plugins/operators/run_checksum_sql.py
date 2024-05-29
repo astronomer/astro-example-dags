@@ -5,7 +5,7 @@ from pprint import pprint  # noqa
 from typing import List, Optional
 
 from sqlalchemy import create_engine
-from airflow.models import BaseOperator
+from airflow.models import Variable, BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from airflow.models.connection import Connection
@@ -147,6 +147,15 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
         return create_engine(conn_uri, **engine_kwargs)
 
     def _check_if_modified(self, conn):
+        try:
+            always_modified = Variable.get("ALWAYS_REBUILD_VIEWS")
+        except KeyError:
+            always_modified = 0
+
+        self.log.info(f"ALWAYS_REBUILD_VIEWS == {always_modified} {type(always_modified)}")
+        if always_modified == "1":
+            return True
+
         # Check if the record exists and if the checksum matches
         select_query = f"""
             SELECT checksum FROM {self.schema}.report_checksums
@@ -181,7 +190,7 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             pattern = r"CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "rep__"
         elif self.sql_type == "cleansers":
-            pattern = r"CREATE VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
+            pattern = r"CREATE VIEW {{ schema }}\.(\w+)"
             expected_prefix = "clean__"
         elif self.sql_type == "fact":
             pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
