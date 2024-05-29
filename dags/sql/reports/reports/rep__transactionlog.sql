@@ -8,44 +8,53 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
         ho.try_commission_chargeable as try_commission_chargeable,
         ho.try_commission_chargeable_at as try_commission_chargeable_at,
         ti.*,
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__discount_applied
         ELSE
            0
         END AS order_discount_in_appointment_discount_applied,
 
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__discount_amount
         ELSE
             NULL
         END AS order_discount_in_appointment_discount_amount,
 
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__absorbed_by
         ELSE
             ''
         END AS order_discount_in_appointment_absorbed_by,
 
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__reason
         ELSE
             ''
         END AS order_discount_in_appointment_reason,
 
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__discount_code
         ELSE
             ''
         END AS order_discount_in_appointment_discount_code,
 
-        CASE WHEN t.lineitem_type = 'discount' THEN
+        CASE WHEN ti.lineitem_type = 'discount' THEN
             ho.discount_in_appointment__discount_type
         ELSE
             ''
         END AS order_discount_in_appointment_discount_type,
 
-        i.partner_order_name as partner_order_name,
-        i.harper_order_name as harper_order_name,
+        CASE WHEN i.harper_order_name IS NULL THEN
+            ho.order_name
+        ELSE
+            i.harper_order_name
+        END AS harper_order_name,
+
+        CASE WHEN i.partner_order_name IS NULL THEN
+            ho.original_order_name
+        ELSE
+            i.partner_order_name
+        END AS partner_order_name,
         i.commission__commission_type as commission_type,
         i.commission__percentage as commission_percentage,
         i.commission__calculated_amount as commission_amount_calculated,
@@ -60,14 +69,13 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
         i.order_type AS order_type,
         {{ clean__transaction__summary_columns | prefix_columns('t', 'transaction_info', exclude_columns=[]) }},
         {{ rep__deduped_order_items_columns | prefix_columns('i', 'item_info') }},
-        {{ rep__order__summary_columns | prefix_columns('hos', 'harper_order') }}
+        {{ rep__order__summary_columns | prefix_columns('ho', 'harper_order') }}
     FROM
         {{ schema }}.clean__transaction__items ti
     LEFT JOIN {{ schema }}.clean__transaction__summary t ON t.id = ti.transaction_id
-    LEFT JOIN {{ schema }}.rep__order__summary hos ON ti.order_id = hos.id
-    LEFT JOIN {{ schema }}.rep__deduped_order_items i on ti.item_id = i.item_id AND i.is_link_order_child_item = 0 AND i.order_id=ti.order
+    LEFT JOIN {{ schema }}.rep__deduped_order_items i on ti.item_id = i.item_id AND i.is_link_order_child_item = 0
+    LEFT JOIN {{ schema }}.rep__order__summary ho ON ti.order_id = ho.id
 
-    ORDER BY t.createdat ASC
 WITH NO DATA;
 
 {% if is_modified %}

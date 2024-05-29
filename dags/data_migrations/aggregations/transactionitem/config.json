@@ -16,5 +16,8 @@
     "order_id": [
       "string"
     ]
-  }
+  },
+  "discard_fields": [
+    "order"
+  ]
 }
