@@ -10,6 +10,9 @@ CREATE VIEW {{ schema }}.clean__order__items AS
 	oi.price as item_price_pence,
 	oi.discount AS item_discount_price_pence,
 	oi.price - oi.discount AS item_value_pence,
+    oi.calculated_discount AS calculated_item_discount_price_pence,
+	oi.price - oi.calculated_discount AS calculated_item_value_pence,
+
 	oi.qty AS item_quantity,
 	CASE WHEN oi.order_type = 'inspire_me' THEN 1 ELSE 0 END AS is_inspire_me,
     -- CASE WHEN oi.commission__amount THEN

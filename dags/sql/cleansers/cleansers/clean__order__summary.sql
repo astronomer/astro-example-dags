@@ -3,6 +3,11 @@ DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
+        CASE WHEN o.order_type IN ('harper_try') THEN
+            'harper_try'
+        ELSE
+            'harper_concierge'
+        END AS harper_product_type,
         get_halo_url(o.id, o.order_type) AS halo_link,
         get_stripe_customer_url(c.stripe_customer_id) AS stripe_customer_link,
         {{ clean__order__item__summary_columns | prefix_columns('clean__ois', 'itemsummary', exclude_columns=['order_id']) }},

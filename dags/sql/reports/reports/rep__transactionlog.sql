@@ -5,44 +5,52 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__transactionlog CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
     SELECT
         ho.brand_name AS partner_name,
+        ho.harper_product_type,
         ho.try_commission_chargeable as try_commission_chargeable,
         ho.try_commission_chargeable_at as try_commission_chargeable_at,
         ti.*,
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__discount_applied
-        ELSE
-           0
-        END AS order_discount_in_appointment_discount_applied,
+        i.calculated_discount,
+        i.calculated_discount_code,
+        i.calculated_discount_percent,
 
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__discount_amount
-        ELSE
-            NULL
-        END AS order_discount_in_appointment_discount_amount,
+        -- calculate discount_amount, discount_code, discount_amount_off, discount_percentage_off
+        -- for item_info.discount etc. or harper_order
 
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__absorbed_by
-        ELSE
-            ''
-        END AS order_discount_in_appointment_absorbed_by,
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__discount_applied
+        -- ELSE
+           -- 0
+        -- END AS order_discount_in_appointment_discount_applied,
+--
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__discount_amount
+        -- ELSE
+            -- NULL
+        -- END AS order_discount_in_appointment_discount_amount,
+--
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__absorbed_by
+        -- ELSE
+            -- ''
+        -- END AS order_discount_in_appointment_absorbed_by,
+--
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__reason
+        -- ELSE
+            -- ''
+        -- END AS order_discount_in_appointment_reason,
+--
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__discount_code
+        -- ELSE
+            -- ''
+        -- END AS order_discount_in_appointment_discount_code,
 
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__reason
-        ELSE
-            ''
-        END AS order_discount_in_appointment_reason,
-
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__discount_code
-        ELSE
-            ''
-        END AS order_discount_in_appointment_discount_code,
-
-        CASE WHEN ti.lineitem_type = 'discount' THEN
-            ho.discount_in_appointment__discount_type
-        ELSE
-            ''
-        END AS order_discount_in_appointment_discount_type,
+        -- CASE WHEN ti.lineitem_type = 'discount' THEN
+            -- ho.discount_in_appointment__discount_type
+        -- ELSE
+            -- ''
+        -- END AS order_discount_in_appointment_discount_type,
 
         CASE WHEN i.harper_order_name IS NULL THEN
             ho.order_name
@@ -55,6 +63,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
         ELSE
             i.partner_order_name
         END AS partner_order_name,
+        -- if discount percentage, take
+        --price * discount_percentage = discount_amount
+
         i.commission__commission_type as commission_type,
         i.commission__percentage as commission_percentage,
         i.commission__calculated_amount as commission_amount_calculated,

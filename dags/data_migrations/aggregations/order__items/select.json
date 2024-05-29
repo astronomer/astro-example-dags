@@ -9,7 +9,16 @@
     },
     {
         "$addFields": {
-            "items.link_order_child": "$link_order_child"
+            "items.link_order_child": "$link_order_child",
+            "items.order_discount_code": "$discount_code",
+            "items.order_discount_percent": "$discount_rate",
+            "items.order_discount_type": "$discount_type",
+            "items.order_discount_total": "$discount_total",
+            "items.order_request_details_discount_code": "$request_details.discount_code",
+            "items.in_appointment_discount_code": "$discount_in_appointment.discount_code",
+            "items.in_appointment_discount_type": "$discount_in_appointment.discount_type",
+            "items.in_appointment_discount_amount": "$discount_in_appointment.discount_amount",
+            "items.in_appointment_discount_absorbed_by": "$discount_in_appointment.discount_absorbed_by"
         }
     },
     {
@@ -52,11 +61,72 @@
             }
         },
         "is_link_order_child_item": {
-              "$cond": {
-                  "if": {"$eq": ["$link_order_child", true]},
-                  "then": 1,
-                  "else": 0
-              }
+            "$cond": {
+                "if": {"$eq": ["$link_order_child", true]},
+                "then": 1,
+                "else": 0
+            }
+        },
+        "calculated_discount": {
+            "$cond": {
+                "if": {"$ne": ["$discount", null]},
+                "then": "$discount",
+                "else": {
+                    "$cond": {
+                        "if": {"$ne": ["$order_discount_total", null]},
+                        "then": "$order_discount_total",
+                        "else": {
+                            "$multiply": ["$price", {"$ifNull": ["$order_discount_percent", 0]}]
+                        }
+                    }
+                }
+            }
+        },
+        "calculated_discount_code": {
+            "$ifNull": ["$discount_code", {
+                "$ifNull": ["$order_discount_code", {
+                    "$ifNull": ["$order_request_details_discount_code", {
+                        "$ifNull": ["$in_appointment_discount_code", null]
+                    }]
+                }]
+            }]
+        },
+        "calculated_discount_percent": {
+            "$cond": {
+                "if": {"$ne": ["$order_discount_percent", null]},
+                "then": "$order_discount_percent",
+                "else": {
+                    "$cond": {
+                        "if": {"$ne": ["$in_appointment_discount_amount", null]},
+                        "then": {
+                            "$divide": [
+                                "$in_appointment_discount_amount",
+                                "$price"
+                            ]
+                        },
+                        "else": 0
+                    }
+                }
+            }
+        }
+      }
+    },
+    { "$set": {
+        "calculated_discount": {
+            "$convert": {
+                "input": "$calculated_discount",
+                "to": "int",
+                "onError": 0,
+                "onNull": 0
+            }
+        },
+        "calculated_discount_percent": {
+            "$convert": {
+                "input": "$calculated_discount_percent",
+                "to": "int",
+                "onError": 0,
+                "onNull": 0
+            }
         }
       }
     },
@@ -65,7 +135,16 @@
             "items": 0,
             "_id": 0,
             "request_detail": 0,
-            "parent_order_name":0
+            "parent_order_name":0,
+            "order_discount_code": 0,
+            "order_discount_percent": 0,
+            "order_discount_type": 0,
+            "order_discount_total": 0,
+            "order_request_details_discount_code": 0,
+            "in_appointment_discount_code": 0,
+            "in_appointment_discount_type": 0,
+            "in_appointment_discount_amount": 0,
+            "in_appointment_discount_absorbed_by": 0
         }
     },
     { "$skip": 0 },

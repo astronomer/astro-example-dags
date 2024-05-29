@@ -15,6 +15,15 @@
     ],
     "is_link_order_child_item": [
       "int32"
+    ],
+    "calculated_discount": [
+      "int32"
+    ],
+    "calculated_discount_code": [
+      "string"
+    ],
+    "calculated_discount_percent": [
+      "int32"
     ]
   }
 }
