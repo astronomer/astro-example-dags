@@ -42,8 +42,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
         i.initiated_sale__inspire_me_option_selected as inspire_me_option_selected,
         i.initiated_sale__inspire_me_description as inspire_me_description,
         i.order_type AS order_type,
-        ho.halo_link,
-        ho.stripe_customer_link,
         {{ clean__transaction__summary_columns | prefix_columns('t', 'transaction_info', exclude_columns=[]) }},
         {{ rep__deduped_order_items_columns | prefix_columns('i', 'item_info') }},
         {{ rep__order__summary_columns | prefix_columns('ho', 'harper_order') }}

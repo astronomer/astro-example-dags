@@ -1,7 +1,7 @@
 {% if is_modified %}
-DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__transactionlog_simplified CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__transactionlog__view CASCADE;
 {% endif %}
-CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog_simplified AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog__view AS
 
 SELECT
     t.transaction_info__payment_at__dim_date,
@@ -50,8 +50,10 @@ SELECT
     t.try_chargeable_at__dim_yearcalendarweek_sc,
     t.try_chargeable_at__dim_yearmonth_sc,
     t.transaction_info__payment_at,
-    t.stripe_customer_link,
-    t.halo_link,
+    t.harper_order__stripe_customer_link,
+    t.harper_order__halo_link,
+    t.harper_order__id,
+    t.item_info__item_id,
     t.id
 
 FROM
@@ -61,12 +63,12 @@ ORDER BY
   t.createdat DESC
 WITH NO DATA;
 {% if is_modified %}
-CREATE UNIQUE INDEX IF NOT EXISTS rep__transactionlog_simplified_idx ON {{ schema }}.rep__transactionlog_simplified (id);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_try_commission_chargeable_idx ON {{ schema }}.rep__transactionlog_simplified (try_commission_chargeable);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_try_payment_at_idx ON {{ schema }}.rep__transactionlog_simplified (transaction_info__payment_at);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_order_type_idx ON {{ schema }}.rep__transactionlog_simplified (order_type);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_partner_name_idx ON {{ schema }}.rep__transactionlog_simplified (partner_name);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_partner_order_name_idx ON {{ schema }}.rep__transactionlog_simplified (partner_order_name);
-CREATE INDEX IF NOT EXISTS rep__transactionlog_harper_order_name_idx ON {{ schema }}.rep__transactionlog_simplified (harper_order_name);
+CREATE UNIQUE INDEX IF NOT EXISTS rep__transactionlog__view_idx ON {{ schema }}.rep__transactionlog__view (id);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_try_commission_chargeable_idx ON {{ schema }}.rep__transactionlog__view (try_commission_chargeable);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_try_payment_at_idx ON {{ schema }}.rep__transactionlog__view (transaction_info__payment_at);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_order_type_idx ON {{ schema }}.rep__transactionlog__view (order_type);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_partner_name_idx ON {{ schema }}.rep__transactionlog__view (partner_name);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_partner_order_name_idx ON {{ schema }}.rep__transactionlog__view (partner_order_name);
+CREATE INDEX IF NOT EXISTS rep__transactionlog_harper_order_name_idx ON {{ schema }}.rep__transactionlog__view (harper_order_name);
 {% endif %}
-REFRESH MATERIALIZED VIEW {{ schema }}.rep__transactionlog_simplified;
+REFRESH MATERIALIZED VIEW {{ schema }}.rep__transactionlog__view;
