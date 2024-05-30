@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__order__item__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__item__summary AS
     SELECT
@@ -21,4 +20,3 @@ CREATE VIEW {{ schema }}.clean__order__item__summary AS
         order__items oi ON o.id = oi.order_id
     GROUP BY
         o.id;
-{% endif %}

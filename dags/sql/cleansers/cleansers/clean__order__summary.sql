@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
@@ -40,4 +39,3 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
     LEFT JOIN customer c ON c.id = o.customer_id
 
     ;
-{% endif %}

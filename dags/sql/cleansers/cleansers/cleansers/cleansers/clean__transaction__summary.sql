@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__transaction__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__transaction__summary AS
     SELECT
@@ -10,5 +9,3 @@ CREATE VIEW {{ schema }}.clean__transaction__summary AS
     LEFT JOIN {{ schema }}.clean__transaction__item__summary tis ON tis.transaction_id=t.id
     LEFT JOIN {{ schema }}.dim__time dt ON t.payment_at::date = dt.dim_date_id
 ;
-
-{% endif %}

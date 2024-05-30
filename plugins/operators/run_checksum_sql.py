@@ -11,6 +11,7 @@ from airflow.hooks.base import BaseHook
 from airflow.models.connection import Connection
 
 from plugins.utils.render_template import render_template
+from plugins.utils.extract_entities_from_sql import extract_entity_name
 
 from plugins.operators.mixins.get_columns_from_table import GetColumnsFromTableMixin
 
@@ -106,14 +107,15 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
                     self.context["is_modified"] = is_modified
 
                     self.log.info(self.sql_template)
+                    self._validate_sql_convention()
                     self.sql = render_template(self.sql_template, context=context, extra_context=self.context)
                     self.log.info(f"SQL='{self.sql}'")
                     self.log.info(f"isspace='{self.sql.isspace()}'")
                     if self.sql.isspace():
                         self.log.info("isspace is true")
+
                     if not (self.sql.isspace() or self.sql == ""):
                         # Validate the SQL to make sure it follows our naming convention
-                        self._validate_sql_convention(self.sql)
 
                         self.log.info(f"Executing {self.sql}")
                         conn.execute(self.sql)
@@ -179,77 +181,35 @@ CREATE TABLE IF NOT EXISTS {self.schema}.report_checksums (
             # If the record exists and the checksum matches, it's not considered modified
             return False
 
-    def _validate_sql_convention(self, sql):
+    def _validate_sql_convention(self):
         if self.sql_type == "indexes":
             return
         elif self.sql_type == "users":
             return
-        pattern = ""
+        elif self.sql_type == "functions":
+            return
         expected_prefix = ""
         if self.sql_type == "reports":
-            pattern = r"CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "rep__"
         elif self.sql_type == "cleansers":
-            pattern = r"CREATE VIEW {{ schema }}\.(\w+)"
             expected_prefix = "clean__"
         elif self.sql_type == "fact":
-            pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "fact__"
         elif self.sql_type == "dimensions":
-            pattern = r"CREATE TABLE IF NOT EXISTS {{ schema }}\.(\w+)"
             expected_prefix = "dim__"
-        elif self.sql_type == "functions":  # This is the new case for SQL functions
-            pattern = r"CREATE OR REPLACE FUNCTION {{ schema }}\.(\w+)"
-            expected_prefix = ""
 
-        if pattern:
-            matches = re.findall(pattern, sql, re.IGNORECASE)
-            for match in matches:
-                # Assuming the table or view name is always the last group captured
-                view_or_table_name = match[-1]  # This gets the last element of the match tuple
-                if not view_or_table_name.startswith(expected_prefix):
-                    raise AirflowException(
-                        f"{view_or_table_name} does not start with '{expected_prefix}' as required for Entity type '{self.sql_type}'."  # noqa
-                    )
+        entity_name = extract_entity_name(self.sql_template)
 
-    # def _add_table_columns_to_context(self, conn):
-    #     self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context}")
-    #     for table in self.add_table_columns_to_context:
-    #         self.context[f"{table}_columns"] = self.get_columns_from_table(conn, "public", table)
+        if not entity_name:
+            raise AirflowException(f"No Entity name found in sql_template - '{self.sql_template}'.")
+
+        if not entity_name.startswith(expected_prefix):
+            raise AirflowException(
+                f"{entity_name} does not start with '{expected_prefix}' as required for Entity type '{self.sql_type}'."  # noqa
+            )
 
     def _add_table_columns_to_context(self, conn):
         self.log.info(f"_add_table_columns_to_context: {self.add_table_columns_to_context} for {self.sql_type}")
-
-        if self.sql_type == "reports":
-            # Add all the clean__* views
-            # Query to find tables, views, and materialized views starting with 'clean__'
-            # remember %% escapes the % Bloody crazy syntax.
-            query = f"""
-                SELECT n.nspname AS schema_name,
-                       c.relname AS object_name,
-                       CASE c.relkind
-                           WHEN 'r' THEN 'table'
-                           WHEN 'v' THEN 'view'
-                           WHEN 'm' THEN 'materialized view'
-                           ELSE 'other'
-                       END AS object_type
-                FROM pg_class c
-                JOIN pg_namespace n ON n.oid = c.relnamespace
-                WHERE c.relname LIKE 'clean__%%' AND c.relkind IN ('r', 'v', 'm')
-                AND n.nspname = '{self.schema}';
-            """
-
-            # Execute the query
-            self.log.info(f"_add_table_columns_to_context: Loading cleansers {query}")
-            result = conn.execute(query)
-            clean_objects = result.fetchall()
-
-            # Add 'clean__' tables to context
-            for schema_name, object_name, object_type in clean_objects:
-                # You can customize the storage format as needed
-                key = f"{object_name}_columns"
-                self.context[key] = self.get_columns_from_table(conn, schema_name, object_name)
-                self.log.info(f"Added {object_type} '{object_name}' from schema '{schema_name}' to context")
 
         # Process each table from the initial list
         for table in self.add_table_columns_to_context:

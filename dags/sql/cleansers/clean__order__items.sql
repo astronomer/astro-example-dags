@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__order__items CASCADE;
 CREATE VIEW {{ schema }}.clean__order__items AS
   SELECT
@@ -30,4 +29,3 @@ WHERE
 	AND oi.name IS NOT NULL AND oi.name != ''
 	AND oi.order_name IS NOT NULL AND oi.order_name != '' AND oi.order_name != ' ' AND oi.order_name != ' -L1'
 	AND oi.original_order_name IS NOT NULL AND oi.original_order_name != '' AND oi.original_order_name != ' ' AND oi.original_order_name != ' -L1'
-{% endif %}
