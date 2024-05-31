@@ -71,7 +71,7 @@ def example_astronauts():
 
     #Use dynamic task mapping to run the print_astronaut_craft task for each 
     #Astronaut in space
-    print_astronaut_craft.partial(greeting="Hello! :)").expand(
+    print_astronaut_craft.partial(greeting="Bonjour à tous").expand(
         person_in_space=get_astronauts() #Define dependencies using TaskFlow API syntax
     )
 
