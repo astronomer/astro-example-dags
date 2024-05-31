@@ -33,6 +33,7 @@ import requests
     doc_md=__doc__,
     default_args={"owner": "Astro", "retries": 3},
     tags=["example"],
+    dag_id="alexandre_g"
 )
 def example_astronauts():
     #Define tasks
