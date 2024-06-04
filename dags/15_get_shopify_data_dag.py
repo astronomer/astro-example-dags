@@ -55,11 +55,7 @@ start_task = ShortCircuitOperator(
 )
 start_task.doc = doc
 
-partners = [
-    # 'rixo',
-    # 'thefold',
-    "harper_production"
-]
+partners = ["shrimps", "chinti_parker", "beckham", "jigsaw", "rixo", "cefinn", "temperley", "snicholson"]
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(
     task_id="ensure_transient_schema_exists",
