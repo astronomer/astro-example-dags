@@ -37,7 +37,11 @@ linked_sd AS (
 first_order AS (
     SELECT
         customer_id,
+<<<<<<< Updated upstream
         MIN(DATE(createdat)) AS first_order_date
+=======
+        MIN(DATE(createdat)) AS first_order_datest
+>>>>>>> Stashed changes
     FROM
         public.orders
     GROUP BY
