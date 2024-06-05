@@ -3,7 +3,7 @@ CREATE VIEW {{ schema }}.rep__ship_direct_orders AS
 SELECT b.order_name AS original_order_name, a.*
     FROM (
         SELECT *
-        FROM {{ schema }}.clean__order__summary
+        FROM {{ schema }}.rep__order__summary.sql
         WHERE
         order_type = 'ship_direct') a
     LEFT JOIN public.clean__order__summary b
