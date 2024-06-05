@@ -18,7 +18,7 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         {{ dim__time_columns | prefix_columns('tae', 'tp_actually_ended') }},
         {{ dim__time_columns | prefix_columns('tar', 'tp_actually_reconciled') }},
         {{ dim__time_columns | prefix_columns('tcc', 'try_chargeable_at') }},
-        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
+        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}o
     FROM
         {{ schema }}.orders o
     LEFT JOIN
