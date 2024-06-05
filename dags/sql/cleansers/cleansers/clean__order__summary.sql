@@ -2,6 +2,7 @@ DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
+        ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS customer_order_seq,
         CASE WHEN o.order_type IN ('harper_try') THEN
             'harper_try'
         ELSE
