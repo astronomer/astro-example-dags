@@ -1,131 +1,131 @@
 {
-  "title": "IUserSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "bsonType": [
-        "objectId"
-      ],
-      "type": "string",
-      "tsType": "MongooseObjectId"
+    "title": "IUserSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
+        },
+        "first_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "timekit_resource_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "last_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "password": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "last_active": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "reset_password_token": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "reset_password_expiry": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "harper_member": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "Yes",
+                "Not yet",
+                "Declined"
+            ]
+        },
+        "telephone_number": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "resources_access": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "type": "string",
+                "bsonType": [
+                    "string"
+                ]
+            }
+        },
+        "email": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "role": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "__t": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "first_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "timekit_resource_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "last_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "password": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "last_active": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "reset_password_token": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "reset_password_expiry": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "harper_member": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "Yes",
-        "Not yet",
-        "Declined"
-      ]
-    },
-    "telephone_number": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "resources_access": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "type": "string",
-        "bsonType": [
-          "string"
-        ]
-      }
-    },
-    "email": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "role": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "__t": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "role",
-    "email",
-    "password"
-  ],
-  "additionalProperties": false
+    "required": [
+        "role",
+        "email",
+        "password"
+    ],
+    "additionalProperties": false
 }

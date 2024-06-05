@@ -1,37 +1,37 @@
 {
-  "title": "IJobModelSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "name": {
-      "bsonType": [
-        "string"
-      ],
-      "type": "string"
+    "title": "IJobModelSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "name": {
+            "bsonType": [
+                "string"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
     },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    }
-  },
-  "required": [
-    "name"
-  ],
-  "additionalProperties": false
+    "required": [
+        "name"
+    ],
+    "additionalProperties": false
 }

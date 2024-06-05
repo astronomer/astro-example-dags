@@ -1,44 +1,44 @@
 {
-  "title": "IImageSchema",
-  "bsonType": [
-    "object"
-  ],
-  "type": "object",
-  "properties": {
-    "url": {
-      "bsonType": [
-        "string"
-      ],
-      "type": "string"
+    "title": "IImageSchema",
+    "bsonType": [
+        "object"
+    ],
+    "type": "object",
+    "properties": {
+        "url": {
+            "bsonType": [
+                "string"
+            ],
+            "type": "string"
+        },
+        "size": {
+            "bsonType": [
+                "string"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
     },
-    "size": {
-      "bsonType": [
-        "string"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    }
-  },
-  "required": [
-    "url",
-    "size"
-  ],
-  "additionalProperties": false
+    "required": [
+        "url",
+        "size"
+    ],
+    "additionalProperties": false
 }

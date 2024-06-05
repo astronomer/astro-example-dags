@@ -1,345 +1,345 @@
 {
-  "title": "ICustomerSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "bsonType": [
-        "objectId"
-      ],
-      "type": "string",
-      "tsType": "MongooseObjectId"
-    },
-    "first_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "last_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "password": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "last_active": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "reset_password_token": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "reset_password_expiry": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "harper_member": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "Yes",
-        "Not yet",
-        "Declined"
-      ]
-    },
-    "telephone_number": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "shipping_address": {
-      "title": "IAddressSchema",
-      "type": "object",
-      "bsonType": [
+    "title": "ICustomerSchema",
+    "type": "object",
+    "bsonType": [
         "object"
-      ],
-      "properties": {
-        "address_1": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+    ],
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
         },
-        "address_2": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+        "first_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
         },
-        "city": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+        "last_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
         },
-        "county": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+        "password": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
         },
-        "postcode": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+        "last_active": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
         },
-        "country": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+        "reset_password_token": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "reset_password_expiry": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "harper_member": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "Yes",
+                "Not yet",
+                "Declined"
+            ]
         },
         "telephone_number": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
         },
-        "__v": {
-          "bsonType": [
-            "int"
-          ],
-          "type": "integer"
+        "shipping_address": {
+            "title": "IAddressSchema",
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "address_1": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "address_2": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "city": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "county": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "postcode": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "country": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "telephone_number": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "__v": {
+                    "bsonType": [
+                        "int"
+                    ],
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "bsonType": [
+                        "date"
+                    ],
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "bsonType": [
+                        "date"
+                    ],
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "billing_address": {
+            "title": "IAddressSchema",
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "address_1": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "address_2": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "city": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "county": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "postcode": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "country": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "telephone_number": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "__v": {
+                    "bsonType": [
+                        "int"
+                    ],
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "bsonType": [
+                        "date"
+                    ],
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "bsonType": [
+                        "date"
+                    ],
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "email": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "partner_customer_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "total_orders": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "total_purchace_price": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "total_pieces_ordered": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "total_ordered_price": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "last_completed_order_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "email_updated_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "telephone_number_updated_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "has_calculated_totals": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "stripe_customer_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "stripe_payment_method_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "stripe_payment_fingerprint": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "stripe_payment_fingerprint_updated_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
         },
         "createdAt": {
-          "bsonType": [
-            "date"
-          ],
-          "type": "string"
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
         },
         "updatedAt": {
-          "bsonType": [
-            "date"
-          ],
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "billing_address": {
-      "title": "IAddressSchema",
-      "type": "object",
-      "bsonType": [
-        "object"
-      ],
-      "properties": {
-        "address_1": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "address_2": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "city": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "county": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "postcode": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "country": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
-        },
-        "telephone_number": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ]
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
         },
         "__v": {
-          "bsonType": [
-            "int"
-          ],
-          "type": "integer"
-        },
-        "createdAt": {
-          "bsonType": [
-            "date"
-          ],
-          "type": "string"
-        },
-        "updatedAt": {
-          "bsonType": [
-            "date"
-          ],
-          "type": "string"
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
         }
-      },
-      "additionalProperties": false
     },
-    "email": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "partner_customer_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "total_orders": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "total_purchace_price": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "total_pieces_ordered": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "total_ordered_price": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "last_completed_order_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "email_updated_at": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "telephone_number_updated_at": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "has_calculated_totals": {
-      "type": "boolean",
-      "bsonType": [
-        "bool"
-      ]
-    },
-    "stripe_customer_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "stripe_payment_method_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "stripe_payment_fingerprint": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "stripe_payment_fingerprint_updated_at": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "additionalProperties": false,
-  "required": [
-    "first_name",
-    "last_name",
-    "password",
-    "last_active",
-    "reset_password_token",
-    "reset_password_expiry",
-    "harper_member",
-    "telephone_number",
-    "shipping_address",
-    "billing_address",
-    "email",
-    "partner_customer_id",
-    "total_orders",
-    "total_purchace_price",
-    "total_pieces_ordered",
-    "total_ordered_price",
-    "last_completed_order_id",
-    "email_updated_at",
-    "telephone_number_updated_at",
-    "has_calculated_totals",
-    "stripe_customer_id",
-    "stripe_payment_method_id",
-    "stripe_payment_fingerprint",
-    "stripe_payment_fingerprint_updated_at",
-    "createdAt",
-    "updatedAt"
-  ]
+    "additionalProperties": false,
+    "required": [
+        "first_name",
+        "last_name",
+        "password",
+        "last_active",
+        "reset_password_token",
+        "reset_password_expiry",
+        "harper_member",
+        "telephone_number",
+        "shipping_address",
+        "billing_address",
+        "email",
+        "partner_customer_id",
+        "total_orders",
+        "total_purchace_price",
+        "total_pieces_ordered",
+        "total_ordered_price",
+        "last_completed_order_id",
+        "email_updated_at",
+        "telephone_number_updated_at",
+        "has_calculated_totals",
+        "stripe_customer_id",
+        "stripe_payment_method_id",
+        "stripe_payment_fingerprint",
+        "stripe_payment_fingerprint_updated_at",
+        "createdAt",
+        "updatedAt"
+    ]
 }

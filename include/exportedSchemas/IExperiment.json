@@ -1,95 +1,95 @@
 {
-  "title": "IExperimentSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "array_data": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "type": "object",
-        "bsonType": [
-          "objectId"
-        ],
-        "properties": {
-          "value": {
-            "type": "object",
+    "title": "IExperimentSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "_id": {
+            "type": "string",
             "bsonType": [
-              "object"
+                "objectId"
             ],
             "tsType": "MongooseObjectId"
-          },
-          "key": {
-            "type": "object",
-            "bsonType": [
-              "object"
-            ]
-          }
         },
-        "additionalProperties": false
-      }
+        "type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "array_data": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "type": "object",
+                "bsonType": [
+                    "objectId"
+                ],
+                "properties": {
+                    "value": {
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "tsType": "MongooseObjectId"
+                    },
+                    "key": {
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ]
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "is_active": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "experimentId": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "variantNumber": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "is_active": {
-      "type": "boolean",
-      "bsonType": [
-        "bool"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "experimentId": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "variantNumber": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "additionalProperties": false,
-  "required": [
-    "_id",
-    "experimentId",
-    "variantNumber",
-    "type",
-    "array_data",
-    "is_active"
-  ]
+    "additionalProperties": false,
+    "required": [
+        "_id",
+        "experimentId",
+        "variantNumber",
+        "type",
+        "array_data",
+        "is_active"
+    ]
 }

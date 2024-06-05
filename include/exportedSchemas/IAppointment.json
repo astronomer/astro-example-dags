@@ -1,123 +1,123 @@
 {
-  "title": "IAppointmentSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "resource_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "appointment_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "status": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "appointment_start": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "appointment_end": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "timekit_response": {
-      "type": "object",
-      "bsonType": [
+    "title": "IAppointmentSchema",
+    "type": "object",
+    "bsonType": [
         "object"
-      ],
-      "additionalProperties": false
+    ],
+    "properties": {
+        "_id": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "resource_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "appointment_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "status": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "appointment_start": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "appointment_end": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "timekit_response": {
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "additionalProperties": false
+        },
+        "timekit_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "locate2u_stop_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "rescheduling_reason": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "appointment_date": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "green_slot": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
+        "order": {
+            "tsType": "MongooseObjectId",
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "timekit_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "locate2u_stop_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "rescheduling_reason": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "appointment_date": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "green_slot": {
-      "type": "boolean",
-      "bsonType": [
-        "bool"
-      ]
-    },
-    "order": {
-      "tsType": "MongooseObjectId",
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "additionalProperties": false,
-  "required": [
-    "resource_id",
-    "appointment_id",
-    "status",
-    "timekit_response",
-    "timekit_id",
-    "rescheduling_reason",
-    "appointment_date",
-    "green_slot",
-    "order"
-  ]
+    "additionalProperties": false,
+    "required": [
+        "resource_id",
+        "appointment_id",
+        "status",
+        "timekit_response",
+        "timekit_id",
+        "rescheduling_reason",
+        "appointment_date",
+        "green_slot",
+        "order"
+    ]
 }

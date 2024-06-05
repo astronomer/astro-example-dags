@@ -1,50 +1,50 @@
 {
-  "title": "IOrderChangesLogSchema",
-  "type": "object",
-  "bsonType": "object",
-  "properties": {
-    "change_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
+    "title": "IOrderChangesLogSchema",
+    "type": "object",
+    "bsonType": "object",
+    "properties": {
+        "change_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "value_changed_to": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "updated_by": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "user_role": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
     },
-    "value_changed_to": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "updated_by": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "user_role": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    }
-  },
-  "additionalProperties": false
+    "additionalProperties": false
 }
