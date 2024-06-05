@@ -12,6 +12,6 @@ FROM (
         createdat,
         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS rn
     FROM
-        public.clean__order__summary
+        {{ schema }}.clean__order__summary
 ) sub
 WHERE rn = 1
