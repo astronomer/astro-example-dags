@@ -1,5 +1,5 @@
-DROP VIEW IF EXISTS {{ schema }}.ship_direct_orders CASCADE;
-CREATE VIEW {{ schema }}.ship_direct_orders AS
+DROP VIEW IF EXISTS {{ schema }}.rep__ship_direct_orders CASCADE;
+CREATE VIEW {{ schema }}.rep__ship_direct_orders AS
 SELECT b.order_name AS original_order_name, a.*
     FROM (
         SELECT *
