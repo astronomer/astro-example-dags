@@ -1,213 +1,213 @@
 {
-  "title": "IOrderEventSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "bsonType": [
-        "objectId"
-      ],
-      "type": "string",
-      "tsType": "MongooseObjectId"
-    },
-    "order_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "requestId": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "event_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "event",
-        "note",
-        "function",
-        ""
-      ]
-    },
-    "user_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "harper",
-        "brand",
-        "third_party_service",
-        "customer",
-        ""
-      ]
-    },
-    "user": {
-      "tsType": "MongooseObjectId",
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ]
-    },
-    "event_time_at": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "message": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "context_data": {
-      "title": "context_data",
-      "type": "object",
-      "bsonType": [
+    "title": "IOrderEventSchema",
+    "type": "object",
+    "bsonType": [
         "object"
-      ],
-      "properties": {
-        "data_type": {
-          "type": "string",
-          "bsonType": [
-            "string"
-          ],
-          "enum": [
-            "email",
-            "sms",
-            "data",
-            "note",
-            "function"
-          ]
+    ],
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
         },
-        "data": {
-          "type": "object",
-          "bsonType": [
-            "object"
-          ]
+        "order_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
         },
-        "links": {
-          "type": "array",
-          "bsonType": [
-            "array"
-          ],
-          "items": {
+        "requestId": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "event_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "event",
+                "note",
+                "function",
+                ""
+            ]
+        },
+        "user_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "harper",
+                "brand",
+                "third_party_service",
+                "customer",
+                ""
+            ]
+        },
+        "user": {
+            "tsType": "MongooseObjectId",
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ]
+        },
+        "event_time_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "message": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "context_data": {
+            "title": "context_data",
             "type": "object",
             "bsonType": [
-              "object"
+                "object"
             ],
             "properties": {
-              "name": {
-                "type": "string",
-                "bsonType": [
-                  "string"
-                ]
-              },
-              "url": {
-                "type": "string",
-                "bsonType": [
-                  "string"
-                ]
-              }
+                "data_type": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ],
+                    "enum": [
+                        "email",
+                        "sms",
+                        "data",
+                        "note",
+                        "function"
+                    ]
+                },
+                "data": {
+                    "type": "object",
+                    "bsonType": [
+                        "object"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "bsonType": [
+                        "array"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            },
+                            "url": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                }
             },
             "additionalProperties": false
-          }
+        },
+        "event_name_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "AllItemsOutOfStockError",
+                "CatastrophicOrderFailureError",
+                "PlatformSystemError",
+                "RequiresCustomerServiceError",
+                "RequiresManualInterventionError",
+                "TechAlertError",
+                "internalOrderCreated",
+                "platformOrderCreated",
+                "orderFulfilled",
+                "orderReceived",
+                "invoiceIssued",
+                "invoiceVoided",
+                "trialPeriodStarted",
+                "trialPeriodEndingSoon",
+                "trialPeriodEnded",
+                "trialPeriodFinalReconciliation",
+                "returnCreatedByCustomer",
+                "returnSentByCustomer",
+                "returnDeliveredByCustomer",
+                "itemsRefundedByWarehouse",
+                "paymentReceived",
+                "paymentPreAuthed",
+                "paymentFailed",
+                "orderCompleted",
+                "orderPPR",
+                "orderProblem",
+                "orderRejected",
+                "sentCustomerSMS",
+                "sentCustomerEmail",
+                "noteAdded",
+                "customerServiceAlert",
+                "orderStatusUpdate",
+                "fraudResponseLogged",
+                "inspireMeUpdated",
+                "writtenOff",
+                "shippingFeeRefundedByWarehouse",
+                "triggerPlatformOrderCreation",
+                "addToOrderCreated",
+                "inspireMeOrderCreated",
+                "harperTryOrderCreated",
+                "newAppointmentOrderCreated",
+                "orderCreated",
+                "platformOrderPartialCreated",
+                "secondAppointmentOrderCreated",
+                "shipDirectOrderCreated",
+                "triggerModuleFunction",
+                "orderFinalised",
+                "triggerPlatformOrderFunction",
+                ""
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
         }
-      },
-      "additionalProperties": false
     },
-    "event_name_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "AllItemsOutOfStockError",
-        "CatastrophicOrderFailureError",
-        "PlatformSystemError",
-        "RequiresCustomerServiceError",
-        "RequiresManualInterventionError",
-        "TechAlertError",
-        "internalOrderCreated",
-        "platformOrderCreated",
-        "orderFulfilled",
-        "orderReceived",
-        "invoiceIssued",
-        "invoiceVoided",
-        "trialPeriodStarted",
-        "trialPeriodEndingSoon",
-        "trialPeriodEnded",
-        "trialPeriodFinalReconciliation",
-        "returnCreatedByCustomer",
-        "returnSentByCustomer",
-        "returnDeliveredByCustomer",
-        "itemsRefundedByWarehouse",
-        "paymentReceived",
-        "paymentPreAuthed",
-        "paymentFailed",
-        "orderCompleted",
-        "orderPPR",
-        "orderProblem",
-        "orderRejected",
-        "sentCustomerSMS",
-        "sentCustomerEmail",
-        "noteAdded",
-        "customerServiceAlert",
-        "orderStatusUpdate",
-        "fraudResponseLogged",
-        "inspireMeUpdated",
-        "writtenOff",
-        "shippingFeeRefundedByWarehouse",
-        "triggerPlatformOrderCreation",
-        "addToOrderCreated",
-        "inspireMeOrderCreated",
-        "harperTryOrderCreated",
-        "newAppointmentOrderCreated",
-        "orderCreated",
-        "platformOrderPartialCreated",
-        "secondAppointmentOrderCreated",
-        "shipDirectOrderCreated",
-        "triggerModuleFunction",
-        "orderFinalised",
-        "triggerPlatformOrderFunction",
-        ""
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "event_name_id",
-    "message",
-    "user_type",
-    "event_type",
-    "requestId",
-    "order_id"
-  ],
-  "additionalProperties": false
+    "required": [
+        "event_name_id",
+        "message",
+        "user_type",
+        "event_type",
+        "requestId",
+        "order_id"
+    ],
+    "additionalProperties": false
 }

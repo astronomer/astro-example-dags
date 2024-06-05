@@ -1,70 +1,70 @@
 {
-  "title": "ISmsSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "subject": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
+    "title": "ISmsSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "subject": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "recipient": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "sender": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "order_id": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "content": {
+            "bsonType": [
+                "string"
+            ],
+            "type": "string"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "recipient": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "sender": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "order_id": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "content": {
-      "bsonType": [
-        "string"
-      ],
-      "type": "string"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "subject",
-    "recipient",
-    "sender",
-    "order_id",
-    "content",
-    "createdAt",
-    "updatedAt"
-  ],
-  "additionalProperties": false
+    "required": [
+        "subject",
+        "recipient",
+        "sender",
+        "order_id",
+        "content",
+        "createdAt",
+        "updatedAt"
+    ],
+    "additionalProperties": false
 }

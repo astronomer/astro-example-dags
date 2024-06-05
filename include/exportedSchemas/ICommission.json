@@ -1,50 +1,50 @@
 {
-  "title": "ICommissionSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "commission_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "standard",
-        "initiated",
-        "harper_try",
-        "harper_try_initiated"
-      ]
+    "title": "ICommissionSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "commission_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "standard",
+                "initiated",
+                "harper_try",
+                "harper_try_initiated"
+            ]
+        },
+        "percentage": {
+            "type": "number",
+            "bsonType": [
+                "double"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
     },
-    "percentage": {
-      "type": "number",
-      "bsonType": [
-        "double"
-      ]
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    }
-  },
-  "required": [
-    "commission_type",
-    "percentage"
-  ],
-  "additionalProperties": false
+    "required": [
+        "commission_type",
+        "percentage"
+    ],
+    "additionalProperties": false
 }

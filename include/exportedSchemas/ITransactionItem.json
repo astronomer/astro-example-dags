@@ -1,137 +1,137 @@
 {
-  "title": "ITransactionItemSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "bsonType": [
-        "objectId"
-      ],
-      "type": "string",
-      "tsType": "MongooseObjectId"
+    "title": "ITransactionItemSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
+        },
+        "lineitem_product_uuid": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "lineitem_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "lineitem_payment_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "lineitem_amount": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "lineitem_billed_quantity": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "lineitem_vat_percentage": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "lineitem_category": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "product",
+                "fee",
+                "deposit",
+                "item_discount",
+                "order_discount",
+                "harper_item_discount",
+                "harper_order_discount",
+                "unidentified_fee",
+                "unidentified_product",
+                "unmatched_item"
+            ]
+        },
+        "lineitem_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "purchase",
+                "refund",
+                "discount",
+                "try_on",
+                "adjusted_purchase",
+                "adjusted_refund"
+            ]
+        },
+        "referenced_transaction_item_id": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "order": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "item_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "item_idx": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "lineitem_product_uuid": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "lineitem_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "lineitem_payment_name": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "lineitem_amount": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "lineitem_billed_quantity": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "lineitem_vat_percentage": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "lineitem_category": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "product",
-        "fee",
-        "deposit",
-        "item_discount",
-        "order_discount",
-        "harper_item_discount",
-        "harper_order_discount",
-        "unidentified_fee",
-        "unidentified_product",
-        "unmatched_item"
-      ]
-    },
-    "lineitem_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "purchase",
-        "refund",
-        "discount",
-        "try_on",
-        "adjusted_purchase",
-        "adjusted_refund"
-      ]
-    },
-    "referenced_transaction_item_id": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "order": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "item_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "item_idx": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "lineitem_type",
-    "lineitem_category",
-    "lineitem_billed_quantity",
-    "lineitem_amount",
-    "lineitem_payment_name",
-    "lineitem_name"
-  ],
-  "additionalProperties": false
+    "required": [
+        "lineitem_type",
+        "lineitem_category",
+        "lineitem_billed_quantity",
+        "lineitem_amount",
+        "lineitem_payment_name",
+        "lineitem_name"
+    ],
+    "additionalProperties": false
 }

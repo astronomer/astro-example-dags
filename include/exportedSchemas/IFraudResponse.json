@@ -1,79 +1,79 @@
 {
-  "title": "IFraudResponseSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "type": "string",
-      "bsonType": [
-        "objectId"
-      ],
-      "tsType": "MongooseObjectId"
-    },
-    "response_id": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "order_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "checkout_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "data": {
-      "type": "object",
-      "bsonType": [
+    "title": "IFraudResponseSchema",
+    "type": "object",
+    "bsonType": [
         "object"
-      ],
-      "additionalProperties": false
+    ],
+    "properties": {
+        "_id": {
+            "type": "string",
+            "bsonType": [
+                "objectId"
+            ],
+            "tsType": "MongooseObjectId"
+        },
+        "response_id": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "order_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "checkout_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "data": {
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "additionalProperties": false
+        },
+        "event_name_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "checkoutEvent",
+                "returnEvent",
+                "transactionEvent",
+                "fulfilmentEvent",
+                ""
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "event_name_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "checkoutEvent",
-        "returnEvent",
-        "transactionEvent",
-        "fulfilmentEvent",
-        ""
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "additionalProperties": false,
-  "required": [
-    "event_name_id",
-    "checkout_id",
-    "order_id",
-    "response_id"
-  ]
+    "additionalProperties": false,
+    "required": [
+        "event_name_id",
+        "checkout_id",
+        "order_id",
+        "response_id"
+    ]
 }

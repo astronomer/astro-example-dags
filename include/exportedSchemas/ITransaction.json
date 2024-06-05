@@ -1,233 +1,233 @@
 {
-  "title": "ITransactionSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "_id": {
-      "bsonType": [
-        "objectId"
-      ],
-      "type": "string",
-      "tsType": "MongooseObjectId"
+    "title": "ITransactionSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
+        },
+        "harper_invoice_type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "checkout",
+                "try_on",
+                "concierge",
+                "trial_end",
+                "trial_end_replacement",
+                "reconciliation",
+                "ppr",
+                "shipping_fee_refund"
+            ]
+        },
+        "payment_reference_id": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "payment_reference": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "payment_provider": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ],
+            "enum": [
+                "internal",
+                "zettle",
+                "stripe"
+            ]
+        },
+        "payment_at": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "date"
+            ]
+        },
+        "payment_timestamp": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "payment_currency": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "payment_currency_symbol": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "payment_country": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "payment_invoiced_amount": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "payment_invoiced_vatamount": {
+            "type": "integer",
+            "bsonType": [
+                "int"
+            ]
+        },
+        "purchases": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "refunds": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "try_ons": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "deposits": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "adjusted_purchases": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "adjusted_refunds": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "discounts": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "orders": {
+            "type": "array",
+            "bsonType": [
+                "array"
+            ],
+            "items": {
+                "bsonType": [
+                    "objectId"
+                ],
+                "type": "string",
+                "tsType": "MongooseObjectId"
+            }
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "harper_invoice_type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "checkout",
-        "try_on",
-        "concierge",
-        "trial_end",
-        "trial_end_replacement",
-        "reconciliation",
-        "ppr",
-        "shipping_fee_refund"
-      ]
-    },
-    "payment_reference_id": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "payment_reference": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "payment_provider": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ],
-      "enum": [
-        "internal",
-        "zettle",
-        "stripe"
-      ]
-    },
-    "payment_at": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "date"
-      ]
-    },
-    "payment_timestamp": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "payment_currency": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "payment_currency_symbol": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "payment_country": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "payment_invoiced_amount": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "payment_invoiced_vatamount": {
-      "type": "integer",
-      "bsonType": [
-        "int"
-      ]
-    },
-    "purchases": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "refunds": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "try_ons": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "deposits": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "adjusted_purchases": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "adjusted_refunds": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "discounts": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "orders": {
-      "type": "array",
-      "bsonType": [
-        "array"
-      ],
-      "items": {
-        "bsonType": [
-          "objectId"
-        ],
-        "type": "string",
-        "tsType": "MongooseObjectId"
-      }
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "payment_timestamp",
-    "payment_invoiced_vatamount",
-    "payment_invoiced_amount",
-    "payment_country",
-    "payment_currency_symbol",
-    "payment_currency",
-    "payment_date",
-    "payment_at",
-    "payment_provider",
-    "harper_invoice_type"
-  ],
-  "additionalProperties": false
+    "required": [
+        "payment_timestamp",
+        "payment_invoiced_vatamount",
+        "payment_invoiced_amount",
+        "payment_country",
+        "payment_currency_symbol",
+        "payment_currency",
+        "payment_date",
+        "payment_at",
+        "payment_provider",
+        "harper_invoice_type"
+    ],
+    "additionalProperties": false
 }
