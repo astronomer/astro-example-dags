@@ -11,9 +11,13 @@ CREATE VIEW {{ schema }}.clean__order__items AS
 	oi.price - oi.discount AS item_value_pence,
     oi.calculated_discount AS calculated_item_discount_price_pence,
 	oi.price - oi.calculated_discount AS calculated_item_value_pence,
-
 	oi.qty AS item_quantity,
-	CASE WHEN oi.order_type = 'inspire_me' THEN 1 ELSE 0 END AS is_inspire_me,
+	SELECT
+    CASE
+        (WHEN o.createdat < '2024-05-28' AND oi.initiated_sale__user_role = 'remote_sales') THEN 1
+        (WHEN o.createdat >= '2024-05-28' AND oi.order_type = 'inspire_me') THEN 1
+        ELSE 0
+    END AS inspire_me
     -- CASE WHEN oi.commission__amount THEN
     --     oi.commission__amount
     -- ELSE
@@ -22,8 +26,11 @@ CREATE VIEW {{ schema }}.clean__order__items AS
     ELSE
         NULL
     --    END
-    END AS commission__calculated_amount
+    END AS commission__calculated_amount,
+	cdt.*
 FROM {{ schema }}.order__items oi
+LEFT JOIN {{ schema }}.dim__time cdt
+ON cdt.dim_date_id = oi.createdat
 WHERE
 	LOWER(oi.name) NOT LIKE '%%undefined%%'
 	AND oi.name IS NOT NULL AND oi.name != ''
