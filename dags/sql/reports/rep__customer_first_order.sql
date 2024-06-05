@@ -8,7 +8,7 @@ SELECT
 FROM (
     SELECT
         customer_id,
-        id,
+        order_id,
         createdat,
         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS rn
     FROM
