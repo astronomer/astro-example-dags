@@ -27,10 +27,10 @@ CREATE VIEW {{ schema }}.clean__order__items AS
         NULL
     --    END
     END AS commission__calculated_amount,
-	cdt.*
+	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
-LEFT JOIN {{ schema }}.dim__time cdt
-ON cdt.dim_date_id = oi.createdat
+LEFT JOIN
+    {{ schema }}.dim__time oc ON oi.createdat::date = oc.dim_date_id
 WHERE
 	LOWER(oi.name) NOT LIKE '%%undefined%%'
 	AND oi.name IS NOT NULL AND oi.name != ''
