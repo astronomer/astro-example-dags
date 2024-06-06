@@ -18,7 +18,7 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         {{ dim__time_columns | prefix_columns('tae', 'tp_actually_ended') }},
         {{ dim__time_columns | prefix_columns('tar', 'tp_actually_reconciled') }},
         {{ dim__time_columns | prefix_columns('tcc', 'try_chargeable_at') }},
-        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}o
+        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
     FROM
         {{ schema }}.orders o
     LEFT JOIN
@@ -41,6 +41,6 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
     WHERE brand_name IS NOT NULL
     AND brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','',' ')
     AND order_name IS NOT NULL
-    AND order_name NOT IN ('',' ','  ')
+    AND order_name NOT IN ('',' ','  ',' -L1')
     AND lower(customer__first_name) NOT LIKE '%test%'
     ;
