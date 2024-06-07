@@ -1,0 +1,10 @@
+layout pyenv 3.10.10
+
+export PYTHONDONTWRITEBYTECODE=1
+export GITFEATURES_MASTER_BRANCH=main
+export GITFEATURES_REPO=github
+
+export_alias dcdatalake "docker exec -it astro-example-dags_b02baf-datalake-1 bash"
+export_alias dcairweb "docker exec -it astro-example-dags_b02baf-webserver-1 bash"
+export_alias dcairsched "docker exec -it astro-example-dags_b02baf-scheduler-1 bash"
+export_alias dcdatalake "docker exec -it astro-example-dags_b02baf-datalake-1 bash"
