@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__zettle__transaction__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__zettle__transaction__summary AS
     select
@@ -20,4 +19,3 @@ CREATE VIEW {{ schema }}.clean__zettle__transaction__summary AS
     LEFT JOIN {{ schema }}.clean__zettle__purchase_payments zpp ON zt.originatingtransactionuuid=zpp.uuid
     LEFT JOIN dim__time dt ON zpp.created::date = dt.dim_date_id
 ;
-{% endif %}

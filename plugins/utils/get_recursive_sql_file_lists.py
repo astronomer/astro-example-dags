@@ -1,28 +1,9 @@
 import os
-import re
 import hashlib
 
 from airflow.exceptions import AirflowException
 
-# Define regex pattern to match different SQL types
-# pattern = r"""
-# CREATE\s+MATERIALIZED VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
-# CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
-# CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
-# CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
-# """
-
-pattern = re.compile(
-    r"""
-CREATE\s+MATERIALIZED\s+VIEW\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+OR\s+REPLACE\s+VIEW\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+TABLE\s+{{\s*schema\s*}}\.(\w+)\s*|
-CREATE\s+OR\s+REPLACE\s+FUNCTION\s+{{\s*schema\s*}}\.(\w+)
-""",
-    re.IGNORECASE | re.VERBOSE,
-)
+from plugins.utils.extract_entities_from_sql import extract_entity_name
 
 
 def get_recursive_sql_file_lists(
@@ -56,24 +37,19 @@ def get_recursive_sql_file_lists(
                 last_dir_index = path_parts.index(last_dir_name)
                 modified_filepath = os.sep.join(path_parts[last_dir_index:])
                 sql_string = content.decode("utf-8")
-                # Extract entity names from the SQL string using the pattern
-                matches = re.findall(pattern, sql_string)
-                print(matches)
-                if len(matches) < 1 and check_entity_pattern:
-                    raise AirflowException(
-                        f"SQL filename {full_path} doesn't contain a string which matches a doublecheck pattern {pattern}"  # noqa
-                    )
-                for match in matches:
-                    entity_name = next((m for m in match if m), None)
+
+                if check_entity_pattern:
+                    entity_name = extract_entity_name(sql_string)
                     if entity_name:
-                        print(f"Matched {entity_name}")
                         if f"{filename_without_extension}" != entity_name:
                             raise AirflowException(
-                                f"SQL filename {full_path} doesn't match its Entity Name {entity_name}"  # noqa
+                                f"SQL filename {full_path} doesn't match its Entity Name {entity_name}"
                             )
                         current_level_entities.append(entity_name)
                     else:
-                        print(f"Failed to match for {filename_without_extension}")
+                        raise AirflowException(
+                            f"SQL filename {full_path} doesn't contain a recognisable entity string, e.g. I can't work out the name of the view/table/dimension"  # noqa
+                        )
 
                 file_info = {
                     "filename": filename_without_extension,

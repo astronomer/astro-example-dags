@@ -8,7 +8,6 @@ from airflow.utils.trigger_rule import TriggerRule
 
 from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
 from plugins.utils.found_records_to_process import found_records_to_process
-from plugins.utils.get_recursive_sql_file_lists import get_recursive_sql_file_lists
 from plugins.utils.send_harper_slack_notification import send_harper_failure_notification
 
 from plugins.operators.drop_table import DropPostgresTableOperator
@@ -62,11 +61,6 @@ start_task.doc = doc
 base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag, trigger_rule=TriggerRule.NONE_FAILED)
 exported_schemas_path = "../include/exportedSchemas/"
 exported_schemas_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), exported_schemas_path)
-
-reports = "./sql/reports"
-reports_abspath = os.path.join(os.path.dirname(os.path.abspath(__file__)), reports)
-
-reports_sql_files = get_recursive_sql_file_lists(reports_abspath, subdir="reports")
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(
     task_id="ensure_transient_schema_exists",
@@ -209,20 +203,3 @@ for config in migrations:
     >> ensure_missing_columns_function_exists
     >> migration_tasks
 )
-
-# last_report_task = base_tables_completed
-# for group_index, group_list in enumerate(reports_sql_files, start=1):
-#     report_task = DummyOperator(task_id=f"reports_{group_index}", dag=dag)
-#     report_task_complete = DummyOperator(task_id=f"reports_{group_index}_complete", dag=dag)
-#     last_report_task >> report_task
-
-#     # Initialize an array to hold all tasks in the current group
-#     tasks_in_current_group = []
-
-#     for config in group_list:
-#         id = config["id"]
-#         task = DummyOperator(task_id=id, dag=dag)
-#         # Add the current task to the array
-#         tasks_in_current_group.append(task)
-#     report_task >> tasks_in_current_group >> report_task_complete
-#     last_report_task = report_task_complete

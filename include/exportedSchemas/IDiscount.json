@@ -1,67 +1,67 @@
 {
-  "title": "IDiscountSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "code": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
+    "title": "IDiscountSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "code": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "amount": {
+            "type": "number",
+            "bsonType": [
+                "double"
+            ]
+        },
+        "type": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "valid_until": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "timestamp"
+            ]
+        },
+        "valid_from": {
+            "type": "string",
+            "tsType": "Date",
+            "bsonType": [
+                "timestamp"
+            ]
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        }
     },
-    "amount": {
-      "type": "number",
-      "bsonType": [
-        "double"
-      ]
-    },
-    "type": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "valid_until": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "timestamp"
-      ]
-    },
-    "valid_from": {
-      "type": "string",
-      "tsType": "Date",
-      "bsonType": [
-        "timestamp"
-      ]
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    }
-  },
-  "required": [
-    "code",
-    "amount",
-    "type",
-    "valid_until",
-    "valid_from"
-  ],
-  "additionalProperties": false
+    "required": [
+        "code",
+        "amount",
+        "type",
+        "valid_until",
+        "valid_from"
+    ],
+    "additionalProperties": false
 }

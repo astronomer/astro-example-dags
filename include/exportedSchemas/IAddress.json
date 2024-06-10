@@ -1,70 +1,70 @@
 {
-  "title": "IAddressSchema",
-  "type": "object",
-  "bsonType": [
-    "object"
-  ],
-  "properties": {
-    "address_1": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
+    "title": "IAddressSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "address_1": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "address_2": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "city": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "county": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "postcode": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "country": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "telephone_number": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
     },
-    "address_2": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "city": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "county": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "postcode": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "country": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "telephone_number": {
-      "type": "string",
-      "bsonType": [
-        "string"
-      ]
-    },
-    "__v": {
-      "bsonType": [
-        "int"
-      ],
-      "type": "integer"
-    },
-    "createdAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    },
-    "updatedAt": {
-      "bsonType": [
-        "date"
-      ],
-      "type": "string"
-    }
-  },
-  "additionalProperties": false
+    "additionalProperties": false
 }

@@ -1,5 +1,3 @@
-{% if is_modified %}
-
 DROP VIEW IF EXISTS {{ schema }}.clean__zettle__purchase_payments CASCADE;
 CREATE VIEW {{ schema }}.clean__zettle__purchase_payments AS
 SELECT
@@ -19,4 +17,3 @@ FROM
         FROM
             json_array_elements(CAST(p.payments AS JSON))
     ) AS x;
-{% endif %}

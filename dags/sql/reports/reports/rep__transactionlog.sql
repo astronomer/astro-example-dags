@@ -8,49 +8,13 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__transactionlog AS
         ho.harper_product_type,
         ho.try_commission_chargeable as try_commission_chargeable,
         ho.try_commission_chargeable_at as try_commission_chargeable_at,
+        ho.try_chargeable_at__dim_date,
+        ho.try_chargeable_at__dim_yearcalendarweek_sc,
+        ho.try_chargeable_at__dim_yearmonth_sc,
         ti.*,
         i.calculated_discount,
         i.calculated_discount_code,
         i.calculated_discount_percent,
-
-        -- calculate discount_amount, discount_code, discount_amount_off, discount_percentage_off
-        -- for item_info.discount etc. or harper_order
-
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__discount_applied
-        -- ELSE
-           -- 0
-        -- END AS order_discount_in_appointment_discount_applied,
---
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__discount_amount
-        -- ELSE
-            -- NULL
-        -- END AS order_discount_in_appointment_discount_amount,
---
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__absorbed_by
-        -- ELSE
-            -- ''
-        -- END AS order_discount_in_appointment_absorbed_by,
---
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__reason
-        -- ELSE
-            -- ''
-        -- END AS order_discount_in_appointment_reason,
---
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__discount_code
-        -- ELSE
-            -- ''
-        -- END AS order_discount_in_appointment_discount_code,
-
-        -- CASE WHEN ti.lineitem_type = 'discount' THEN
-            -- ho.discount_in_appointment__discount_type
-        -- ELSE
-            -- ''
-        -- END AS order_discount_in_appointment_discount_type,
 
         CASE WHEN i.harper_order_name IS NULL THEN
             ho.order_name

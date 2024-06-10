@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__transaction__item__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__transaction__item__summary AS
     SELECT
@@ -13,5 +12,3 @@ FROM
 GROUP BY
     transaction_id
 ;
-
-{% endif %}

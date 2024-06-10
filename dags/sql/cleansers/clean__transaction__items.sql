@@ -1,4 +1,3 @@
-{% if is_modified %}
 DROP VIEW IF EXISTS {{ schema }}.clean__transaction__items CASCADE;
 CREATE VIEW {{ schema }}.clean__transaction__items AS
     SELECT
@@ -38,4 +37,3 @@ CREATE VIEW {{ schema }}.clean__transaction__items AS
         tdi.*
     FROM transaction__discounts td
     LEFT JOIN transactionitem tdi ON tdi.id = td.transactionitem_id;
-{% endif %}
