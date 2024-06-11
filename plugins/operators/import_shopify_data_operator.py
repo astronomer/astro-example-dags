@@ -57,8 +57,8 @@ columns_to_drop = [
     "shipping_address__phone",
     "shipping_address__zip",
     "customer__sms_marketing_consent",
-    "customer__email_marketing_consent__consent_updated_at",
-    "customer__sms_marketing_consent__consent_updated_at",
+    # "customer__email_marketing_consent__consent_updated_at",
+    # "customer__sms_marketing_consent__consent_updated_at",
 ]
 
 
@@ -165,7 +165,7 @@ END $$;
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 250
+            limit = 25
 
             # Base URL path
             headers = {}
@@ -187,6 +187,7 @@ END $$;
             self.log.info("Fetching transactions for %s", query_params)
 
             url = f"{base_url}?{urlencode(query_params)}"
+            page_count = 0  # Counter for the number of pages processed
             while url:
                 self.log.info("Fetching orders from URL: %s", url)
                 try:
@@ -206,9 +207,11 @@ END $$;
                 data = response.json()
                 orders = data.get("orders", [])
                 records = [order for order in orders if self._check_province_code(order)]
+                page_count += 1
 
                 self.log.info("Filter total Batch docs found: %d", len(records))
                 total_docs_processed += len(records)
+                self.log.info("Total pages processed: %d", page_count)
 
                 df = DataFrame(records)
                 self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
@@ -335,19 +338,18 @@ END $$;
                 return True
         return False
 
-
-def _get_next_page_url(self, response):
-    link_header = response.headers.get("Link")
-    print("_get_next_page_url", link_header)  # Debug print
-    if link_header:
-        links = link_header.split(",")
-        print("_get_next_page_url links", links)  # Debug print
-        for link in links:
-            if 'rel="next"' in link:
-                next_url = link.split(";")[0].strip()
-                print("_get_next_page_url next_url", next_url)  # Debug print
-                return next_url.strip("<> ")
-    return None
+    def _get_next_page_url(self, response):
+        link_header = response.headers.get("Link")
+        print("_get_next_page_url", link_header)  # Debug print
+        if link_header:
+            links = link_header.split(",")
+            print("_get_next_page_url links", links)  # Debug print
+            for link in links:
+                if 'rel="next"' in link:
+                    next_url = link.split(";")[0].strip()
+                    print("_get_next_page_url next_url", next_url)  # Debug print
+                    return next_url.strip("<> ")
+        return None
 
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):
