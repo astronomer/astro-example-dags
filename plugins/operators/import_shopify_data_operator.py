@@ -54,6 +54,8 @@ columns_to_drop = [
     "shipping_address__name",
     "shipping_address__phone",
     "shipping_address__zip",
+    "customer__sms_marketing_consent",
+    "customer__email_marketing_consent",
 ]
 
 
@@ -106,7 +108,11 @@ SELECT
     partner_platform_api_access_token,
     partner_platform_base_url,
     partner_platform_api_version,
-    allowed_region_for_harper
+    allowed_region_for_harper,
+    partner_shopify_app_type,
+    partner_platform_api_key,
+    partner_platform_api_secret
+
 FROM {self.schema}.partner
 WHERE partner_platform = 'shopify'
 AND reference = '{self.partner_ref}'
@@ -155,11 +161,18 @@ END $$;
             limit = 250
 
             # Base URL path
-            base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
+            headers = {}
+            if {self.schema}.partner.partner_shopify_app_type == "private":
+                base_url = (
+                    f"https://{self.shopify_app_type}:{self.api_secret}@{self.base_url}/admin/api/2024-04/orders.json"
+                )
+            else:
+                base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
+                headers = {"X-Shopify-Access-Token": self.api_access_token}
+
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
             start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
 
-            headers = {"X-Shopify-Access-Token": self.api_access_token}
             # Dictionary of query parameters
             query_params = {
                 "created_at_min": start_param,
@@ -189,7 +202,7 @@ END $$;
                 total_docs_processed += len(records)
 
                 df = DataFrame(records)
-                print("TOTAL Initial DF docs", df.shape)
+                self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
 
                 if not df.empty:
                     self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
@@ -252,13 +265,19 @@ END $$;
             context=context,
             extra_context=self.context,
         )
-        self.log.info(f"Executing {self.get_partner_config_sql}")
-        partner = conn.execute(self.get_partner_config_sql).fetchone()
-        self.api_access_token = partner["partner_platform_api_access_token"]
-        self.base_url = partner["partner_platform_base_url"]
-        self.api_version = partner["partner_platform_api_version"]
-        provinces_json = partner["allowed_region_for_harper"]
-        provinces = json.loads(provinces_json)
+        partner_row = conn.execute(self.get_partner_config_sql).fetchone()
+        if partner_row:
+            self.api_access_token = partner_row["partner_platform_api_access_token"]
+            self.base_url = partner_row["partner_platform_base_url"]
+            self.api_version = partner_row["partner_platform_api_version"]
+            self.shopify_app_type = partner_row["partner_shopify_app_type"]
+            self.api_key = partner_row["partner_platform_api_key"]
+            self.api_secret = partner_row["partner_platform_api_secret"]
+            provinces_json = partner_row["allowed_region_for_harper"]
+            provinces = json.loads(provinces_json)
+        else:
+            self.log.error("No partner details found.")
+            raise AirflowException("No partner details found.")
 
         self.provinces = []
         for province in provinces:
