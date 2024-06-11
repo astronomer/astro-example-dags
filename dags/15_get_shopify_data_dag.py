@@ -57,13 +57,13 @@ start_task.doc = doc
 
 partners = [
     "shrimps",
-    "chinti_parker",
-    "beckham",
-    "jigsaw",
-    "rixo",
-    "cefinn",
-    "temperley",
-    "snicholson",
+    # "chinti_parker",
+    # "beckham",
+    # "jigsaw",
+    # "rixo",
+    # "cefinn",
+    # "temperley",
+    # "snicholson",
     "self-portrait",
 ]
 

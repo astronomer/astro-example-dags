@@ -1,6 +1,8 @@
 import re
 import json
 from pprint import pprint  # noqa
+
+# from datetime import datetime
 from urllib.parse import urlencode
 
 import requests
@@ -55,7 +57,8 @@ columns_to_drop = [
     "shipping_address__phone",
     "shipping_address__zip",
     "customer__sms_marketing_consent",
-    "customer__email_marketing_consent",
+    "customer__email_marketing_consent__consent_updated_at",
+    "customer__sms_marketing_consent__consent_updated_at",
 ]
 
 
@@ -95,6 +98,10 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.separator = "__"
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.discard_fields = []
+        self.preserve_fields = [
+            ("customer__email_marketing_consent", "bool"),
+            ("company", "string"),
+        ]
 
         self.context = {
             "schema": schema,
@@ -162,7 +169,7 @@ END $$;
 
             # Base URL path
             headers = {}
-            if {self.schema}.partner.partner_shopify_app_type == "private":
+            if self.shopify_app_type == "private":
                 base_url = (
                     f"https://{self.shopify_app_type}:{self.api_secret}@{self.base_url}/admin/api/2024-04/orders.json"
                 )
@@ -184,27 +191,33 @@ END $$;
             url = f"{base_url}?{urlencode(query_params)}"
             while url:
                 self.log.info("Fetching orders from URL: %s", url)
-                response = requests.get(url, headers=headers)
-                if response.status_code != 200:
-                    error_message = response.json()
-                    self.log.error("Error fetching orders: %s", error_message)
-                    raise AirflowException(f"Error {error_message} {response}")
+                try:
+                    response = requests.get(url, headers=headers)
+                    if response.status_code == 401:
+                        self.log.error("Authentication failed for URL: %s", url)
+                        break  # Break the while loop to skip to the next iteration of the outer loop
+                    if response.status_code != 200:
+                        error_message = response.json()
+                        self.log.error("Error fetching orders: %s", error_message)
+                        raise AirflowException(f"Error {error_message} {response}")
+                except requests.exceptions.RequestException as e:
+                    self.log.error("Request failed: %s", e)
+                    break  # Break the while loop to skip to the next iteration of the outer loop
 
                 url = self._get_next_page_url(response)
                 data = response.json()
                 orders = data.get("orders", [])
                 records = [order for order in orders if self._check_province_code(order)]
 
-                # print(response.json())
-
-                print("Filter total Batch docs found", len(records))
-
+                self.log.info("Filter total Batch docs found: %d", len(records))
                 total_docs_processed += len(records)
 
                 df = DataFrame(records)
                 self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
 
                 if not df.empty:
+                    # print("RAW RECORDS 0, ", records[105])
+                    # print("df RECORDS 0, ", df.iloc[105]["customer"]["sms_marketing_consent"])
                     self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
                     df["airflow_sync_ds"] = ds
 
@@ -214,21 +227,46 @@ END $$;
                         existing_discard_fields = [col for col in self.discard_fields if col in df.columns]
                         df.drop(existing_discard_fields, axis=1, inplace=True)
 
-                    print("TOTAL discarded field docs found", df.shape)
+                    self.log.info("TOTAL discarded field docs found: %d", df.shape[0])
                     df = self.flatten_dataframe_columns_precisely(df)
+                    self.log.info("TOTAL flattened docs found: %d", df.shape[0])
                     print("TOTAL flattenned docs found", df.shape)
 
+                    """if "customer__sms_marketing_consent__consent_updated_at" in df.columns:
+                        print("RAW DATA TYPES", df["customer__sms_marketing_consent__consent_updated_at"].dtype)
+                        dtypes = df["customer__sms_marketing_consent__consent_updated_at"].apply(lambda x: type(x))
+                        print(dtypes)
+                    for col, dtype in df.dtypes.items():
+                        if dtype.kind in ("M", "m"):  # 'M' for datetime-like, 'm' for timedelta
+                            df[col] = df[col].apply(lambda x: x.isoformat() if not pd.isnull(x) else None)
+                    for column in df.columns:
+                        is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
+                        if is_date_column:
+                            # print("Handling datetime Top level column")
+                            column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
+
+                    if "customer__sms_marketing_consent__consent_updated_at" in df.columns:
+                        print("RAW DATA TYPES", df["customer__sms_marketing_consent__consent_updated_at"].dtype)
+                        dtypes = df["customer__sms_marketing_consent__consent_updated_at"].apply(lambda x: type(x))
+                        print(dtypes)"""
+
                     df.columns = df.columns.str.lower()
-
+                    df = self.align_to_schema_df(df)
+                    print("TOTAL Aligned docs found", df.shape)
                     df = df.drop(columns=columns_to_drop)
+                    df.fillna("")
 
-                    df.to_sql(
-                        self.destination_table,
-                        conn,
-                        if_exists="append",
-                        schema=self.destination_schema,
-                        index=False,
-                    )
+                    try:
+                        df.to_sql(
+                            self.destination_table,
+                            conn,
+                            if_exists="append",
+                            schema=self.destination_schema,
+                            index=False,
+                        )
+                    except Exception as e:
+                        self.log.error(f"Failed to write DataFrame to SQL: {e}")
+                        raise
                 else:
                     self.log.info("All Records Filtered to zero in this batch.")
 
@@ -326,3 +364,12 @@ END $$;
             return xcom.value
 
         return None
+
+    def align_to_schema_df(self, df):
+        for field, dtype in self.preserve_fields:
+            if field not in df.columns:
+                df[field] = None
+            print(f"aligning column {field} as type {dtype}")
+            df[field] = df[field].astype(dtype)
+
+        return df
