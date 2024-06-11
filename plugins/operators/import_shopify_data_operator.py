@@ -335,18 +335,19 @@ END $$;
                 return True
         return False
 
-    def _get_next_page_url(self, response):
-        link_header = response.headers.get("Link")
-        print("_get_next_page_url", link_header)
-        if link_header:
-            links = link_header.split(",")
-            print("_get_next_page_url", links)
-            for link in links:
-                if link.find("next") > 0:
-                    next_url = link
-                    print("_get_next_page_url", next_url)
-                    return next_url.replace("<", "").split(">")[0]
-        return None
+
+def _get_next_page_url(self, response):
+    link_header = response.headers.get("Link")
+    print("_get_next_page_url", link_header)  # Debug print
+    if link_header:
+        links = link_header.split(",")
+        print("_get_next_page_url links", links)  # Debug print
+        for link in links:
+            if 'rel="next"' in link:
+                next_url = link.split(";")[0].strip()
+                print("_get_next_page_url next_url", next_url)  # Debug print
+                return next_url.strip("<> ")
+    return None
 
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):
