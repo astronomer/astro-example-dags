@@ -170,9 +170,7 @@ END $$;
             # Base URL path
             headers = {}
             if self.shopify_app_type == "private":
-                base_url = (
-                    f"https://{self.shopify_app_type}:{self.api_secret}@{self.base_url}/admin/api/2024-04/orders.json"
-                )
+                base_url = f"https://{self.api_key}:{self.api_secret}@{self.base_url}/admin/api/2024-04/orders.json"
             else:
                 base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
                 headers = {"X-Shopify-Access-Token": self.api_access_token}
@@ -216,6 +214,7 @@ END $$;
                 self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
 
                 if not df.empty:
+                    df["partner__reference"] = self.partner_reference
                     # print("RAW RECORDS 0, ", records[105])
                     # print("df RECORDS 0, ", df.iloc[105]["customer"]["sms_marketing_consent"])
                     self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
@@ -311,6 +310,7 @@ END $$;
             self.shopify_app_type = partner_row["partner_shopify_app_type"]
             self.api_key = partner_row["partner_platform_api_key"]
             self.api_secret = partner_row["partner_platform_api_secret"]
+            self.partner_reference = partner_row["reference"]
             provinces_json = partner_row["allowed_region_for_harper"]
             provinces = json.loads(provinces_json)
         else:
@@ -325,6 +325,7 @@ END $$;
                 self.provinces.append(region_lookup[province_lower])
             else:
                 raise AirflowException(f"Error: Please add '{province}' to region_lookup.")
+        print("regions: ", provinces)
 
     def _check_province_code(self, order):
         shipping_address = order.get("shipping_address", None)
