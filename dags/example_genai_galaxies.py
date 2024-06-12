@@ -36,7 +36,7 @@ _VALID_CHARS = os.getenv("VALID_CHARS", "abcdefghijklmnopqrstuvwxyz ")
 _INPUT_SEQ_LENGTH = os.getenv("INPUT_SEQ_LENGTH", 5)
 # define which terms to remove from the training data to reduce bias towards certain types of galaxy names
 _TERMS_TO_REMOVE_FROM_TRAINING_DATA = os.getenv(
-    "TERMS_TO_REMOVE_FROM_TRAINING_DATA", ["galaxy", "dwarf", "spheroidal"]
+    "TERMS_TO_REMOVE_FROM_TRAINING_DATA", ["galaxy"]
 )
 
 ## Inference parameters
@@ -142,7 +142,7 @@ def example_genai_galaxies():
         train_set_vocab_size = len(char_to_int)
 
         # encode the characters of the galaxy names into sequences of integers to learn from
-        # the input for the model will be a sequence of length seq_length and the output will
+        # the input for the model will be a sequence of length input_seq_length and the output will
         # be the next character in the sequence, the model learns to predict the next character!
         dataX = []
         dataY = []
