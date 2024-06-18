@@ -2,6 +2,7 @@ DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
+        ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS customer_order_seq,
         CASE WHEN o.order_type IN ('harper_try') THEN
             'harper_try'
         ELSE
@@ -37,5 +38,9 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
     LEFT JOIN
         clean__order__status_events clean__ose ON clean__ose.order_id = o.id
     LEFT JOIN customer c ON c.id = o.customer_id
-
+    WHERE brand_name IS NOT NULL
+    AND brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','',' ')
+    AND order_name IS NOT NULL
+    AND order_name NOT IN ('',' ','  ',' -L1')
+    AND lower(customer__first_name) NOT LIKE '%test%'
     ;
