@@ -9,4 +9,4 @@ SELECT b.order_name AS previous_order_name, a.*
     LEFT JOIN {{ schema }}.clean__order__summary b
     ON a.initiated_sale__original_order_id = b.id
     WHERE a.order_status != 'cancelled'
-    AND b.link_order__is_child != 1
+    AND b.link_order__is_child != 1;
