@@ -10,12 +10,17 @@ Do this once, the first time you setup your local docker, or after every astro d
 
 ```shell
 touch airflow_settings.yaml
+astro login
 astro config set -g disable_env_objects false
 astro workspace list
 # NAME         ID
 # DataLake     clr9qwhbn033u01qzg6shab5j
 
-astro dev start|restart --workspace-id clr9qwhbn033u01qzg6shab5j
+# you only need to do this once
+astro dev start --workspace-id clr9qwhbn033u01qzg6shab5j
+
+Then if you need to
+astro dev restart
 
 ```
 
