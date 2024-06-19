@@ -13,22 +13,11 @@ CREATE VIEW {{ schema }}.clean__order__items AS
     oi.calculated_discount AS calculated_item_discount_price_pence,
 	oi.price - oi.calculated_discount AS calculated_item_value_pence,
 	oi.qty AS item_quantity,
-<<<<<<< Updated upstream
-    /*CASE WHEN oi.commission__amount THEN oi.commission__amount
-    ELSE
-    CASE WHEN oi.commission__percentage IS NOT NULL THEN
-         oi.price * ( oi.commission__percentage / 100)
-    ELSE
-        NULL
-       END
-    END AS commission__calculated_amount,*/
-=======
 	CASE WHEN oi.commission__percentage IS NOT NULL THEN
 	    oi.price * ( oi.commission__percentage / 100)
 	    ELSE
 	        NULL
     END AS commission__calculated_amount,
->>>>>>> Stashed changes
 	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
 LEFT JOIN
