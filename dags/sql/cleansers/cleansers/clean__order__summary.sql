@@ -2,7 +2,7 @@ DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
-        ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS customer_order_seq,
+        ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) AS customer_order_seq,
         CASE WHEN o.order_type IN ('harper_try') THEN
             'harper_try'
         ELSE
@@ -12,7 +12,6 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         get_stripe_customer_url(c.stripe_customer_id) AS stripe_customer_link,
         {{ clean__order__item__summary_columns | prefix_columns('clean__ois', 'itemsummary', exclude_columns=['order_id']) }},
         {{ clean__order__status_events_columns | prefix_columns('clean__ose', 'orderstatusevent', exclude_columns=['order_id']) }},
-
         {{ dim__time_columns | prefix_columns('adt', 'appointment__date') }},
         {{ dim__time_columns | prefix_columns('tas', 'tp_actually_started') }},
         {{ dim__time_columns | prefix_columns('tae', 'tp_actually_ended') }},
@@ -38,9 +37,9 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
     LEFT JOIN
         clean__order__status_events clean__ose ON clean__ose.order_id = o.id
     LEFT JOIN customer c ON c.id = o.customer_id
-    WHERE brand_name IS NOT NULL
+    WHERE o.brand_name IS NOT NULL
     AND brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','',' ')
-    AND order_name IS NOT NULL
-    AND order_name NOT IN ('',' ','  ',' -L1')
-    AND lower(customer__first_name) NOT LIKE '%test%'
+    AND o.order_name IS NOT NULL
+    AND o.order_name NOT IN ('',' ','  ',' -L1')
+    AND lower(o.customer__first_name) NOT LIKE '%test%'
     ;

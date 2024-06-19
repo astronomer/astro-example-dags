@@ -12,21 +12,14 @@ CREATE VIEW {{ schema }}.clean__order__items AS
     oi.calculated_discount AS calculated_item_discount_price_pence,
 	oi.price - oi.calculated_discount AS calculated_item_value_pence,
 	oi.qty AS item_quantity,
-	SELECT
-    CASE
-        (WHEN o.createdat < '2024-05-28' AND oi.initiated_sale__user_role = 'remote_sales') THEN 1
-        (WHEN o.createdat >= '2024-05-28' AND oi.order_type = 'inspire_me') THEN 1
-        ELSE 0
-    END AS inspire_me
-    -- CASE WHEN oi.commission__amount THEN
-    --     oi.commission__amount
-    -- ELSE
+    /*CASE WHEN oi.commission__amount THEN oi.commission__amount
+    ELSE
     CASE WHEN oi.commission__percentage IS NOT NULL THEN
          oi.price * ( oi.commission__percentage / 100)
     ELSE
         NULL
-    --    END
-    END AS commission__calculated_amount,
+       END
+    END AS commission__calculated_amount,*/
 	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
 LEFT JOIN
@@ -36,3 +29,4 @@ WHERE
 	AND oi.name IS NOT NULL AND oi.name != ''
 	AND oi.order_name IS NOT NULL AND oi.order_name != '' AND oi.order_name != ' ' AND oi.order_name != ' -L1'
 	AND oi.original_order_name IS NOT NULL AND oi.original_order_name != '' AND oi.original_order_name != ' ' AND oi.original_order_name != ' -L1'
+;
