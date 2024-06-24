@@ -91,14 +91,17 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         END AS happened,
         id_merge,
         SUM(CASE
+                WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
+            END) AS inspire_me_items_ordered,
+        SUM(CASE
                 WHEN item_is_inspire_me = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS inspire_me_items_purchased,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
             END) AS inspire_me_items_purchased_value,
         SUM(CASE
-                WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
-            END) AS inspire_me_items_ordered,
+                WHEN item_is_initiated_sale = 1 THEN 1 ELSE 0
+            END) AS initiated_sale_ordered,
         SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS initiated_sale_items_purchased,
