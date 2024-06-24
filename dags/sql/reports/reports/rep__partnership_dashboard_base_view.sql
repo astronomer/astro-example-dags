@@ -47,6 +47,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             sd.createdat AS sd__createdat,
             o.createdat AS order__createdat,
             o.createdat__dim_date AS order__createdat__dim_date,
+            o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
             i.is_initiated_sale AS item_is_initiated_sale,
             i.is_inspire_me AS item_is_inspire_me,
             sd.original_order_name AS original_id_ship_direct,
@@ -54,7 +55,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             CASE
                 WHEN fo.id = o.id THEN 'New Harper Customer'
                 ELSE 'Returning Harper Customer'
-            END AS customer_type_
+            END AS customer_type_,
+            CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return
         FROM
             {{ schema }}.rep__deduped_order_items i
         LEFT JOIN
@@ -107,6 +109,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         MAX(time_in_appointment) AS max_time_in_appointment,
         MAX(time_to_appointment) AS max_time_to_appointment,
         order__createdat__dim_date AS order_created_date,
+        order__createdat__dim_yearmonth,
         order_name_merge,
         order__type,
         shipping_address__city,
@@ -114,6 +117,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(missing) AS number_items_missing,
         SUM(not_available) AS number_items_not_available,
         SUM(out_of_stock) AS number_items_out_of_stock,
+        SUM(post_purchase_return) AS number_items_post_purchase_return,
         SUM(preorder) AS number_items_preorder,
         SUM(purchased) AS number_items_purchased,
         SUM(qty) AS number_items_ordered,
@@ -147,6 +151,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         order__type,
         item___order_type,
         order__createdat__dim_date,
+        order__createdat__dim_yearmonth,
         order_status,
         customer_type_,
         customer_id,
