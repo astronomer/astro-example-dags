@@ -55,7 +55,9 @@ _NUM_PROMPTS = os.getenv("NUM_PROMPTS", 5)
 )
 def example_genai_galaxies():
 
-    @task
+    @task(
+        max_active_tis_per_dag=1,
+    )
     def load_galaxy_names(
         duckdb_instance_name: str = _DUCKDB_INSTANCE_NAME,
         table_name: str = _DUCKDB_TABLE_NAME,

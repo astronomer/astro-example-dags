@@ -43,7 +43,9 @@ _DUCKDB_TABLE_URI = f"duckdb://{_DUCKDB_INSTANCE_NAME}/{_DUCKDB_TABLE_NAME}"
 )
 def example_etl_galaxies():
 
-    @task
+    @task(
+        max_active_tis_per_dag=1,
+    )
     def create_galaxy_table_in_duckdb(
         duckdb_instance_name: str = _DUCKDB_INSTANCE_NAME,
         table_name: str = _DUCKDB_TABLE_NAME,
@@ -119,7 +121,8 @@ def example_etl_galaxies():
     @task(
         outlets=[
             Dataset(_DUCKDB_TABLE_URI)
-        ]  # Define that this task updates the `galaxy_data` Dataset
+        ],  # Define that this task updates the `galaxy_data` Dataset
+        max_active_tis_per_dag=1,
     )
     def load_galaxy_data(
         filtered_galaxy_df: pd.DataFrame,
@@ -142,7 +145,9 @@ def example_etl_galaxies():
         )
         t_log.info("Galaxy data loaded into DuckDB.")
 
-    @task
+    @task(
+        max_active_tis_per_dag=1,
+    )
     def print_loaded_galaxies(
         duckdb_instance_name: str = _DUCKDB_INSTANCE_NAME,
         table_name: str = _DUCKDB_TABLE_NAME,

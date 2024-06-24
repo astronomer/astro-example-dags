@@ -4,3 +4,5 @@
 airflow_settings.yaml
 __pycache__/
 astro
+include/astronomy.db 
+include/galaxy_name_gen.h5
