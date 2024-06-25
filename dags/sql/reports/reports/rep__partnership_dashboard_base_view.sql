@@ -10,33 +10,8 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_dashboard_base_vi
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_base_view AS
     WITH
-    customer_first_order AS (
-        SELECT
-            customer_id,
-            id,
-            createdat,
-            DATE(createdat) AS first_order_date
-        FROM (
-            SELECT
-                customer_id,
-                id,
-                createdat,
-                ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY createdat) AS rn
-            FROM
-                {{ schema }}.clean__order__summary
-        ) sub
-        WHERE rn = 1
-    ),
     order_items AS (
         SELECT
-            CASE
-                WHEN o.ship_direct = 1 THEN sd.previous_order_name
-                ELSE o.order_name
-            END AS order_name_merge, -- Parent order_name
-            CASE
-                WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
-                ELSE o.id
-            END AS id_merge,
             o.*,
             i.*,
             o.order_type AS order__type,
@@ -48,21 +23,23 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             o.createdat AS order__createdat,
             o.createdat__dim_date AS order__createdat__dim_date,
             o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
+            CASE
+                WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
+                ELSE o.id
+            END AS id_merge,
             i.is_initiated_sale AS item_is_initiated_sale,
             i.is_inspire_me AS item_is_inspire_me,
-            sd.original_order_name AS original_id_ship_direct,
-            i.item_value_pence AS item__item_value_pence,
             CASE
-                WHEN fo.id = o.id THEN 'New Harper Customer'
-                ELSE 'Returning Harper Customer'
-            END AS customer_type_,
-            CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return
+                WHEN o.ship_direct = 1 THEN sd.previous_order_name
+                ELSE o.order_name
+            END AS order_name_merge, -- Parent order_name
+            CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return,
+            sd.original_order_name AS original_id_ship_direct,
+            i.item_value_pence AS item__item_value_pence
         FROM
             {{ schema }}.rep__deduped_order_items i
         LEFT JOIN
             {{ schema }}.clean__order__summary o ON o.id = i.order_id
-        LEFT JOIN
-            customer_first_order fo ON fo.customer_id = o.customer_id
         LEFT JOIN
             {{ schema }}.rep__ship_direct_orders sd ON o.id = sd.id
         WHERE
@@ -82,13 +59,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         END AS contains_inspire_me,
         customer_id,
         customer_type_,
-        discount_total,
-        CASE
-            WHEN order_status IN ('completed', 'returned', 'unpurchased_processed', 'return_prepared') THEN 'Happened'
-            WHEN order_status = 'failed' THEN 'Failed'
-            WHEN  (order_cancelled_status IN ('Cancelled post shipment','Cancelled - no email triggered','Cancelled pre shipment') OR order_status = 'Cancelled') THEN 'Cancelled'
-            ELSE NULL
-        END AS happened,
+        ROUND(CAST(NULLIF(discount_total, ' ') AS NUMERIC) / 100.0, 2) AS discount_total,
+		happened,
         id_merge,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
@@ -96,21 +68,21 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(CASE
                 WHEN item_is_inspire_me = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS inspire_me_items_purchased,
-        SUM(CASE
+        ROUND(SUM(CASE
                 WHEN item_is_inspire_me = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
-            END) AS inspire_me_items_purchased_value,
+            END)/100,2) AS inspire_me_items_purchased_value,
         SUM(CASE
                 WHEN item_is_initiated_sale = 1 THEN 1 ELSE 0
             END) AS initiated_sale_ordered,
         SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS initiated_sale_items_purchased,
-        SUM(CASE
+        ROUND(SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
-            END) AS initiated_sale_purchased_value,
+            END)/100,2) AS initiated_sale_purchased_value,
         item___order_type,
-        MAX(time_in_appointment) AS max_time_in_appointment,
-        MAX(time_to_appointment) AS max_time_to_appointment,
+        MAX(time_in_appointment) AS time_in_appointment,
+        MAX(time_to_appointment) AS time_to_appointment,
         order__createdat__dim_date AS order_created_date,
         order__createdat__dim_yearmonth,
         order_name_merge,
@@ -134,16 +106,16 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         tp_actually_started__dim_year,
         try_commission_chargeable,
         try_commission_chargeable_at,
-        SUM(item__item_value_pence) AS value_items_ordered,
-        SUM(CASE
+        ROUND(SUM(item__item_value_pence)/100,2) AS value_items_ordered,
+        ROUND(SUM(CASE
                 WHEN purchased = 1 THEN item__item_value_pence ELSE NULL
-            END) AS value_items_purchased,
-        SUM(CASE
+            END)/100,2) AS value_items_purchased,
+        ROUND(SUM(CASE
                 WHEN returned = 1 THEN item__item_value_pence ELSE NULL
-            END) AS value_items_returned,
-        SUM(CASE
+            END)/100,2) AS value_items_returned,
+        ROUND(SUM(CASE
                 WHEN missing = 1 THEN item__item_value_pence ELSE NULL
-            END) AS value_items_missing
+            END)/100,2) AS value_items_missing
     FROM
         order_items o
     GROUP BY
@@ -152,6 +124,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         brand_name,
         order_cancelled_status,
         order__type,
+        happened,
         item___order_type,
         order__createdat__dim_date,
         order__createdat__dim_yearmonth,
@@ -171,9 +144,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         tp_actually_started__dim_month,
         try_commission_chargeable,
         try_commission_chargeable_at
-    ORDER BY
-        order_created_date DESC,
-        order__type
 
 WITH NO DATA;
 
