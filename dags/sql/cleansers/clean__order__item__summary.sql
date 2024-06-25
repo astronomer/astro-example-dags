@@ -13,7 +13,6 @@ CREATE VIEW {{ schema }}.clean__order__item__summary AS
         SUM(oi.return_requested_by_customer) AS num_return_requested_by_customer,
         SUM(oi.return_sent_by_customer) AS num_return_sent_by_customer,
         array_agg(DISTINCT(oi.tracking_url)) AS delivery_tracking_urls
-
     FROM
         {{ schema }}.orders o
     JOIN

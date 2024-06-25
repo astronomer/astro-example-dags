@@ -2,12 +2,21 @@ DROP VIEW IF EXISTS {{ schema }}.clean__order__summary CASCADE;
 CREATE VIEW {{ schema }}.clean__order__summary AS
     SELECT
         o.*,
-        ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) AS customer_order_seq,
+        --ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) AS customer_order_seq,
+        CASE WHEN
+            ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) = 1 THEN 'New Harper Customer'
+            ELSE 'Returning Harper Customer' END AS customer_type_, --This will only note the first order recorded. Check linked orders, could be issue.
         CASE WHEN o.order_type IN ('harper_try') THEN
             'harper_try'
         ELSE
             'harper_concierge'
         END AS harper_product_type,
+        CASE
+            WHEN order_status IN ('completed', 'returned', 'unpurchased_processed', 'return_prepared') THEN 'Happened'
+            WHEN order_status = 'failed' THEN 'Failed'
+            WHEN  (order_cancelled_status IN ('Cancelled post shipment','Cancelled - no email triggered','Cancelled pre shipment') OR order_status = 'Cancelled') THEN 'Cancelled'
+            ELSE NULL
+        END AS happened,
         get_halo_url(o.id, o.order_type) AS halo_link,
         get_stripe_customer_url(c.stripe_customer_id) AS stripe_customer_link,
         {{ clean__order__item__summary_columns | prefix_columns('clean__ois', 'itemsummary', exclude_columns=['order_id']) }},
