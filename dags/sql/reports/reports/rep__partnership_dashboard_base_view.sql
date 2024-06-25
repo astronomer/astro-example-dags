@@ -10,6 +10,15 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_dashboard_base_vi
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_base_view AS
     WITH
+
+    ship_directs AS (
+        SELECT
+            previous_original_order_name,
+            id
+        FROM
+        {{ schema }}.rep__ship_direct_orders
+    ),
+
     order_items AS (
         SELECT
             o.*,
@@ -19,29 +28,27 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             o.order_name AS order__name,
             i.order_name AS item__order_name,
             i.createdat AS item__createdat,
-            sd.createdat AS sd__createdat,
             o.createdat AS order__createdat,
             o.createdat__dim_date AS order__createdat__dim_date,
             o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
-            CASE
+            /*CASE
                 WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
                 ELSE o.id
-            END AS id_merge,
+            END AS id_merge,*/
             i.is_initiated_sale AS item_is_initiated_sale,
             i.is_inspire_me AS item_is_inspire_me,
             CASE
-                WHEN o.ship_direct = 1 THEN sd.previous_order_name
-                ELSE o.order_name
-            END AS order_name_merge, -- Parent order_name
+                WHEN o.ship_direct = 1 THEN sd.previous_original_order_name
+                ELSE o.original_order_name
+            END AS original_order_name_merge, -- Parent order_name
             CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return,
-            sd.original_order_name AS original_id_ship_direct,
             i.item_value_pence AS item__item_value_pence
         FROM
             {{ schema }}.rep__deduped_order_items i
         LEFT JOIN
             {{ schema }}.clean__order__summary o ON o.id = i.order_id
         LEFT JOIN
-            {{ schema }}.rep__ship_direct_orders sd ON o.id = sd.id
+            ship_directs sd ON o.id = sd.id
         WHERE
             i.is_link_order_child_item = 0
             AND o.link_order__is_child = 0
@@ -61,7 +68,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         customer_type_,
         ROUND(CAST(NULLIF(discount_total, ' ') AS NUMERIC) / 100.0, 2) AS discount_total,
 		happened,
-        id_merge,
+        harper_product_type,
+        --id_merge,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
             END) AS inspire_me_items_ordered,
@@ -80,13 +88,12 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         ROUND(SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
             END)/100,2) AS initiated_sale_purchased_value,
-        item___order_type,
         MAX(time_in_appointment) AS time_in_appointment,
         MAX(time_to_appointment) AS time_to_appointment,
         order__createdat__dim_date AS order_created_date,
         order__createdat__dim_yearmonth,
-        order_name_merge,
         order__type,
+        original_order_name_merge,
         shipping_address__city,
         shipping_address__postcode,
         SUM(missing) AS number_items_missing,
@@ -119,13 +126,13 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
     FROM
         order_items o
     GROUP BY
-        order_name_merge,
-        id_merge,
+        original_order_name_merge,
+        --id_merge,
         brand_name,
         order_cancelled_status,
         order__type,
         happened,
-        item___order_type,
+        harper_product_type,
         order__createdat__dim_date,
         order__createdat__dim_yearmonth,
         order_status,
@@ -149,8 +156,7 @@ WITH NO DATA;
 
 {% if is_modified %}
 --CREATE UNIQUE INDEX IF NOT EXISTS rep__partnership_dashboard_base_view_idx ON {{ schema }}.rep__partnership_dashboard_base_view (id_merge);
-CREATE INDEX IF NOT EXISTS rep__partnership_dashboard_base_view_order_name_idx ON {{ schema }}.rep__partnership_dashboard_base_view (order_name_merge);
-CREATE INDEX IF NOT EXISTS rep__partnership_dashboard_base_view_item_order_type_idx ON {{ schema }}.rep__partnership_dashboard_base_view (item___order_type);
+CREATE INDEX IF NOT EXISTS rep__partnership_dashboard_base_view_original_order_name_idx ON {{ schema }}.rep__partnership_dashboard_base_view (original_order_name_merge);
 CREATE INDEX IF NOT EXISTS rep__partnership_dashboard_base_view_contains_initiated_sale_idx ON {{ schema }}.rep__partnership_dashboard_base_view (contains_initiated_sale);
 
 {% endif %}
