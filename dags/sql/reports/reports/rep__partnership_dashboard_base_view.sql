@@ -58,7 +58,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         MAX(appointment__date__dim_year) AS appointment__date__dim_year,
         brand_name,
         CASE
-            WHEN order_type = 'harper_try' THEN MAX(tp_actually_ended__dim_date)
+            WHEN order__type = 'harper_try' THEN MAX(tp_actually_ended__dim_date)
             WHEN appointment_completed_at IS NULL THEN MAX(appointment__date__dim_date)
             ELSE DATE(MAX(appointment_completed_at))
             END AS completion_date,
@@ -110,7 +110,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(purchased) AS number_items_purchased,
         SUM(qty) AS number_items_ordered,
         SUM(returned) AS number_items_returned,
-        SUM(post_purchase_return) AS number_items_post_purchase_return,
         SUM(unpurchased_return) AS number_items_unpurchased_return,
         --through_door_actual,
         tp_actually_ended__dim_date,
@@ -140,7 +139,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         order__createdat__dim_date,
         order__createdat__dim_yearmonth,
         order_status,
-        customer_type_,
         customer_id,
         discount_total,
         shipping_address__postcode,
