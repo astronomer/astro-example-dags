@@ -13,7 +13,6 @@ CREATE VIEW {{ schema }}.clean__order__items AS
   oi.calculated_discount AS calculated_item_discount_price_pence,
 	oi.price - oi.calculated_discount AS calculated_item_value_pence,
 	oi.qty AS item_quantity,
-
     -- CASE WHEN oi.commission__amount THEN oi.commission__amount
     --  oi.comission__amount
     -- ELSE
@@ -22,8 +21,9 @@ CREATE VIEW {{ schema }}.clean__order__items AS
     ELSE
         NULL
     -- END
-
     END AS commission__calculated_amount,
+	CASE WHEN return_reason = 'unpurchased_return' THEN 1 ELSE 0 AS unpurchased_return,
+	CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return,
 	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
 LEFT JOIN
