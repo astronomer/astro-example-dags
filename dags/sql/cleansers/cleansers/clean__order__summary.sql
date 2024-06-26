@@ -4,17 +4,17 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         o.*,
         --ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) AS customer_order_seq,
         CASE WHEN
-            ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) = 1 THEN 'New Harper Customer'
-            ELSE 'Returning Harper Customer' END AS customer_type_, --This will only note the first order recorded. Check linked orders, could be issue.
+            ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.createdat) = 1 THEN 1
+            ELSE 0 END AS new_harper_customer, --This will only note the first order recorded. Check linked orders, could be issue.
         CASE WHEN o.order_type IN ('harper_try') THEN
             'harper_try'
         ELSE
             'harper_concierge'
         END AS harper_product_type,
         CASE
-            WHEN order_status IN ('completed', 'returned', 'unpurchased_processed', 'return_prepared') THEN 'Happened'
-            WHEN order_status = 'failed' THEN 'Failed'
             WHEN  (order_cancelled_status IN ('Cancelled post shipment','Cancelled - no email triggered','Cancelled pre shipment') OR order_status = 'Cancelled') THEN 'Cancelled'
+            WHEN order_status IN ('completed', 'returned', 'unpurchased_processed', 'return_prepared','return_required') THEN 'Happened' --return required
+            WHEN order_status = 'failed' THEN 'Failed'
             ELSE NULL
         END AS happened,
         get_halo_url(o.id, o.order_type) AS halo_link,

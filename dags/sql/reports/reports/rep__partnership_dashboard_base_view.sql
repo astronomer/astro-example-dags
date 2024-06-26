@@ -38,10 +38,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             i.is_initiated_sale AS item_is_initiated_sale,
             i.is_inspire_me AS item_is_inspire_me,
             CASE
-                WHEN o.ship_direct = 1 THEN sd.previous_original_order_name
+                WHEN o.ship_direct = 1 AND (sd.previous_original_order_name IS NOT NULL AND sd.previous_original_order_name != '') THEN sd.previous_original_order_name
                 ELSE o.original_order_name
             END AS original_order_name_merge, -- Parent order_name
-            CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return,
             i.item_value_pence AS item__item_value_pence
         FROM
             {{ schema }}.rep__deduped_order_items i
@@ -59,13 +58,21 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         MAX(appointment__date__dim_year) AS appointment__date__dim_year,
         brand_name,
         CASE
+            WHEN order_type = 'harper_try' THEN MAX(tp_actually_ended__dim_date)
+            WHEN appointment_completed_at IS NULL THEN MAX(appointment__date__dim_date)
+            ELSE DATE(MAX(appointment_completed_at))
+            END AS completion_date,
+        CASE
             WHEN MAX(CAST(item_is_initiated_sale AS INT)) = 1 THEN 1 ELSE 0
-        END AS contains_initiated_sale,
+            END AS contains_initiated_sale,
         CASE
             WHEN MAX(CAST(item_is_inspire_me AS INT)) = 1 THEN 1 ELSE 0
         END AS contains_inspire_me,
         customer_id,
-        customer_type_,
+        CASE
+            WHEN MAX(new_harper_customer) = 1 THEN 'New Harper Customer'
+            ELSE 'Returning Harper Customer'
+        END AS customer_type_,
         ROUND(CAST(NULLIF(discount_total, ' ') AS NUMERIC) / 100.0, 2) AS discount_total,
 		happened,
         harper_product_type,
@@ -94,7 +101,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         order__createdat__dim_yearmonth,
         order__type,
         original_order_name_merge,
-        shipping_address__city,
         shipping_address__postcode,
         SUM(missing) AS number_items_missing,
         SUM(not_available) AS number_items_not_available,
@@ -104,24 +110,22 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(purchased) AS number_items_purchased,
         SUM(qty) AS number_items_ordered,
         SUM(returned) AS number_items_returned,
-        through_door_actual,
+        SUM(post_purchase_return) AS number_items_post_purchase_return,
+        SUM(unpurchased_return) AS number_items_unpurchased_return,
+        --through_door_actual,
         tp_actually_ended__dim_date,
-        tp_actually_ended__dim_month,
-        tp_actually_ended__dim_year,
         tp_actually_started__dim_date,
-        tp_actually_started__dim_month,
-        tp_actually_started__dim_year,
         try_commission_chargeable,
         try_commission_chargeable_at,
         ROUND(SUM(item__item_value_pence)/100,2) AS value_items_ordered,
         ROUND(SUM(CASE
-                WHEN purchased = 1 THEN item__item_value_pence ELSE NULL
+                WHEN purchased = 1 THEN item__item_value_pence ELSE 0
             END)/100,2) AS value_items_purchased,
         ROUND(SUM(CASE
-                WHEN returned = 1 THEN item__item_value_pence ELSE NULL
+                WHEN returned = 1 THEN item__item_value_pence ELSE 0
             END)/100,2) AS value_items_returned,
         ROUND(SUM(CASE
-                WHEN missing = 1 THEN item__item_value_pence ELSE NULL
+                WHEN missing = 1 THEN item__item_value_pence ELSE 0
             END)/100,2) AS value_items_missing
     FROM
         order_items o
@@ -139,16 +143,12 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         customer_type_,
         customer_id,
         discount_total,
-        shipping_address__city,
         shipping_address__postcode,
-        through_door_actual,
+        --through_door_actual,
         trial_period,
+        appointment_completed_at,
         tp_actually_ended__dim_date,
-        tp_actually_ended__dim_year,
-        tp_actually_ended__dim_month,
         tp_actually_started__dim_date,
-        tp_actually_started__dim_year,
-        tp_actually_started__dim_month,
         try_commission_chargeable,
         try_commission_chargeable_at
 
