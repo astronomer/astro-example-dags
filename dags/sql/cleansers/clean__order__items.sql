@@ -22,7 +22,7 @@ CREATE VIEW {{ schema }}.clean__order__items AS
         NULL
     -- END
     END AS commission__calculated_amount,
-	CASE WHEN return_reason = 'unpurchased_return' THEN 1 ELSE 0 AS unpurchased_return,
+	CASE WHEN return_reason = 'unpurchased_return' THEN 1 ELSE 0 END AS unpurchased_return,
 	CASE WHEN return_reason = 'post_purchase_return' THEN 1 ELSE 0 END AS post_purchase_return,
 	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
