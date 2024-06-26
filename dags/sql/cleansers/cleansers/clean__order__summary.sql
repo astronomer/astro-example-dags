@@ -19,6 +19,7 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         END AS happened,
         get_halo_url(o.id, o.order_type) AS halo_link,
         get_stripe_customer_url(c.stripe_customer_id) AS stripe_customer_link,
+        get_locate2u_url(o.appointment__locate2u_stop_id) AS locate2u_link,
         {{ clean__order__item__summary_columns | prefix_columns('clean__ois', 'itemsummary', exclude_columns=['order_id']) }},
         {{ clean__order__status_events_columns | prefix_columns('clean__ose', 'orderstatusevent', exclude_columns=['order_id']) }},
         {{ dim__time_columns | prefix_columns('adt', 'appointment__date') }},
