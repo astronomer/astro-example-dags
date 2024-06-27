@@ -85,28 +85,38 @@ class PostgresToGoogleSheetOperator(BaseOperator):
             # Initialize Google Sheets hook
             sheets_hook = GSheetsHook(gcp_conn_id=self.google_conn_id)
 
-            try:
-                # Try to clear the sheet before writing new data to ensure overwrite
-                sheets_hook.clear(spreadsheet_id=self.spreadsheet_id, range_=f"{self.worksheet}")
-            except HttpError as e:
-                if e.resp.status == 404:
-                    # If the sheet does not exist, create it
-                    self.log.info(f"Sheet '{self.worksheet}' does not exist. Creating it.")
-                    request_body = {
-                        "requests": [
-                            {
-                                "addSheet": {
-                                    "properties": {
-                                        "title": self.worksheet,
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                    sheets_hook.batch_update(spreadsheet_id=self.spreadsheet_id, body=request_body)
-                else:
-                    raise
+            spreadsheet = hook.get_spreadsheet(self.spreadsheet_id)
+            # Iterate through the sheets in the spreadsheet
+            sheet_exists = False
+            for sheet in spreadsheet.get("sheets", []):
+                if sheet["properties"]["title"] == self.worksheet:
+                    sheet_exists = True
 
+            create_request_body = {
+                "requests": [
+                    {
+                        "addSheet": {
+                            "properties": {
+                                "title": self.worksheet,
+                            }
+                        }
+                    }
+                ]
+            }
+            if sheet_exists:
+                try:
+                    # Try to clear the sheet before writing new data to ensure overwrite
+                    sheets_hook.clear(spreadsheet_id=self.spreadsheet_id, range_=f"{self.worksheet}")
+                except HttpError as e:
+                    if e.resp.status == 404:
+                        # If the sheet does not exist, create it
+                        self.log.info(f"Sheet '{self.worksheet}' does not exist. Creating it.")
+                        sheets_hook.batch_update(spreadsheet_id=self.spreadsheet_id, body=create_request_body)
+                    else:
+                        raise
+            else:
+                self.log.info(f"Creating New Sheet '{self.worksheet}'.")
+                sheets_hook.batch_update(spreadsheet_id=self.spreadsheet_id, body=create_request_body)
             print(data)
             # Write data to the sheet
             sheets_hook.update_values(
