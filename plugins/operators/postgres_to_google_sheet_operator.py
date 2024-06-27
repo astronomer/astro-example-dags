@@ -85,7 +85,7 @@ class PostgresToGoogleSheetOperator(BaseOperator):
             # Initialize Google Sheets hook
             sheets_hook = GSheetsHook(gcp_conn_id=self.google_conn_id)
 
-            spreadsheet = hook.get_spreadsheet(self.spreadsheet_id)
+            spreadsheet = sheets_hook.get_spreadsheet(self.spreadsheet_id)
             # Iterate through the sheets in the spreadsheet
             sheet_exists = False
             for sheet in spreadsheet.get("sheets", []):
