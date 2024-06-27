@@ -103,20 +103,22 @@ class PostgresToGoogleSheetOperator(BaseOperator):
                     }
                 ]
             }
-            if sheet_exists:
+            if not sheet_exists:
+                self.log.info(f"Creating New Sheet '{self.worksheet}'.")
                 try:
-                    # Try to clear the sheet before writing new data to ensure overwrite
+                    sheets_hook.get_conn().spreadsheets().batchUpdate(
+                        spreadsheetId=self.spreadsheet_id, body=create_request_body
+                    ).execute()
+                except HttpError as e:
+                    self.log.error(f"Error creating sheet: {e}")
+                    raise
+            else:
+                try:
                     sheets_hook.clear(spreadsheet_id=self.spreadsheet_id, range_=f"{self.worksheet}")
                 except HttpError as e:
-                    if e.resp.status == 404:
-                        # If the sheet does not exist, create it
-                        self.log.info(f"Sheet '{self.worksheet}' does not exist. Creating it.")
-                        sheets_hook.batch_update(spreadsheet_id=self.spreadsheet_id, body=create_request_body)
-                    else:
-                        raise
-            else:
-                self.log.info(f"Creating New Sheet '{self.worksheet}'.")
-                sheets_hook.batch_update(spreadsheet_id=self.spreadsheet_id, body=create_request_body)
+                    self.log.error(f"Error clearing sheet: {e}")
+                    raise
+
             print(data)
             # Write data to the sheet
             sheets_hook.update_values(
