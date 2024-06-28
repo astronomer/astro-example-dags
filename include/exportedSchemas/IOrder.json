@@ -2523,6 +2523,46 @@
                 "string"
             ]
         },
+        "experiment": {
+            "title": "experiment",
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "experiment_id": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "experiment_name": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "experiment_variant_id": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "experiment_variant_name": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                },
+                "experiment_platform": {
+                    "type": "string",
+                    "bsonType": [
+                        "string"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "appointment": {
             "title": "appointment",
             "type": "object",
