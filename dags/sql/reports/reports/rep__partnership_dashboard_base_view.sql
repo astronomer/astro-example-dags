@@ -58,10 +58,14 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         MAX(appointment__date__dim_year) AS appointment__date__dim_year,
         brand_name,
         CASE
-            WHEN order__type = 'harper_try' THEN MAX(tp_actually_ended__dim_date)
-            WHEN appointment_completed_at IS NULL THEN MAX(appointment__date__dim_date)
-            ELSE DATE(MAX(appointment_completed_at))
-            END AS completion_date,
+        WHEN order_type = 'harper_try' THEN
+            CASE
+                WHEN tp_actually_ended__dim_date IS NOT NULL THEN MAX(tp_actually_ended__dim_date)
+                ELSE MAX(trial_period_end_at)
+            END
+        WHEN appointment_completed_at IS NULL THEN MAX(appointment__date__dim_date)
+        ELSE DATE(MAX(appointment_completed_at))
+    END AS completion_date,
         CASE
             WHEN MAX(CAST(item_is_initiated_sale AS INT)) = 1 THEN 1 ELSE 0
             END AS contains_initiated_sale,
@@ -144,6 +148,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         shipping_address__postcode,
         --through_door_actual,
         trial_period,
+        trial_period_end_at,
         appointment_completed_at,
         tp_actually_ended__dim_date,
         tp_actually_started__dim_date,
