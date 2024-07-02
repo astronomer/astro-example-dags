@@ -101,7 +101,6 @@ SELECT
     item_value_pence,
     link_order__is_child,
     missing,
-    name,
     not_available,
     order__cal_week,
     order__createdat,
@@ -146,7 +145,7 @@ SELECT
     try_chargeable_at__dim_date,
     unpurchased_return,
     variant_id
-FROM order_items;
+FROM order_items
 
 WITH NO DATA;
 
