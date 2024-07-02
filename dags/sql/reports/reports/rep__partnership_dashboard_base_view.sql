@@ -31,6 +31,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
             o.createdat AS order__createdat,
             o.createdat__dim_date AS order__createdat__dim_date,
             o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
+            o.initiated_sale__user_role,
             /*CASE
                 WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
                 ELSE o.id
@@ -84,6 +85,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(CASE
                 WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
             END) AS inspire_me_items_ordered,
+        ROUND(SUM(CASE
+                WHEN item_is_inspire_me = 1 THEN item__item_value_pence ELSE 0
+            END)/100,2) AS inspire_me_items_ordered_value,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS inspire_me_items_purchased,
@@ -93,12 +97,16 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(CASE
                 WHEN item_is_initiated_sale = 1 THEN 1 ELSE 0
             END) AS initiated_sale_ordered,
+        ROUND(SUM(CASE
+                WHEN item_is_initiated_sale = 1 THEN item__item_value_pence ELSE 0
+            END)/100,2) AS initiated_sale_items_ordered_value,
         SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN 1 ELSE 0
             END) AS initiated_sale_items_purchased,
         ROUND(SUM(CASE
                 WHEN item_is_initiated_sale = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
             END)/100,2) AS initiated_sale_purchased_value,
+        initiated_sale__user_role,
         MAX(time_in_appointment) AS time_in_appointment,
         MAX(time_to_appointment) AS time_to_appointment,
         order__createdat__dim_date AS order_created_date,
@@ -140,6 +148,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         order__type,
         happened,
         harper_product_type,
+        initiated_sale__user_role,
         order__createdat__dim_date,
         order__createdat__dim_yearmonth,
         order_status,
