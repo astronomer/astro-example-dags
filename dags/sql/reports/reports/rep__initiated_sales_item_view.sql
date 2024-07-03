@@ -38,6 +38,7 @@ order_items AS (
         i.is_initiated_sale AS item__is_initiated_sale,
         i.updatedat AS item__updatedat,
         i.is_inspire_me AS item__is_inspire_me,
+        o.initiated_sale__inspire_me_option_selected AS order__initiated_sale__inspire_me_option_selected,
         CASE
             WHEN o.ship_direct = 1 AND (sd.previous_original_order_name IS NOT NULL AND sd.previous_original_order_name != '') THEN sd.previous_original_order_name
             ELSE o.original_order_name
@@ -69,7 +70,7 @@ SELECT
             WHEN tp_actually_ended__dim_date IS NOT NULL THEN tp_actually_ended__dim_date
             ELSE trial_period_end_at
         END
-    WHEN (appointment_completed_at IS NULL OR appointment_completed_at = '') THEN appointment__date__dim_date
+    WHEN appointment_completed_at IS NULL  THEN appointment__date__dim_date
     ELSE DATE(appointment_completed_at)
     END AS completion_date,
 	DATE(customer__createdat) AS customer__first_order,
@@ -82,7 +83,7 @@ SELECT
     harper_product_type,
     idx,
     images,
-    initiated_sale__inspire_me_option_selected,
+    order__initiated_sale__inspire_me_option_selected,
 	CASE WHEN is_inspire_me = 1 THEN item__item_value_pence ELSE 0 END AS inspire_me_value_pence,
     is_inspire_me,
     item__commission__percentage,
