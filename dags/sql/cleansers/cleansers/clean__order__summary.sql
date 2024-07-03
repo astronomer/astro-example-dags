@@ -48,7 +48,7 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         clean__order__status_events clean__ose ON clean__ose.order_id = o.id
     LEFT JOIN customer c ON c.id = o.customer_id
     WHERE o.brand_name IS NOT NULL
-    AND o.brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','',' ')
+    AND o.brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','Harper Production','Harper-concierge-demo','',' ')
     AND o.order_name IS NOT NULL
     AND o.order_name NOT IN ('',' ','  ',' -L1')
     AND lower(o.customer__first_name) NOT LIKE '%%test%%'

@@ -58,6 +58,7 @@ order_items AS (
 SELECT
     appointment__date__dim_date,
     appointment_completed_at,
+    brand_name,
     calculated_item_discount_price_pence,
     calculated_item_value_pence,
     colour,
@@ -68,7 +69,7 @@ SELECT
             WHEN tp_actually_ended__dim_date IS NOT NULL THEN tp_actually_ended__dim_date
             ELSE trial_period_end_at
         END
-    WHEN appointment_completed_at IS NULL THEN appointment__date__dim_date
+    WHEN (appointment_completed_at IS NULL OR appointment_completed_at = '') THEN appointment__date__dim_date
     ELSE DATE(appointment_completed_at)
     END AS completion_date,
 	DATE(customer__createdat) AS customer__first_order,
@@ -81,6 +82,7 @@ SELECT
     harper_product_type,
     idx,
     images,
+    initiated_sale__inspire_me_option_selected,
 	CASE WHEN is_inspire_me = 1 THEN item__item_value_pence ELSE 0 END AS inspire_me_value_pence,
     is_inspire_me,
     item__commission__percentage,
