@@ -22,8 +22,12 @@ CREATE VIEW {{ schema }}.clean__order__items AS
         NULL
     -- END
     END AS commission__calculated_amount,
-	CASE WHEN return_reason = 'unpurchased_return' THEN 1 ELSE 0 END AS unpurchased_return,
-	CASE WHEN (purchased = 1 AND received_by_warehouse = 1) THEN 1 ELSE 0 END AS post_purchase_return,
+	CASE WHEN (purchased = 0 AND received = 1 AND received_by_warehouse = 1 AND returned = 0)  THEN 1 ELSE 0 END AS unpurchased_return,
+	CASE
+		WHEN (purchased = 1 AND received = 1 AND received_by_warehouse = 1) THEN 1
+		WHEN returned = 1 THEN 1
+		ELSE 0
+	END AS post_purchase_return,
 	 {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
 FROM {{ schema }}.order__items oi
 LEFT JOIN
