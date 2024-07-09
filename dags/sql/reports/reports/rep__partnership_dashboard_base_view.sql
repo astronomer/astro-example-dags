@@ -120,6 +120,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_dashboard_b
         SUM(preorder) AS number_items_preorder,
         SUM(purchased) AS number_items_purchased,
         SUM(qty) AS number_items_ordered,
+        SUM(received) AS number_items_received,
+        SUM(received_by_warehouse) AS number_items_received_by_warehouse,
         SUM(returned) AS number_items_returned,
         SUM(unpurchased_return) AS number_items_unpurchased_return,
         --through_door_actual,
