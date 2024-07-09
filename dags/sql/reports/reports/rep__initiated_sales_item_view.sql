@@ -53,7 +53,7 @@ order_items AS (
     WHERE
         i.is_link_order_child_item = 0
         AND o.link_order__is_child = 0
-        AND i.is_initiated_sale = 1
+        --AND i.is_initiated_sale = 1
 )
 
 SELECT
