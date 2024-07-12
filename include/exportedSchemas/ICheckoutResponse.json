@@ -131,7 +131,8 @@
                 "bsonType": [
                     "object"
                 ],
-                "tsType": "unknown"
+                "tsType": "unknown",
+                "additionalProperties": false
             }
         },
         "createdAt": {

@@ -1849,7 +1849,8 @@
                 "bsonType": [
                     "object"
                 ],
-                "tsType": "any"
+                "tsType": "any",
+                "additionalProperties": false
             }
         },
         "original_items": {

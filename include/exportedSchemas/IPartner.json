@@ -2281,23 +2281,6 @@
                 "bool"
             ]
         },
-        "services": {
-            "type": "object",
-            "bsonType": "object",
-            "properties": {
-                "harper_try": {
-                    "type": "object",
-                    "bsonType": "object",
-                    "tsType": "IPartnerHarperTryService"
-                },
-                "harper_concierge": {
-                    "type": "object",
-                    "bsonType": "object",
-                    "tsType": "IPartnerHarperConciergeService"
-                }
-            },
-            "additionalProperties": false
-        },
         "__v": {
             "bsonType": [
                 "int"
@@ -2321,8 +2304,7 @@
         "reference",
         "name",
         "partner_platform",
-        "timezone",
-        "services"
+        "timezone"
     ],
     "additionalProperties": false
 }
