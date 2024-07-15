@@ -113,6 +113,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.get_partner_config_template = f"""
 SELECT
     reference,
+    name,
     partner_platform_api_access_token,
     partner_platform_base_url,
     partner_platform_api_version,
@@ -218,7 +219,7 @@ END $$;
                 self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
 
                 if not df.empty:
-                    df["partner__reference"] = self.partner_reference
+                    df.insert(0, "partner__name", self.partner_name)  # partner name as the first column
                     self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
                     df["airflow_sync_ds"] = ds
 
@@ -305,6 +306,7 @@ END $$;
             self.api_key = partner_row["partner_platform_api_key"]
             self.api_secret = partner_row["partner_platform_api_secret"]
             self.partner_reference = partner_row["reference"]
+            self.partner_name = partner_row["name"]
             provinces_json = partner_row["allowed_region_for_harper"]
             provinces = json.loads(provinces_json)
         else:
