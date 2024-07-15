@@ -5,6 +5,7 @@ from pprint import pprint  # noqa
 # from datetime import datetime
 from urllib.parse import urlencode
 
+import pandas as pd
 import requests
 from pandas import DataFrame
 from sqlalchemy import create_engine
@@ -218,44 +219,34 @@ END $$;
 
                 if not df.empty:
                     df["partner__reference"] = self.partner_reference
-                    # print("RAW RECORDS 0, ", records[105])
-                    # print("df RECORDS 0, ", df.iloc[105]["customer"]["sms_marketing_consent"])
                     self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
                     df["airflow_sync_ds"] = ds
 
                     if self.discard_fields:
-                        # keep this because if we're dropping any problematic fields
-                        # from the top level we might want to do this before Flattenning
                         existing_discard_fields = [col for col in self.discard_fields if col in df.columns]
-                        df.drop(existing_discard_fields, axis=1, inplace=True)
+                        if existing_discard_fields:
+                            df.drop(existing_discard_fields, axis=1, inplace=True)
 
                     self.log.info("TOTAL discarded field docs found: %d", df.shape[0])
                     df = self.flatten_dataframe_columns_precisely(df)
                     self.log.info("TOTAL flattened docs found: %d", df.shape[0])
                     print("TOTAL flattenned docs found", df.shape)
 
-                    """if "customer__sms_marketing_consent__consent_updated_at" in df.columns:
-                        print("RAW DATA TYPES", df["customer__sms_marketing_consent__consent_updated_at"].dtype)
-                        dtypes = df["customer__sms_marketing_consent__consent_updated_at"].apply(lambda x: type(x))
-                        print(dtypes)
-                    for col, dtype in df.dtypes.items():
-                        if dtype.kind in ("M", "m"):  # 'M' for datetime-like, 'm' for timedelta
-                            df[col] = df[col].apply(lambda x: x.isoformat() if not pd.isnull(x) else None)
-                    for column in df.columns:
-                        is_date_column = df[column].apply(lambda x: isinstance(x, datetime)).any()
-                        if is_date_column:
-                            # print("Handling datetime Top level column")
-                            column_df = df[column].apply(pd.Timestamp).to_frame(name=column)
-
-                    if "customer__sms_marketing_consent__consent_updated_at" in df.columns:
-                        print("RAW DATA TYPES", df["customer__sms_marketing_consent__consent_updated_at"].dtype)
-                        dtypes = df["customer__sms_marketing_consent__consent_updated_at"].apply(lambda x: type(x))
-                        print(dtypes)"""
+                    # Transform fields ending in '_at' to date strings
+                    for col in df.columns:
+                        if col.endswith("_at"):
+                            df[col] = pd.to_datetime(df[col], errors="coerce").apply(
+                                lambda x: x.isoformat() if pd.notnull(x) else None
+                            )
 
                     df.columns = df.columns.str.lower()
                     df = self.align_to_schema_df(df)
                     print("TOTAL Aligned docs found", df.shape)
-                    df = df.drop(columns=columns_to_drop)
+                    # Drop columns defined in columns_to_drop only if they exist
+                    existing_columns_to_drop = [col for col in columns_to_drop if col in df.columns]
+                    df = df.drop(columns=existing_columns_to_drop)
+                    # Drop columns starting with 'client_details'
+                    df = df.loc[:, ~df.columns.str.startswith("client_details")]
                     df.fillna("")
 
                     try:
