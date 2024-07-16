@@ -56,15 +56,15 @@ start_task = ShortCircuitOperator(
 start_task.doc = doc
 
 partners = [
-    # "shrimps",
+    "shrimps",
     "chinti_parker",
-    # "beckham",
-    # "jigsaw",
-    # "rixo",
-    # "cefinn",
-    # "temperley",
-    # "snicholson",
-    # "self-portrait",
+    "beckham",
+    "jigsaw",
+    "rixo",
+    "cefinn",
+    "temperley",
+    "snicholson",
+    "self-portrait",
     # "harper_production",
 ]
 

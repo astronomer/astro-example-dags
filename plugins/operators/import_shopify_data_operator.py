@@ -364,7 +364,11 @@ END $$;
                             for refund_item in refund["refund_line_items"]
                         )
                         value_returned = sum(
-                            float(refund_item["subtotal"]["amount"])
+                            (
+                                float(refund_item["subtotal"])
+                                if isinstance(refund_item["subtotal"], (float, int))
+                                else float(refund_item["subtotal"]["amount"])
+                            )
                             for refund in order_node["refunds"]
                             for refund_item in refund["refund_line_items"]
                         )
@@ -373,6 +377,9 @@ END $$;
                             fulfillment["created_at"] for fulfillment in order_node.get("fulfillments", [])
                         ]
 
+                        for refund in order["refunds"]:
+                            for refund_item in refund["refund_line_items"]:
+                                print(refund_item)  # Check the structure
                         self.log.info(f"Order {order_node['name']}:")
                         self.log.info(f"  Items ordered: {items_ordered}")
                         self.log.info(f"  Items fulfilled: {items_fulfilled}")
