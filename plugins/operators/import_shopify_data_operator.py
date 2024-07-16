@@ -60,7 +60,7 @@ required_columns = [
     "current_total_tax_set__presentment_money__currency_code",
     "discount_codes",
     "email",
-    "estimated_taxes",
+    # "estimated_taxes",
     "financial_status",
     "fulfillment_status",
     "landing_site",
@@ -68,7 +68,7 @@ required_columns = [
     "name",
     "note",
     "note_attributes",
-    "number",
+    # "number",
     "order_number",
     "order_status_url",
     "original_total_additional_fees_set",
@@ -88,7 +88,7 @@ required_columns = [
     "subtotal_price_set__presentment_money__amount",
     "subtotal_price_set__presentment_money__currency_code",
     "tags",
-    "tax_exempt",
+    # "tax_exempt",
     "tax_lines",
     "taxes_included",
     "test",
@@ -126,7 +126,7 @@ required_columns = [
     "customer__updated_at",
     "customer__state",
     "customer__note",
-    "customer__verified_email",
+    # "customer__verified_email",
     "customer__tags",
     "customer__currency",
     "discount_applications",
@@ -153,12 +153,13 @@ required_columns = [
 # Add new required columns for items ordered, fulfilled, returned, and value returned
 required_columns.extend(
     [
-        # "order_name",
+        "order_name",
         "items_ordered",
         # "items_fulfilled",
         "items_returned",
         "value_returned",
-        # "currency"
+        # "currency",
+        "fulfilled_at",
     ]
 )
 
@@ -200,8 +201,12 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
         self.discard_fields = []
         self.preserve_fields = [
-            ("customer__email_marketing_consent", "bool"),
             ("company", "string"),
+            ("user_id", "Int64"),
+            ("taxes_included", "bool"),
+            ("confirmed", "bool"),
+            ("test", "bool"),
+            ("order_number", "Int64"),
         ]
 
         self.context = {
@@ -267,7 +272,7 @@ END $$;
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 25
+            limit = 250
             # max_pages = 100  # Safety limit to prevent infinite loops
 
             # Base URL path
@@ -334,23 +339,23 @@ END $$;
                     self.log.info("TOTAL flattened docs found: %d", df.shape[0])
                     print("TOTAL flattenned docs found", df.shape)
 
-                    # Transform fields ending in '_at' to date strings
-                    for col in df.columns:
-                        if col.endswith("_at"):
-                            df[col] = pd.to_datetime(df[col], errors="coerce").apply(
-                                lambda x: x.isoformat() if pd.notnull(x) else None
-                            )
                     # Create a list to hold new records
-                    new_records = []
+                    df["order_name"] = None
+                    df["items_ordered"] = 0
+                    df["items_fulfilled"] = 0
+                    df["items_returned"] = 0
+                    df["value_returned"] = 0
+                    df["currency"] = None
                     # Break out total item quantity, refunds
                     for order in records:
                         order_node = order
+                        order_name = order["name"]
                         items_ordered = sum(item["quantity"] for item in order_node["line_items"])
-                        """items_fulfilled = sum(
-                            fulfillment["quantity"]
-                            for fulfillment in order_node["fulfillments"]
-                            for item in fulfillment["line_items"]
-                        )"""
+                        items_fulfilled = sum(
+                            item.get("quantity", 0)
+                            for fulfillment in order_node.get("fulfillments", [])
+                            for item in fulfillment.get("line_items", [])
+                        )
                         items_returned = sum(
                             refund_item["quantity"]
                             for refund in order_node["refunds"]
@@ -361,33 +366,39 @@ END $$;
                             for refund in order_node["refunds"]
                             for refund_item in refund["refund_line_items"]
                         )
+                        # Extract 'created_at' from fulfillments
+                        fulfilled_at = [
+                            fulfillment["created_at"] for fulfillment in order_node.get("fulfillments", [])
+                        ]
 
                         self.log.info(f"Order {order_node['name']}:")
                         self.log.info(f"  Items ordered: {items_ordered}")
-                        # self.log.info(f"  Items fulfilled: {items_fulfilled}")
+                        self.log.info(f"  Items fulfilled: {items_fulfilled}")
+                        self.log.info(f"Fulfillments: {order_node['fulfillments']}")
                         self.log.info(f"  Items returned: {items_returned}")
                         self.log.info(
                             f"  Value returned: {value_returned:.2f}\n"
                             f"{order_node['total_price_set']['shop_money']['currency_code']}"
                         )
 
-                        # Add the fields to the list of new records
-                        new_records.append(
-                            {
-                                "items_ordered": items_ordered,
-                                # "items_fulfilled": items_fulfilled,
-                                "items_returned": items_returned,
-                                "value_returned": value_returned,
-                                # 'currency': order_node['total_price_set']['shop_money']['currency_code']
-                            }
-                        )
+                        # Update existing DataFrame with new fields for the specific order
+                        df.loc[df["name"] == order_name, "items_ordered"] = items_ordered
+                        df.loc[df["name"] == order_name, "items_fulfilled"] = items_fulfilled
+                        df.loc[df["name"] == order_name, "items_returned"] = items_returned
+                        df.loc[df["name"] == order_name, "value_returned"] = value_returned
+                        df.loc[df["name"] == order_name, "currency"] = order["total_price_set"]["shop_money"][
+                            "currency_code"
+                        ]
+                        # Store the last item from fulfilled_at
+                        df.loc[df["name"] == order_name, "fulfilled_at"] = fulfilled_at[-1] if fulfilled_at else None
+                        # Transform fields ending in '_at' to date strings
 
-                    # After the loop, create a DataFrame from the new records
-                    new_df = pd.DataFrame(new_records)
-
-                    # Concatenate with the existing DataFrame
-                    df = pd.concat([df, new_df], ignore_index=True)
-
+                    for col in df.columns:
+                        if col.endswith("_at"):
+                            df[col] = pd.to_datetime(df[col], errors="coerce").apply(
+                                lambda x: x.isoformat() if pd.notnull(x) else None
+                            )
+                    # Clean
                     df.columns = df.columns.str.lower()
                     df = self.align_to_schema_df(df)
                     print("TOTAL Aligned docs found", df.shape)
