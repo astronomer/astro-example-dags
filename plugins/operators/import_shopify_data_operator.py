@@ -130,7 +130,7 @@ required_columns = [
     "customer__tags",
     "customer__currency",
     "discount_applications",
-    "fulfillments",
+    # "fulfillments",
     "line_items",
     "payment_terms",
     "refunds",
@@ -141,6 +141,7 @@ required_columns = [
     "shipping_address__country_code",
     "shipping_address__province_code",
     # "shipping_lines",
+    "source_name",
     "airflow_sync_ds",
     # "customer__email_marketing_consent",
     # "company",
@@ -291,6 +292,7 @@ END $$;
                 "created_at_min": start_param,
                 "created_at_max": lte,
                 "limit": limit,
+                # "source_name": "Online Store,Harper Concierge", # Harper source name 3264083
             }
             self.log.info("Fetching transactions for %s", query_params)
 
