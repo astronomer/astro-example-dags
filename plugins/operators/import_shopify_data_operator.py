@@ -20,47 +20,147 @@ from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
 
 region_lookup = {"england": "ENG", "wales": "WLS", "scotland": "SCT", "northern ireland": "NIR"}
 
-columns_to_drop = [
-    "billing_address__address1",
-    "billing_address__address2",
-    "billing_address__first_name",
-    "billing_address__last_name",
-    "billing_address__latitude",
-    "billing_address__longitude",
-    "billing_address__name",
-    "billing_address__phone",
-    "billing_address__zip",
-    "browser_ip",
-    "customer__admin_graphql_api_id",
-    "customer__default_address__address1",
-    "customer__default_address__address2",
-    "customer__default_address__country_name",
-    "customer__default_address__first_name",
-    "customer__default_address__last_name",
-    "customer__default_address__name",
-    "customer__default_address__phone",
-    "customer__default_address__zip",
-    "customer__first_name",
-    "customer__last_name",
-    "customer__multipass_identifier",
-    "customer__phone",
-    "customer_locale",
-    "device_id",
-    "location_id",
-    "phone",
-    "shipping_address__address1",
-    "shipping_address__address2",
-    "shipping_address__first_name",
-    "shipping_address__last_name",
-    "shipping_address__latitude",
-    "shipping_address__longitude",
-    "shipping_address__name",
-    "shipping_address__phone",
-    "shipping_address__zip",
-    "customer__sms_marketing_consent",
-    # "customer__email_marketing_consent__consent_updated_at",
-    # "customer__sms_marketing_consent__consent_updated_at",
+required_columns = [
+    "partner__name",
+    "id",
+    "admin_graphql_api_id",
+    "app_id",
+    "cancel_reason",
+    "cancelled_at",
+    "cart_token",
+    "checkout_id",
+    "checkout_token",
+    "closed_at",
+    "confirmation_number",
+    "confirmed",
+    "contact_email",
+    "created_at",
+    "currency",
+    "current_subtotal_price",
+    "current_subtotal_price_set__shop_money__amount",
+    "current_subtotal_price_set__shop_money__currency_code",
+    "current_subtotal_price_set__presentment_money__amount",
+    "current_subtotal_price_set__presentment_money__currency_code",
+    "current_total_additional_fees_set",
+    "current_total_discounts",
+    "current_total_discounts_set__shop_money__amount",
+    "current_total_discounts_set__shop_money__currency_code",
+    "current_total_discounts_set__presentment_money__amount",
+    "current_total_discounts_set__presentment_money__currency_code",
+    "current_total_duties_set",
+    "current_total_price",
+    "current_total_price_set__shop_money__amount",
+    "current_total_price_set__shop_money__currency_code",
+    "current_total_price_set__presentment_money__amount",
+    "current_total_price_set__presentment_money__currency_code",
+    "current_total_tax",
+    "current_total_tax_set__shop_money__amount",
+    "current_total_tax_set__shop_money__currency_code",
+    "current_total_tax_set__presentment_money__amount",
+    "current_total_tax_set__presentment_money__currency_code",
+    "discount_codes",
+    "email",
+    "estimated_taxes",
+    "financial_status",
+    "fulfillment_status",
+    "landing_site",
+    "landing_site_ref",
+    "name",
+    "note",
+    "note_attributes",
+    "number",
+    "order_number",
+    "order_status_url",
+    "original_total_additional_fees_set",
+    "original_total_duties_set",
+    "payment_gateway_names",
+    "po_number",
+    "presentment_currency",
+    "processed_at",
+    "reference",
+    "referring_site",
+    "source_identifier",
+    "source_name",
+    "source_url",
+    "subtotal_price",
+    "subtotal_price_set__shop_money__amount",
+    "subtotal_price_set__shop_money__currency_code",
+    "subtotal_price_set__presentment_money__amount",
+    "subtotal_price_set__presentment_money__currency_code",
+    "tags",
+    "tax_exempt",
+    "tax_lines",
+    "taxes_included",
+    "test",
+    "token",
+    "total_discounts",
+    "total_discounts_set__shop_money__amount",
+    "total_discounts_set__shop_money__currency_code",
+    "total_discounts_set__presentment_money__amount",
+    "total_discounts_set__presentment_money__currency_code",
+    "total_line_items_price",
+    "total_line_items_price_set__shop_money__amount",
+    "total_line_items_price_set__shop_money__currency_code",
+    "total_line_items_price_set__presentment_money__amount",
+    "total_line_items_price_set__presentment_money__currency_code",
+    "total_outstanding",
+    "total_price",
+    "total_price_set__shop_money__amount",
+    "total_price_set__shop_money__currency_code",
+    "total_price_set__presentment_money__amount",
+    "total_price_set__presentment_money__currency_code",
+    "total_shipping_price_set__shop_money__amount",
+    "total_shipping_price_set__shop_money__currency_code",
+    "total_shipping_price_set__presentment_money__amount",
+    "total_shipping_price_set__presentment_money__currency_code",
+    "total_tax",
+    "total_tax_set__shop_money__amount",
+    "total_tax_set__shop_money__currency_code",
+    "total_tax_set__presentment_money__amount",
+    "total_tax_set__presentment_money__currency_code",
+    "updated_at",
+    "user_id",
+    "customer__id",
+    "customer__email",
+    "customer__created_at",
+    "customer__updated_at",
+    "customer__state",
+    "customer__note",
+    "customer__verified_email",
+    "customer__tags",
+    "customer__currency",
+    "discount_applications",
+    "fulfillments",
+    "line_items",
+    "payment_terms",
+    "refunds",
+    "shipping_address__city",
+    "shipping_address__province",
+    "shipping_address__country",
+    "shipping_address__company",
+    "shipping_address__country_code",
+    "shipping_address__province_code",
+    # "shipping_lines",
+    "airflow_sync_ds",
+    # "customer__email_marketing_consent",
+    # "company",
+    "partner__reference",
+    "order_id",
+    # "customer__first_name",
+    # "customer__last_name",
 ]
+
+# Add new required columns for items ordered, fulfilled, returned, and value returned
+required_columns.extend(
+    [
+        # "order_name",
+        "items_ordered",
+        # "items_fulfilled",
+        "items_returned",
+        "value_returned",
+        # "currency"
+    ]
+)
 
 
 class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
@@ -168,6 +268,7 @@ END $$;
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
             limit = 25
+            # max_pages = 100  # Safety limit to prevent infinite loops
 
             # Base URL path
             headers = {}
@@ -239,16 +340,67 @@ END $$;
                             df[col] = pd.to_datetime(df[col], errors="coerce").apply(
                                 lambda x: x.isoformat() if pd.notnull(x) else None
                             )
+                    # Create a list to hold new records
+                    new_records = []
+                    # Break out total item quantity, refunds
+                    for order in records:
+                        order_node = order
+                        items_ordered = sum(item["quantity"] for item in order_node["line_items"])
+                        """items_fulfilled = sum(
+                            fulfillment["quantity"]
+                            for fulfillment in order_node["fulfillments"]
+                            for item in fulfillment["line_items"]
+                        )"""
+                        items_returned = sum(
+                            refund_item["quantity"]
+                            for refund in order_node["refunds"]
+                            for refund_item in refund["refund_line_items"]
+                        )
+                        value_returned = sum(
+                            float(refund_item["subtotal"]["amount"])
+                            for refund in order_node["refunds"]
+                            for refund_item in refund["refund_line_items"]
+                        )
+
+                        self.log.info(f"Order {order_node['name']}:")
+                        self.log.info(f"  Items ordered: {items_ordered}")
+                        # self.log.info(f"  Items fulfilled: {items_fulfilled}")
+                        self.log.info(f"  Items returned: {items_returned}")
+                        self.log.info(
+                            f"  Value returned: {value_returned:.2f}\n"
+                            f"{order_node['total_price_set']['shop_money']['currency_code']}"
+                        )
+
+                        # Add the fields to the list of new records
+                        new_records.append(
+                            {
+                                "items_ordered": items_ordered,
+                                # "items_fulfilled": items_fulfilled,
+                                "items_returned": items_returned,
+                                "value_returned": value_returned,
+                                # 'currency': order_node['total_price_set']['shop_money']['currency_code']
+                            }
+                        )
+
+                    # After the loop, create a DataFrame from the new records
+                    new_df = pd.DataFrame(new_records)
+
+                    # Concatenate with the existing DataFrame
+                    df = pd.concat([df, new_df], ignore_index=True)
 
                     df.columns = df.columns.str.lower()
                     df = self.align_to_schema_df(df)
                     print("TOTAL Aligned docs found", df.shape)
-                    # Drop columns defined in columns_to_drop only if they exist
-                    existing_columns_to_drop = [col for col in columns_to_drop if col in df.columns]
-                    df = df.drop(columns=existing_columns_to_drop)
-                    # Drop columns starting with 'client_details'
-                    df = df.loc[:, ~df.columns.str.startswith("client_details")]
-                    df.fillna("")
+
+                    # Print the columns present in the DataFrame
+                    # self.log.info("DataFrame columns before filtering: %s", df.columns.tolist())
+
+                    for column in required_columns:
+                        if column not in df.columns:
+                            df[column] = ""
+
+                    # Filter the DataFrame to only include the required columns
+                    df = df[required_columns]
 
                     try:
                         df.to_sql(
@@ -263,6 +415,10 @@ END $$;
                         raise
                 else:
                     self.log.info("All Records Filtered to zero in this batch.")
+
+            # if page_count >= max_pages:
+            # self.log.warning(f"Reached the maximum number of pages
+            # ({max_pages}). There might be more data to process.")
 
             # Check how many Docs total
             if total_docs_processed > 0:

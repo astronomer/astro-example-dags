@@ -60,11 +60,11 @@ partners = [
     "chinti_parker",
     # "beckham",
     # "jigsaw",
-    "rixo",
+    # "rixo",
     # "cefinn",
     # "temperley",
     # "snicholson",
-    "self-portrait",
+    # "self-portrait",
     # "harper_production",
 ]
 
