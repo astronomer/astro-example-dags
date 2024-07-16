@@ -1,0 +1,31 @@
+{
+    "title": "IPartnerHarperConciergeSettingsSchema",
+    "type": "object",
+    "bsonType": "object",
+    "properties": {
+        "max_basket_size": {
+            "bsonType": "int",
+            "type": "number"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": []
+}
