@@ -1,5 +1,6 @@
 import re
 import json
+import time
 from pprint import pprint  # noqa
 
 # from datetime import datetime
@@ -12,6 +13,7 @@ from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
+from requests.exceptions import HTTPError
 from airflow.utils.session import provide_session
 
 from plugins.utils.render_template import render_template
@@ -27,9 +29,6 @@ required_columns = [
     "app_id",
     "cancel_reason",
     "cancelled_at",
-    "cart_token",
-    "checkout_id",
-    "checkout_token",
     "closed_at",
     "confirmation_number",
     "confirmed",
@@ -59,23 +58,19 @@ required_columns = [
     "current_total_tax_set__presentment_money__amount",
     "current_total_tax_set__presentment_money__currency_code",
     "discount_codes",
-    "email",
-    # "estimated_taxes",
+    # "email",
     "financial_status",
     "fulfillment_status",
     "landing_site",
     "landing_site_ref",
     "name",
-    "note",
-    "note_attributes",
-    # "number",
     "order_number",
     "order_status_url",
     "original_total_additional_fees_set",
     "original_total_duties_set",
     "payment_gateway_names",
     "po_number",
-    "presentment_currency",
+    # "presentment_currency",
     "processed_at",
     "reference",
     "referring_site",
@@ -89,10 +84,10 @@ required_columns = [
     "subtotal_price_set__presentment_money__currency_code",
     "tags",
     # "tax_exempt",
-    "tax_lines",
+    # "tax_lines",
     "taxes_included",
     "test",
-    "token",
+    # "token",
     "total_discounts",
     "total_discounts_set__shop_money__amount",
     "total_discounts_set__shop_money__currency_code",
@@ -121,11 +116,11 @@ required_columns = [
     "updated_at",
     "user_id",
     "customer__id",
-    "customer__email",
+    # "customer__email",
     "customer__created_at",
     "customer__updated_at",
     "customer__state",
-    "customer__note",
+    # "customer__note",
     # "customer__verified_email",
     "customer__tags",
     "customer__currency",
@@ -285,7 +280,7 @@ END $$;
                 headers = {"X-Shopify-Access-Token": self.api_access_token}
 
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2016-08-01T00:00:00.000Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00.000Z"
 
             # Dictionary of query parameters
             query_params = {
@@ -298,20 +293,60 @@ END $$;
 
             url = f"{base_url}?{urlencode(query_params)}"
             page_count = 0  # Counter for the number of pages processed
+            max_retries = 5
+            retry_delay = 1
+
             while url:
                 self.log.info("Fetching orders from URL: %s", url)
-                try:
-                    response = requests.get(url, headers=headers)
-                    if response.status_code == 401:
-                        self.log.error("Authentication failed for URL: %s", url)
-                        break  # Break the while loop to skip to the next iteration of the outer loop
-                    if response.status_code != 200:
-                        error_message = response.json()
-                        self.log.error("Error fetching orders: %s", error_message)
-                        raise AirflowException(f"Error {error_message} {response}")
-                except requests.exceptions.RequestException as e:
-                    self.log.error("Request failed: %s", e)
-                    break  # Break the while loop to skip to the next iteration of the outer loop
+                for attempt in range(max_retries):
+                    try:
+                        response = requests.get(url, headers=headers)
+                        time.sleep(0.5)
+
+                        # Log rate limit information
+                        api_call_limit = response.headers.get("X-Shopify-Shop-Api-Call-Limit")
+                        self.log.info(f"API call limit: {api_call_limit}")
+
+                        response.raise_for_status()  # This will raise an HTTPError for bad responses
+
+                        # If we get here, the request was successful
+                        break
+
+                    except HTTPError as e:
+                        status_code = e.response.status_code
+                        self.log.error(
+                            f"HTTP error occurred: {e} - Status Code: {status_code} - Response: {e.response.text}"
+                        )
+
+                        if e.response.status_code == 401:
+                            self.log.error("Authentication failed for URL: %s", url)
+                            raise  # Re-raise the exception to stop the process
+
+                        elif e.response.status_code == 429:  # Too Many Requests
+                            if attempt < max_retries - 1:
+                                sleep_time = retry_delay * (2**attempt)  # expontential back-off
+                                self.log.warning(f"Rate limit hit. Retrying in {sleep_time} seconds...")
+                                time.sleep(sleep_time)
+                            else:
+                                self.log.error("Max retries reached. Aborting.")
+                                raise
+                        elif response.status_code != 200:
+                            error_message = response.json()
+                            self.log.error("Error fetching orders: %s", error_message)
+                            raise AirflowException(f"Error {error_message} {response}")
+
+                        else:
+                            self.log.error(f"HTTP error occurred: {e}")
+                            raise
+
+                    except requests.exceptions.RequestException as e:
+                        self.log.error("Request failed: %s", e)
+                        raise e
+
+                # If we've exhausted all retries and still haven't broken out of the loop
+                else:
+                    self.log.error("Failed to get a successful response after all retries")
+                    raise Exception("Failed to get a successful response")
 
                 url = self._get_next_page_url(response)
                 data = response.json()
@@ -377,18 +412,17 @@ END $$;
                             fulfillment["created_at"] for fulfillment in order_node.get("fulfillments", [])
                         ]
 
-                        for refund in order["refunds"]:
-                            for refund_item in refund["refund_line_items"]:
-                                print(refund_item)  # Check the structure
-                        self.log.info(f"Order {order_node['name']}:")
+                        # for refund in order["refunds"]:
+                        # for refund_item in refund["refund_line_items"]:
+                        #       print(refund_item)  # Check the structure
+                        """self.log.info(f"Order {order_node['name']}:")
                         self.log.info(f"  Items ordered: {items_ordered}")
                         self.log.info(f"  Items fulfilled: {items_fulfilled}")
-                        self.log.info(f"Fulfillments: {order_node['fulfillments']}")
                         self.log.info(f"  Items returned: {items_returned}")
                         self.log.info(
                             f"  Value returned: {value_returned:.2f}\n"
                             f"{order_node['total_price_set']['shop_money']['currency_code']}"
-                        )
+                        )"""
 
                         # Update existing DataFrame with new fields for the specific order
                         df.loc[df["name"] == order_name, "items_ordered"] = items_ordered
