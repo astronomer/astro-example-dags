@@ -1,19 +1,20 @@
 import re
 import json
 import time
+import random
 from pprint import pprint  # noqa
 
-# from datetime import datetime
-from urllib.parse import urlencode
-
 import pandas as pd
-import requests
+import shopify
 from pandas import DataFrame
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
+from sqlalchemy.exc import OperationalError
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
-from requests.exceptions import HTTPError
+
+# from requests.exceptions import HTTPError
 from airflow.utils.session import provide_session
 
 from plugins.utils.render_template import render_template
@@ -36,98 +37,64 @@ required_columns = [
     "created_at",
     "currency",
     "current_subtotal_price",
-    "current_subtotal_price_set__shop_money__amount",
     "current_subtotal_price_set__shop_money__currency_code",
     "current_subtotal_price_set__presentment_money__amount",
     "current_subtotal_price_set__presentment_money__currency_code",
-    "current_total_additional_fees_set",
     "current_total_discounts",
-    "current_total_discounts_set__shop_money__amount",
-    "current_total_discounts_set__shop_money__currency_code",
     "current_total_discounts_set__presentment_money__amount",
     "current_total_discounts_set__presentment_money__currency_code",
     "current_total_duties_set",
     "current_total_price",
-    "current_total_price_set__shop_money__amount",
-    "current_total_price_set__shop_money__currency_code",
     "current_total_price_set__presentment_money__amount",
     "current_total_price_set__presentment_money__currency_code",
     "current_total_tax",
-    "current_total_tax_set__shop_money__amount",
-    "current_total_tax_set__shop_money__currency_code",
     "current_total_tax_set__presentment_money__amount",
     "current_total_tax_set__presentment_money__currency_code",
     "discount_codes",
-    # "email",
     "financial_status",
     "fulfillment_status",
-    "landing_site",
-    "landing_site_ref",
+    "harper_product",
     "name",
     "order_number",
     "order_status_url",
-    "original_total_additional_fees_set",
-    "original_total_duties_set",
     "payment_gateway_names",
-    "po_number",
-    # "presentment_currency",
     "processed_at",
     "reference",
     "referring_site",
-    "source_identifier",
     "source_name",
-    "source_url",
+    # "source_url",
     "subtotal_price",
-    "subtotal_price_set__shop_money__amount",
-    "subtotal_price_set__shop_money__currency_code",
     "subtotal_price_set__presentment_money__amount",
     "subtotal_price_set__presentment_money__currency_code",
     "tags",
-    # "tax_exempt",
-    # "tax_lines",
     "taxes_included",
     "test",
-    # "token",
     "total_discounts",
-    "total_discounts_set__shop_money__amount",
-    "total_discounts_set__shop_money__currency_code",
     "total_discounts_set__presentment_money__amount",
     "total_discounts_set__presentment_money__currency_code",
     "total_line_items_price",
-    "total_line_items_price_set__shop_money__amount",
-    "total_line_items_price_set__shop_money__currency_code",
     "total_line_items_price_set__presentment_money__amount",
     "total_line_items_price_set__presentment_money__currency_code",
     "total_outstanding",
     "total_price",
-    "total_price_set__shop_money__amount",
-    "total_price_set__shop_money__currency_code",
     "total_price_set__presentment_money__amount",
     "total_price_set__presentment_money__currency_code",
-    "total_shipping_price_set__shop_money__amount",
-    "total_shipping_price_set__shop_money__currency_code",
     "total_shipping_price_set__presentment_money__amount",
     "total_shipping_price_set__presentment_money__currency_code",
     "total_tax",
-    "total_tax_set__shop_money__amount",
-    "total_tax_set__shop_money__currency_code",
     "total_tax_set__presentment_money__amount",
     "total_tax_set__presentment_money__currency_code",
     "updated_at",
     "user_id",
     "customer__id",
-    # "customer__email",
     "customer__created_at",
     "customer__updated_at",
-    "customer__state",
-    # "customer__note",
-    # "customer__verified_email",
+    # "customer__state",
     "customer__tags",
     "customer__currency",
-    "discount_applications",
-    # "fulfillments",
+    # "discount_applications",
     "line_items",
-    "payment_terms",
+    # "payment_terms",
     "refunds",
     "shipping_address__city",
     "shipping_address__province",
@@ -135,29 +102,17 @@ required_columns = [
     "shipping_address__company",
     "shipping_address__country_code",
     "shipping_address__province_code",
-    # "shipping_lines",
     "source_name",
     "airflow_sync_ds",
-    # "customer__email_marketing_consent",
-    # "company",
     "partner__reference",
     "order_id",
-    # "customer__first_name",
-    # "customer__last_name",
+    "order_name",
+    "items_ordered",
+    "items_returned",
+    "value_ordered" "value_returned",
+    "fulfilled_at",
+    "year_month",
 ]
-
-# Add new required columns for items ordered, fulfilled, returned, and value returned
-required_columns.extend(
-    [
-        "order_name",
-        "items_ordered",
-        # "items_fulfilled",
-        "items_returned",
-        "value_returned",
-        # "currency",
-        "fulfilled_at",
-    ]
-)
 
 
 class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
@@ -212,35 +167,46 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             "partner_ref": partner_ref,
         }
         self.get_partner_config_template = f"""
-SELECT
-    reference,
-    name,
-    partner_platform_api_access_token,
-    partner_platform_base_url,
-    partner_platform_api_version,
-    allowed_region_for_harper,
-    partner_shopify_app_type,
-    partner_platform_api_key,
-    partner_platform_api_secret
+        SELECT
+            reference,
+            name,
+            partner_platform_api_access_token,
+            partner_platform_base_url,
+            partner_platform_api_version,
+            allowed_region_for_harper,
+            partner_shopify_app_type,
+            partner_platform_api_key,
+            partner_platform_api_secret
 
-FROM {self.schema}.partner
-WHERE partner_platform = 'shopify'
-AND reference = '{self.partner_ref}'
-"""
+        FROM {self.schema}.partner
+        WHERE partner_platform = 'shopify'
+        AND reference = '{self.partner_ref}'
+        """
         self.delete_template = """DO $$
-BEGIN
-   IF EXISTS (
-    SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
-    AND tablename = '{{destination_table}}') THEN
-      DELETE FROM {{ destination_schema }}.{{destination_table}}
-        -- WHERE airflow_sync_ds = '{{ ds }}'
-      ;
-   END IF;
-END $$;
-"""
+        BEGIN
+        IF EXISTS (
+            SELECT FROM pg_tables WHERE schemaname = '{{destination_schema}}'
+            AND tablename = '{{destination_table}}') THEN
+            DELETE FROM {{ destination_schema }}.{{destination_table}}
+                -- WHERE airflow_sync_ds = '{{ ds }}'
+            ;
+        END IF;
+        END $$;
+        """
 
         self.log.info("Initialised ImportShopifyPartnerDataOperator")
 
+    def custom_wait(retry_state):
+        exp_wait = wait_exponential(multiplier=1, min=4, max=60).sleep(retry_state)
+        rand_wait = random.uniform(0, 5)  # Add up to 5 seconds of random wait
+        return exp_wait + rand_wait
+
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=custom_wait,
+        retry=retry_if_exception_type(OperationalError),
+        reraise=True,
+    )
     def execute(self, context):
         hook = BaseHook.get_hook(self.postgres_conn_id)
         engine = self.get_postgres_sqlalchemy_engine(hook)
@@ -261,109 +227,58 @@ END $$;
         )
 
         engine = self.get_postgres_sqlalchemy_engine(hook)
+
         with engine.connect() as conn:
-            self._get_partner_config(conn, context)
-            self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
-            conn.execute(self.delete_sql)
+            try:
+                self._get_partner_config(conn, context)
+                self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+                conn.execute(self.delete_sql)
+            except OperationalError as e:
+                if "LockNotAvailable" in str(e):
+                    self.log.warning("Lock not available. Retrying...")
+                    # Add a small random delay before retrying to reduce contention
+                    time.sleep(random.uniform(0.1, 0.5))
+                    raise  # Re-raise the exception to trigger the retry
+                else:
+                    raise  # If it's a different OperationalError, re-raise without retry
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
-            limit = 250
-            # max_pages = 100  # Safety limit to prevent infinite loops
 
-            # Base URL path
-            headers = {}
+            # Set up the Shopify session
             if self.shopify_app_type == "private":
-                base_url = f"https://{self.api_key}:{self.api_secret}@{self.base_url}/admin/api/2024-04/orders.json"
+                # For private apps, use the API key and secret in the URL
+                shopify.ShopifyResource.set_site(
+                    f"https://{self.api_key}:{self.api_secret}@{self.base_url}/admin/api/{self.api_version}"
+                )
             else:
-                base_url = f"https://{self.base_url}/admin/api/2024-04/orders.json"
-                headers = {"X-Shopify-Access-Token": self.api_access_token}
-
+                # For public apps, use the access token in the headers
+                shopify.ShopifyResource.set_site(f"https://{self.base_url}/admin/api/{self.api_version}")
+                shopify.ShopifyResource.set_headers({"X-Shopify-Access-Token": self.api_access_token})
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00.000Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00Z"
 
-            # Dictionary of query parameters
-            query_params = {
-                "created_at_min": start_param,
-                "created_at_max": lte,
-                "limit": limit,
-                # "source_name": "Online Store,Harper Concierge", # Harper source name 3264083
-            }
-            self.log.info("Fetching transactions for %s", query_params)
+            self.log.info(f"Fetching orders from {start_param} to {lte}")
 
-            url = f"{base_url}?{urlencode(query_params)}"
-            page_count = 0  # Counter for the number of pages processed
-            max_retries = 5
-            retry_delay = 1
+            # Fetch orders
+            orders = shopify.Order.find(
+                created_at_min=start_param, created_at_max=lte, limit=250, status="any"  # Shopify's max limit per page
+            )
 
-            while url:
-                self.log.info("Fetching orders from URL: %s", url)
-                for attempt in range(max_retries):
-                    try:
-                        response = requests.get(url, headers=headers)
-                        time.sleep(0.5)
+            page_count = 0
 
-                        # Log rate limit information
-                        api_call_limit = response.headers.get("X-Shopify-Shop-Api-Call-Limit")
-                        self.log.info(f"API call limit: {api_call_limit}")
-
-                        response.raise_for_status()  # This will raise an HTTPError for bad responses
-
-                        # If we get here, the request was successful
-                        break
-
-                    except HTTPError as e:
-                        status_code = e.response.status_code
-                        self.log.error(
-                            f"HTTP error occurred: {e} - Status Code: {status_code} - Response: {e.response.text}"
-                        )
-
-                        if e.response.status_code == 401:
-                            self.log.error("Authentication failed for URL: %s", url)
-                            raise  # Re-raise the exception to stop the process
-
-                        elif e.response.status_code == 429:  # Too Many Requests
-                            if attempt < max_retries - 1:
-                                sleep_time = retry_delay * (2**attempt)  # expontential back-off
-                                self.log.warning(f"Rate limit hit. Retrying in {sleep_time} seconds...")
-                                time.sleep(sleep_time)
-                            else:
-                                self.log.error("Max retries reached. Aborting.")
-                                raise
-                        elif response.status_code != 200:
-                            error_message = response.json()
-                            self.log.error("Error fetching orders: %s", error_message)
-                            raise AirflowException(f"Error {error_message} {response}")
-
-                        else:
-                            self.log.error(f"HTTP error occurred: {e}")
-                            raise
-
-                    except requests.exceptions.RequestException as e:
-                        self.log.error("Request failed: %s", e)
-                        raise e
-
-                # If we've exhausted all retries and still haven't broken out of the loop
-                else:
-                    self.log.error("Failed to get a successful response after all retries")
-                    raise Exception("Failed to get a successful response")
-
-                url = self._get_next_page_url(response)
-                data = response.json()
-                orders = data.get("orders", [])
-                records = [order for order in orders if self._check_province_code(order)]
+            while orders:
                 page_count += 1
+                self.log.info(f"Processing page {page_count} with {len(orders)} orders")
 
-                self.log.info("Filter total Batch docs found: %d", len(records))
+                records = [order.to_dict() for order in orders if self._check_province_code(order.to_dict())]
+
+                self.log.info(f"Filtered orders in this batch: {len(records)}")
                 total_docs_processed += len(records)
-                self.log.info("Total pages processed: %d", page_count)
 
-                df = DataFrame(records)
-                self.log.info("TOTAL Initial DF docs: %d", df.shape[0])
-
-                if not df.empty:
-                    df.insert(0, "partner__name", self.partner_name)  # partner name as the first column
-                    self.log.info(f"Processing ResultSet {total_docs_processed} from batch.")
+                if records:
+                    df = DataFrame(records)
+                    df.insert(0, "partner__name", self.partner_name)
                     df["airflow_sync_ds"] = ds
 
                     if self.discard_fields:
@@ -371,89 +286,74 @@ END $$;
                         if existing_discard_fields:
                             df.drop(existing_discard_fields, axis=1, inplace=True)
 
-                    self.log.info("TOTAL discarded field docs found: %d", df.shape[0])
                     df = self.flatten_dataframe_columns_precisely(df)
-                    self.log.info("TOTAL flattened docs found: %d", df.shape[0])
-                    print("TOTAL flattenned docs found", df.shape)
 
-                    # Create a list to hold new records
-                    df["order_name"] = None
-                    df["items_ordered"] = 0
-                    df["items_fulfilled"] = 0
-                    df["items_returned"] = 0
-                    df["value_returned"] = 0
-                    df["currency"] = None
-                    # Break out total item quantity, refunds
-                    for order in records:
-                        order_node = order
-                        order_name = order["name"]
-                        items_ordered = sum(item["quantity"] for item in order_node["line_items"])
-                        items_fulfilled = sum(
-                            item.get("quantity", 0)
-                            for fulfillment in order_node.get("fulfillments", [])
-                            for item in fulfillment.get("line_items", [])
+                    # Process additional fields
+                    df["order_name"] = df["name"]  # cut
+
+                    self.log.info(f"Data type of 'line_items': {df['line_items'].dtype}")
+                    self.log.info(f"Data type of 'fulfillments': {df['fulfillments'].dtype}")
+                    self.log.info(f"Data type of 'refunds': {df['refunds'].dtype}")
+
+                    # Apply the generic parsing method
+                    df["line_items"] = df["line_items"].apply(self.parse_json_field)
+                    df["fulfillments"] = df["fulfillments"].apply(self.parse_json_field)
+                    df["refunds"] = df["refunds"].apply(self.parse_json_field)
+
+                    print("Sample values from 'line_items' after conversion:")
+                    print(df["line_items"].head())
+
+                    df["items_ordered"] = df["line_items"].apply(lambda x: sum(item["quantity"] for item in x))
+
+                    df["items_fulfilled"] = df["fulfillments"].apply(
+                        lambda x: sum(
+                            sum(item.get("quantity", 0) for item in fulfillment.get("line_items", []))
+                            for fulfillment in x
                         )
-                        items_returned = sum(
-                            refund_item["quantity"]
-                            for refund in order_node["refunds"]
-                            for refund_item in refund["refund_line_items"]
+                    )
+                    df["items_returned"] = df["refunds"].apply(
+                        lambda x: sum(sum(item["quantity"] for item in refund["refund_line_items"]) for refund in x)
+                    )
+
+                    df["value_ordered"] = (
+                        df["total_price"] - df["total_shipping_price_set__presentment_money__amount"]
+                    )  # includes discount
+                    df["value_returned"] = df["refunds"].apply(
+                        lambda x: sum(
+                            sum(float(item["subtotal"]) for item in refund["refund_line_items"]) for refund in x
                         )
-                        value_returned = sum(
-                            (
-                                float(refund_item["subtotal"])
-                                if isinstance(refund_item["subtotal"], (float, int))
-                                else float(refund_item["subtotal"]["amount"])
-                            )
-                            for refund in order_node["refunds"]
-                            for refund_item in refund["refund_line_items"]
+                    )
+                    df["fulfilled_at"] = df["fulfillments"].apply(lambda x: x[-1]["created_at"] if x else None)
+
+                    # Add the new year_month field
+                    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+                    df["year_month"] = df["created_at"].dt.strftime("%Y-%m")
+
+                    # Add the new harper_product field
+                    df["harper_product"] = df["tags"].apply(
+                        lambda tags: (
+                            "harper_try"
+                            if "harper_try" in tags
+                            else ("harper_concierge" if "harper_concierge" in tags else None)
                         )
-                        # Extract 'created_at' from fulfillments
-                        fulfilled_at = [
-                            fulfillment["created_at"] for fulfillment in order_node.get("fulfillments", [])
-                        ]
+                    )
 
-                        # for refund in order["refunds"]:
-                        # for refund_item in refund["refund_line_items"]:
-                        #       print(refund_item)  # Check the structure
-                        """self.log.info(f"Order {order_node['name']}:")
-                        self.log.info(f"  Items ordered: {items_ordered}")
-                        self.log.info(f"  Items fulfilled: {items_fulfilled}")
-                        self.log.info(f"  Items returned: {items_returned}")
-                        self.log.info(
-                            f"  Value returned: {value_returned:.2f}\n"
-                            f"{order_node['total_price_set']['shop_money']['currency_code']}"
-                        )"""
-
-                        # Update existing DataFrame with new fields for the specific order
-                        df.loc[df["name"] == order_name, "items_ordered"] = items_ordered
-                        df.loc[df["name"] == order_name, "items_fulfilled"] = items_fulfilled
-                        df.loc[df["name"] == order_name, "items_returned"] = items_returned
-                        df.loc[df["name"] == order_name, "value_returned"] = value_returned
-                        df.loc[df["name"] == order_name, "currency"] = order["total_price_set"]["shop_money"][
-                            "currency_code"
-                        ]
-                        # Store the last item from fulfilled_at
-                        df.loc[df["name"] == order_name, "fulfilled_at"] = fulfilled_at[-1] if fulfilled_at else None
-                        # Transform fields ending in '_at' to date strings
-
+                    # Ensure date fields are stored as datetime
                     for col in df.columns:
                         if col.endswith("_at"):
-                            df[col] = pd.to_datetime(df[col], errors="coerce").apply(
-                                lambda x: x.isoformat() if pd.notnull(x) else None
-                            )
-                    # Clean
+                            df[col] = pd.to_datetime(df[col], errors="coerce")
+
+                    # Convert dict columns to JSON strings
+                    df = self.convert_dict_columns_to_strings(df)
+
+                    # Clean and align columns
                     df.columns = df.columns.str.lower()
                     df = self.align_to_schema_df(df)
-                    print("TOTAL Aligned docs found", df.shape)
-
-                    # Print the columns present in the DataFrame
-                    # self.log.info("DataFrame columns before filtering: %s", df.columns.tolist())
 
                     for column in required_columns:
                         if column not in df.columns:
                             df[column] = ""
 
-                    # Filter the DataFrame to only include the required columns
                     df = df[required_columns]
 
                     try:
@@ -467,17 +367,19 @@ END $$;
                     except Exception as e:
                         self.log.error(f"Failed to write DataFrame to SQL: {e}")
                         raise
+
+                # Get the next page of orders
+                if orders.has_next_page():
+                    orders = orders.next_page()
                 else:
-                    self.log.info("All Records Filtered to zero in this batch.")
+                    break
 
-            # if page_count >= max_pages:
-            # self.log.warning(f"Reached the maximum number of pages
-            # ({max_pages}). There might be more data to process.")
+            self.log.info(f"Total orders processed: {total_docs_processed}")
 
-            # Check how many Docs total
             if total_docs_processed > 0:
                 conn.execute(
-                    f"CREATE UNIQUE INDEX IF NOT EXISTS {self.destination_table}_idx ON {self.destination_schema}.{self.destination_table} (id);"  # noqa
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS {self.destination_table}_idx "
+                    f"ON {self.destination_schema}.{self.destination_table} (id);"
                 )
 
             context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
@@ -487,6 +389,39 @@ END $$;
             value=context["data_interval_end"].to_iso8601_string(),
         )
         self.log.info("Shopify Data Written to Datalake successfully.")
+
+    def parse_json_field(self, field):
+        """Parse JSON-like string fields into lists of dictionaries."""
+        if isinstance(field, str):
+            try:
+                field = json.loads(field)
+            except (ValueError, TypeError):
+                self.log.error("Failed to parse JSON")
+                field = []
+        return field if isinstance(field, list) else []
+
+    # Assuming df is your DataFrame and it has columns with dict types
+    def convert_dict_columns_to_strings(self, df):
+        """
+        Converts dictionary and list columns in the DataFrame to JSON strings.
+
+        Parameters:
+            df (pd.DataFrame): The DataFrame with potential dictionary or list columns.
+
+        Returns:
+            pd.DataFrame: The DataFrame with dictionary and list columns converted to JSON strings.
+        """
+        # Identify columns with object data types that might contain dictionaries or lists
+        object_columns = df.select_dtypes(include=["object"]).columns
+
+        for col in object_columns:
+            # Try to convert the column entries to JSON strings
+            try:
+                df[col] = df[col].apply(lambda x: json.dumps(x) if isinstance(x, (dict, list)) else x)
+            except Exception as e:
+                print(f"Error converting column {col}: {e}")
+
+        return df
 
     def get_postgres_sqlalchemy_engine(self, hook, engine_kwargs=None):
         """
@@ -540,19 +475,6 @@ END $$;
             if province_code in self.provinces:
                 return True
         return False
-
-    def _get_next_page_url(self, response):
-        link_header = response.headers.get("Link")
-        print("_get_next_page_url", link_header)  # Debug print
-        if link_header:
-            links = link_header.split(",")
-            print("_get_next_page_url links", links)  # Debug print
-            for link in links:
-                if 'rel="next"' in link:
-                    next_url = link.split(";")[0].strip()
-                    print("_get_next_page_url next_url", next_url)  # Debug print
-                    return next_url.strip("<> ")
-        return None
 
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):
