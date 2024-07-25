@@ -2,7 +2,6 @@ import re
 import json
 import time
 import random
-from pprint import pprint  # noqa
 
 import pandas as pd
 import shopify
@@ -20,8 +19,6 @@ from airflow.utils.session import provide_session
 from plugins.utils.render_template import render_template
 
 from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
-
-region_lookup = {"england": "ENG", "wales": "WLS", "scotland": "SCT", "northern ireland": "NIR"}
 
 required_columns = [
     "partner__name",
@@ -117,6 +114,9 @@ required_columns = [
 
 
 class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
+
+    region_lookup = {"england": "ENG", "wales": "WLS", "scotland": "SCT", "northern ireland": "NIR"}
+
     """
     :param postgres_conn_id: postgres connection id
     :type postgres_conn_id: str
@@ -197,7 +197,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
 
         self.log.info("Initialised ImportShopifyPartnerDataOperator")
 
-    def custom_wait(retry_state):
+    def custom_wait(self, retry_state):
         exp_wait = wait_exponential(multiplier=1, min=4, max=60).sleep(retry_state)
         rand_wait = random.uniform(0, 5)  # Add up to 5 seconds of random wait
         return exp_wait + rand_wait
@@ -231,9 +231,11 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
 
         with engine.connect() as conn:
             try:
-                self._get_partner_config(conn, context)
+                partner_config = self._get_partner_config(conn, context)
+                self._setup_shopify_session(partner_config)
                 self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
                 conn.execute(self.delete_sql)
+
             except OperationalError as e:
                 if "LockNotAvailable" in str(e):
                     self.log.warning("Lock not available. Retrying...")
@@ -246,18 +248,8 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
 
-            # Set up the Shopify session
-            if self.shopify_app_type == "private":
-                # For private apps, use the API key and secret in the URL
-                shopify.ShopifyResource.set_site(
-                    f"https://{self.api_key}:{self.api_secret}@{self.base_url}/admin/api/{self.api_version}"
-                )
-            else:
-                # For public apps, use the access token in the headers
-                shopify.ShopifyResource.set_site(f"https://{self.base_url}/admin/api/{self.api_version}")
-                shopify.ShopifyResource.set_headers({"X-Shopify-Access-Token": self.api_access_token})
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2022-01-01T00:00:00.000Z"
 
             self.log.info(f"Fetching orders from {start_param} to {lte}")
 
@@ -267,84 +259,27 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             )
 
             page_count = 0
+            allowed_regions = partner_config["allowed_region_for_harper"]
+            self.log.info(f"Allowed regions for Harper: {allowed_regions}")
 
             while orders:
                 page_count += 1
                 self.log.info(f"Processing page {page_count} with {len(orders)} orders")
 
-                records = [order.to_dict() for order in orders if self._check_province_code(order.to_dict())]
+                records = [
+                    order.to_dict() for order in orders if self._check_province_code(order.to_dict(), allowed_regions)
+                ]
 
                 self.log.info(f"Filtered orders in this batch: {len(records)}")
                 total_docs_processed += len(records)
 
                 if records:
+                    # self.process records
                     df = DataFrame(records)
-                    df.insert(0, "partner__name", self.partner_name)
-                    df["airflow_sync_ds"] = ds
-
-                    if self.discard_fields:
-                        existing_discard_fields = [col for col in self.discard_fields if col in df.columns]
-                        if existing_discard_fields:
-                            df.drop(existing_discard_fields, axis=1, inplace=True)
-
-                    df = self.flatten_dataframe_columns_precisely(df)
-
-                    # Process additional fields
-                    df["order_name"] = df["name"]  # cut
-
-                    self.log.info(f"Data type of 'line_items': {df['line_items'].dtype}")
-                    self.log.info(f"Data type of 'fulfillments': {df['fulfillments'].dtype}")
-                    self.log.info(f"Data type of 'refunds': {df['refunds'].dtype}")
-
-                    # Apply the generic parsing method
-                    df["line_items"] = df["line_items"].apply(self.parse_json_field)
-                    df["fulfillments"] = df["fulfillments"].apply(self.parse_json_field)
-                    df["refunds"] = df["refunds"].apply(self.parse_json_field)
-
-                    print("Sample values from 'line_items' after conversion:")
-                    print(df["line_items"].head())
-
-                    df["items_ordered"] = df["line_items"].apply(lambda x: sum(item["quantity"] for item in x))
-
-                    df["items_fulfilled"] = df["fulfillments"].apply(
-                        lambda x: sum(
-                            sum(item.get("quantity", 0) for item in fulfillment.get("line_items", []))
-                            for fulfillment in x
-                        )
-                    )
-                    df["items_returned"] = df["refunds"].apply(
-                        lambda x: sum(sum(item["quantity"] for item in refund["refund_line_items"]) for refund in x)
-                    )
-
-                    # Value ordered including discount and tax but not shipping
-                    df["total_price"] = pd.to_numeric(df["total_price"], errors="coerce")
-                    df["total_shipping_price_set__presentment_money__amount"] = pd.to_numeric(
-                        df["total_shipping_price_set__presentment_money__amount"], errors="coerce"
-                    )
-
-                    df["value_ordered"] = (
-                        df["total_price"] - df["total_shipping_price_set__presentment_money__amount"]
-                    )  # includes discount
-                    df["value_returned"] = df["refunds"].apply(
-                        lambda x: sum(
-                            sum(float(item["subtotal"]) for item in refund["refund_line_items"]) for refund in x
-                        )
-                    )
-                    df["fulfilled_at"] = df["fulfillments"].apply(lambda x: x[-1]["created_at"] if x else None)
-
-                    # Add the new harper_product field
-                    df["harper_product"] = df["tags"].apply(
-                        lambda tags: (
-                            "harper_try"
-                            if "harper_try" in tags
-                            else ("harper_concierge" if "harper_concierge" in tags else None)
-                        )
-                    )
-
-                    # Ensure date fields are stored as datetime
-                    for col in df.columns:
-                        if col.endswith("_at"):
-                            df[col] = pd.to_datetime(df[col], errors="coerce")
+                    df = self._preprocess_dataframe(df, ds)
+                    df = self._process_additional_fields(df)
+                    self.log.debug("Type of DataFrame: %s", type(df).__name__)
+                    df = self.align_to_schema(df)
 
                     """# Handle NaT values if necessary (e.g., fill with a default date)
                     df["created_at"].fillna(pd.Timestamp("0000-01-01"), inplace=True)
@@ -355,19 +290,6 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                     # Add the new year_month field
                     df["year_month"] = df["created_at"].dt.strftime("%Y-%m")"""
 
-                    # Convert dict columns to JSON strings
-                    df = self.convert_dict_columns_to_strings(df)
-
-                    # Clean and align columns
-                    df.columns = df.columns.str.lower()
-                    df = self.align_to_schema_df(df)
-
-                    for column in required_columns:
-                        if column not in df.columns:
-                            df[column] = ""
-
-                    df = df[required_columns]
-
                     try:
                         df.to_sql(
                             self.destination_table,
@@ -375,6 +297,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                             if_exists="append",
                             schema=self.destination_schema,
                             index=False,
+                            chunksize=1000,
                         )
                     except Exception as e:
                         self.log.error(f"Failed to write DataFrame to SQL: {e}")
@@ -466,25 +389,54 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             self.partner_name = partner_row["name"]
             provinces_json = partner_row["allowed_region_for_harper"]
             provinces = json.loads(provinces_json)
+
+            return {
+                "partner_platform_api_access_token": self.api_access_token,
+                "partner_platform_base_url": self.base_url,
+                "partner_platform_api_version": self.api_version,
+                "partner_shopify_app_type": self.shopify_app_type,
+                "partner_platform_api_key": self.api_key,
+                "partner_platform_api_secret": self.api_secret,
+                "reference": self.partner_reference,
+                "name": self.partner_name,
+                "allowed_region_for_harper": provinces,
+            }
         else:
             self.log.error("No partner details found.")
             raise AirflowException("No partner details found.")
 
-        self.provinces = []
-        for province in provinces:
-            # Convert province to lowercase to ensure case-insensitive matching
-            province_lower = province.lower()
-            if province_lower in region_lookup:
-                self.provinces.append(region_lookup[province_lower])
-            else:
-                raise AirflowException(f"Error: Please add '{province}' to region_lookup.")
-        print("regions: ", provinces)
+    def _setup_shopify_session(self, partner_config):
+        if partner_config is None:
+            raise AirflowException("Partner configuration is missing or invalid")
 
-    def _check_province_code(self, order):
+        if partner_config["partner_shopify_app_type"] == "private":
+            site_url = (
+                f"https://{partner_config['partner_platform_api_key']}:"
+                f"{partner_config['partner_platform_api_secret']}@"
+                f"{partner_config['partner_platform_base_url']}/admin/api/"
+                f"{partner_config['partner_platform_api_version']}"
+            )
+            shopify.ShopifyResource.set_site(site_url)
+        else:
+            site_url = (
+                f"https://{partner_config['partner_platform_base_url']}/"
+                f"admin/api/{partner_config['partner_platform_api_version']}"
+            )
+            shopify.ShopifyResource.set_site(site_url)
+            shopify.ShopifyResource.set_headers(
+                {"X-Shopify-Access-Token": partner_config["partner_platform_api_access_token"]}
+            )
+
+    def _check_province_code(self, order, allowed_regions):
         shipping_address = order.get("shipping_address", None)
         if shipping_address:
             province_code = shipping_address.get("province_code")
-            if province_code in self.provinces:
+            allowed_province_codes = [
+                self.region_lookup[region.lower()]
+                for region in allowed_regions
+                if region.lower() in self.region_lookup
+            ]
+            if province_code in allowed_province_codes:
                 return True
         return False
 
@@ -506,11 +458,74 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
 
         return None
 
-    def align_to_schema_df(self, df):
+    def _preprocess_dataframe(self, df: pd.DataFrame, ds: str) -> pd.DataFrame:
+        df.insert(0, "partner__name", self.partner_name)
+        df["airflow_sync_ds"] = ds
+        if self.discard_fields:
+            df = df.drop(columns=[col for col in self.discard_fields if col in df.columns])
+        return self.flatten_dataframe_columns_precisely(df)
+
+    def _process_additional_fields(self, df: pd.DataFrame) -> pd.DataFrame:
+        # Ensure df is not None and is a DataFrame
+
+        df["order_name"] = df["name"]
+        for field in ["line_items", "fulfillments", "refunds"]:
+            df[field] = df[field].apply(self.parse_json_field)
+
+        df["items_ordered"] = df["line_items"].apply(lambda x: sum(item["quantity"] for item in x))
+        df["items_fulfilled"] = df["fulfillments"].apply(
+            lambda x: sum(
+                sum(item.get("quantity", 0) for item in fulfillment.get("line_items", [])) for fulfillment in x
+            )
+        )
+        df["items_returned"] = df["refunds"].apply(
+            lambda x: sum(sum(item["quantity"] for item in refund["refund_line_items"]) for refund in x)
+        )
+        # Value ordered including discount and tax but not shipping
+        df["total_price"] = pd.to_numeric(df["total_price"], errors="coerce")
+        df["total_shipping_price_set__presentment_money__amount"] = pd.to_numeric(
+            df["total_shipping_price_set__presentment_money__amount"], errors="coerce"
+        )
+
+        df["value_ordered"] = (
+            df["total_price"] - df["total_shipping_price_set__presentment_money__amount"]
+        )  # includes discount
+        df["value_returned"] = df["refunds"].apply(
+            lambda x: sum(sum(float(item["subtotal"]) for item in refund["refund_line_items"]) for refund in x)
+        )
+        df["fulfilled_at"] = df["fulfillments"].apply(lambda x: x[-1]["created_at"] if x else None)
+
+        # print(df.head)
+
+        # Add the new harper_product field
+        df["harper_product"] = df["tags"].apply(
+            lambda tags: (
+                "harper_try" if "harper_try" in tags else ("harper_concierge" if "harper_concierge" in tags else None)
+            )
+        )
+        return df
+
+    def align_to_schema(self, df):
+        # Ensure date fields are stored as datetime
+        for col in df.columns:
+            if col.endswith("_at"):
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+                # Convert dict columns to JSON strings
+
+        df = self.convert_dict_columns_to_strings(df)
+
+        # Clean and align columns
+        df.columns = df.columns.str.lower()
+        # print(df.head)
+
         for field, dtype in self.preserve_fields:
             if field not in df.columns:
                 df[field] = None
             print(f"aligning column {field} as type {dtype}")
             df[field] = df[field].astype(dtype)
 
+        for col in required_columns:
+            if col not in df.columns:
+                df[col] = None
+        df = df[required_columns]
         return df
