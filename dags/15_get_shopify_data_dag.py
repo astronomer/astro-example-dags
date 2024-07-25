@@ -56,16 +56,16 @@ start_task = ShortCircuitOperator(
 start_task.doc = doc
 
 partners = [
-    # "shrimps",
-    # "chinti_parker",
-    # "beckham",
-    # "jigsaw",
-    # "rixo",
-    # "cefinn",
-    # "temperley",
-    # "snicholson",
-    # "self-portrait",
-    "harper_production",
+    "shrimps",
+    "chinti_parker",
+    "beckham",
+    "jigsaw",
+    "rixo",
+    "cefinn",
+    "temperley",
+    "snicholson",
+    "self-portrait",
+    # "harper_production",
 ]
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(
@@ -109,6 +109,8 @@ for partner in partners:
         destination_table=destination_table,
         partner_ref=partner,
         dag=dag,
+        pool="shopify_import_pool",
+        pool_slots=1,
     )
 
     previous_task_id = task_id

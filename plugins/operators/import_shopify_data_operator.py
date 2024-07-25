@@ -109,9 +109,10 @@ required_columns = [
     "order_name",
     "items_ordered",
     "items_returned",
-    "value_ordered" "value_returned",
+    "value_ordered",
+    "value_returned",
     "fulfilled_at",
-    "year_month",
+    # "year_month",
 ]
 
 
@@ -315,6 +316,12 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                         lambda x: sum(sum(item["quantity"] for item in refund["refund_line_items"]) for refund in x)
                     )
 
+                    # Value ordered including discount and tax but not shipping
+                    df["total_price"] = pd.to_numeric(df["total_price"], errors="coerce")
+                    df["total_shipping_price_set__presentment_money__amount"] = pd.to_numeric(
+                        df["total_shipping_price_set__presentment_money__amount"], errors="coerce"
+                    )
+
                     df["value_ordered"] = (
                         df["total_price"] - df["total_shipping_price_set__presentment_money__amount"]
                     )  # includes discount
@@ -324,10 +331,6 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                         )
                     )
                     df["fulfilled_at"] = df["fulfillments"].apply(lambda x: x[-1]["created_at"] if x else None)
-
-                    # Add the new year_month field
-                    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
-                    df["year_month"] = df["created_at"].dt.strftime("%Y-%m")
 
                     # Add the new harper_product field
                     df["harper_product"] = df["tags"].apply(
@@ -342,6 +345,15 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                     for col in df.columns:
                         if col.endswith("_at"):
                             df[col] = pd.to_datetime(df[col], errors="coerce")
+
+                    """# Handle NaT values if necessary (e.g., fill with a default date)
+                    df["created_at"].fillna(pd.Timestamp("0000-01-01"), inplace=True)
+
+                    # Log the datatype of the 'created_at' column
+                    self.log.info(f"created_at datatype = {df['created_at'].dtype}")
+
+                    # Add the new year_month field
+                    df["year_month"] = df["created_at"].dt.strftime("%Y-%m")"""
 
                     # Convert dict columns to JSON strings
                     df = self.convert_dict_columns_to_strings(df)
