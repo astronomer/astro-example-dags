@@ -2298,6 +2298,18 @@
             },
             "additionalProperties": false
         },
+        "platform": {
+            "type": "object",
+            "bsonType": "object",
+            "properties": {
+                "centra": {
+                    "type": "object",
+                    "bsonType": "object",
+                    "tsType": "IPartnerCentra"
+                }
+            },
+            "additionalProperties": false
+        },
         "__v": {
             "bsonType": [
                 "int"

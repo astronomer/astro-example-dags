@@ -1,0 +1,202 @@
+{
+    "title": "IPartnerCentraSchema",
+    "type": "object",
+    "bsonType": [
+        "object"
+    ],
+    "properties": {
+        "checkout_api_type": {
+            "bsonType": "string",
+            "type": "string",
+            "enum": [
+                "checkout-api",
+                "dtc-api"
+            ]
+        },
+        "checkout_api": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "checkout_api_endpoint": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "checkout_api_token": {
+                    "bsonType": "string",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "checkout_api_endpoint",
+                "checkout_api_token"
+            ]
+        },
+        "external_payments_api": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "external_payments_api_endpoint": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "external_payments_api_access_key": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "external_payments_plugin_secret": {
+                    "bsonType": "string",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "external_payments_api_endpoint",
+                "external_payments_api_access_key",
+                "external_payments_plugin_secret"
+            ]
+        },
+        "dtc_api": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "dtc_api_endpoint": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "dtc_api_shared_secret": {
+                    "bsonType": "string",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "dtc_api_endpoint",
+                "dtc_api_shared_secret"
+            ]
+        },
+        "order_api": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "order_api_endpoint": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "order_api_secret": {
+                    "bsonType": "string",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "order_api_endpoint",
+                "order_api_secret"
+            ]
+        },
+        "integration_api": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "integration_api_endpoint": {
+                    "bsonType": "string",
+                    "type": "string"
+                },
+                "integration_api_token": {
+                    "bsonType": "string",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "integration_api_endpoint",
+                "integration_api_token"
+            ]
+        },
+        "configured_payment_method": {
+            "bsonType": "string",
+            "type": "string"
+        },
+        "ingrid": {
+            "bsonType": "object",
+            "type": "object",
+            "properties": {
+                "ingrid_enabled": {
+                    "bsonType": "bool",
+                    "type": "boolean"
+                },
+                "ingrid_attributes": {
+                    "bsonType": "object",
+                    "type": "object",
+                    "properties": {
+                        "harper": {
+                            "bsonType": "string",
+                            "type": "string"
+                        },
+                        "harper_try": {
+                            "bsonType": "string",
+                            "type": "string"
+                        },
+                        "harper_concierge": {
+                            "bsonType": "string",
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "harper",
+                        "harper_try",
+                        "harper_concierge"
+                    ]
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "ingrid_enabled",
+                "ingrid_attributes"
+            ]
+        },
+        "webhooks": {
+            "type": "object",
+            "bsonType": "object",
+            "properties": {
+                "webhook_fulfillment_secret": {
+                    "type": "string",
+                    "bsonType": "string"
+                },
+                "webhook_refund_secret": {
+                    "type": "string",
+                    "bsonType": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "webhook_fulfillment_secret",
+                "webhook_refund_secret"
+            ]
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "configured_payment_method",
+        "checkoutApiVersion"
+    ]
+}
