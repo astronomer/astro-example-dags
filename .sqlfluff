@@ -1,0 +1,11 @@
+[sqlfluff]
+dialect = postgres
+
+[sqlfluff:rules]
+templater = jinja  # Use Jinja templater for Django templates
+
+[sqlfluff:rules:L016]  # Line length rule
+max_line_length = 119
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = true
