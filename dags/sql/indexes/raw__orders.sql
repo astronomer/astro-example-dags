@@ -6,6 +6,7 @@ CREATE INDEX IF NOT EXISTS raw__orders_idx ON {{ schema }}.raw__orders (id);
 CREATE INDEX IF NOT EXISTS raw__orders_order_name_idx ON {{ schema }}.raw__orders (order_name);
 CREATE INDEX IF NOT EXISTS raw__orders_original_order_name_idx ON {{ schema }}.raw__orders (original_order_name);
 CREATE INDEX IF NOT EXISTS raw__orders_customer_id_idx ON {{ schema }}.raw__orders (customer_id);
+CREATE INDEX IF NOT EXISTS raw__orders_partner_id_idx ON {{ schema }}.raw__orders (partner_id);
 CREATE INDEX IF NOT EXISTS raw__orders_is_initiated_sale_idx ON {{ schema }}.raw__orders (is_initiated_sale);
 CREATE INDEX IF NOT EXISTS raw__orders_is_harper_try_idx ON {{ schema }}.raw__orders (is_harper_try);
 CREATE INDEX IF NOT EXISTS raw__orders_link_order_child_idx ON {{ schema }}.raw__orders (link_order_child);
