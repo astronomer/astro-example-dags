@@ -11,7 +11,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__unreconciled_try_orders
         o.brand_name,
         o.fulfillment_status,
         o.createdat,
-        o.partner__trial_reconciliation_period,
+        p.trial_reconciliation_period,
         o.itemsummary__total_items,
         o.itemsummary__num_purchased,
         o.itemsummary__num_actually_purchased,
@@ -30,10 +30,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__unreconciled_try_orders
         o.orderstatusevent__trialperiodfinalreconciliation_at,
         o.trial_period_actually_reconciled_at
     FROM {{ schema }}.rep__order__summary o
+    LEFT JOIN clean__partners p ON p.id = o.partner_id
 
     WHERE
         o.orderstatusevent__trialperiodfinalreconciliation_at IS NULL
-        AND o.createdat < CURRENT_DATE - INTERVAL '1 day' * (o.partner__trial_period + o.partner__trial_reconciliation_period)
+        AND o.createdat < CURRENT_DATE - INTERVAL '1 day' * (p.trial_period + p.trial_reconciliation_period)
         AND o.fulfillment_status NOT IN ('fulfilled', 'unfulfilled')
         AND o.order_status NOT IN ('cancelled', 'in_try_on_period') AND order_type = 'harper_try'
         AND o.itemsummary__num_received_by_partner_warehouse < itemsummary__total_items

@@ -27,8 +27,7 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
         {{ dim__time_columns | prefix_columns('tae', 'tp_actually_ended') }},
         {{ dim__time_columns | prefix_columns('tar', 'tp_actually_reconciled') }},
         {{ dim__time_columns | prefix_columns('tcc', 'try_chargeable_at') }},
-        {{ dim__time_columns | prefix_columns('oc', 'createdat') }},
-        {{ clean__partners_columns | prefix_columns('p', 'partner') }}
+        {{ dim__time_columns | prefix_columns('oc', 'createdat') }}
     FROM
         {{ schema }}.orders o
     LEFT JOIN
@@ -48,7 +47,6 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
     LEFT JOIN
         clean__order__status_events clean__ose ON clean__ose.order_id = o.id
     LEFT JOIN customer c ON c.id = o.customer_id
-    LEFT JOIN clean__partners p ON p.id = o.partner_id
     WHERE o.brand_name IS NOT NULL
     AND o.brand_name NOT IN ('ME+EM UAT', 'Harper UAT Shopify','Harper Production','Harper-concierge-demo','',' ')
     AND o.order_name IS NOT NULL
