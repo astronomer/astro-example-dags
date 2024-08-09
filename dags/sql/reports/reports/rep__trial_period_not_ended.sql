@@ -30,7 +30,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__trial_period_not_ended 
     FROM {{ schema }}.rep__order__summary o
 
     WHERE
-        (o.orderstatusevent__trialperiodended_at IS NULL OR o.orderstatusevent__trialperiodstarted_at IS NULL)
+        -- (o.orderstatusevent__trialperiodended_at IS NULL OR o.orderstatusevent__trialperiodstarted_at IS NULL)
+        o.orderstatusevent__trialperiodended_at IS NULL
         AND (CURRENT_DATE > o.trial_period_end_at OR o.trial_period_end_at IS NULL)
         AND o.order_status NOT IN ('cancelled') AND order_type = 'harper_try'
     ORDER BY needs_invoicing DESC, o.brand_name, o.createdat ASC
