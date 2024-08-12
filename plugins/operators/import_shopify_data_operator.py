@@ -6,7 +6,7 @@ import random
 import pandas as pd
 import shopify
 from pandas import DataFrame
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+from tenacity import wait_exponential
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
 from sqlalchemy.exc import OperationalError
@@ -202,12 +202,13 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         rand_wait = random.uniform(0, 5)  # Add up to 5 seconds of random wait
         return exp_wait + rand_wait
 
-    @retry(
+    """ @retry(
         stop=stop_after_attempt(10),
         wait=custom_wait,
         retry=retry_if_exception_type(OperationalError),
         reraise=True,
-    )
+    )"""
+
     def execute(self, context):
         hook = BaseHook.get_hook(self.postgres_conn_id)
         engine = self.get_postgres_sqlalchemy_engine(hook)
@@ -249,7 +250,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             total_docs_processed = 0
 
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2022-01-01T00:00:00.000Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00.000Z"
 
             self.log.info(f"Fetching orders from {start_param} to {lte}")
 
@@ -323,7 +324,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             key=self.last_successful_dagrun_xcom_key,
             value=context["data_interval_end"].to_iso8601_string(),
         )
-        self.log.info("Shopify Data Written to Datalake successfully.")
+        self.log.info("Shopify Data Written to transient table successfully.")
 
     def parse_json_field(self, field):
         """Parse JSON-like string fields into lists of dictionaries."""

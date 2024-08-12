@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import ShortCircuitOperator
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.sensors.external_task import ExternalTaskSensor
 
 from plugins.utils.is_latest_active_dagrun import is_latest_dagrun
 from plugins.utils.found_records_to_process import found_records_to_process
@@ -26,7 +27,7 @@ default_args = {
     "start_date": datetime(2019, 7, 14),
     "schedule_interval": "@daily",
     "depends_on_past": True,
-    "retry_delay": timedelta(minutes=5),
+    "retry_delay": timedelta(minutes=5),  # airflows retry mechanism
     "retries": 0,
     # "on_failure_callback": [send_harper_failure_notification()],
 }
@@ -41,19 +42,27 @@ dag = DAG(
 )
 
 base_tables_completed = DummyOperator(task_id="base_tables_completed", dag=dag, trigger_rule=TriggerRule.NONE_FAILED)
-# start_task = DummyOperator(task_id="start", dag=dag)
+# is_latest_dagrun_task = DummyOperator(task_id="start", dag=dag)
 doc = """
 Skip the subsequent tasks if
     a) the execution_date is in past
     b) there multiple dag runs are currently active
 """
-start_task = ShortCircuitOperator(
+is_latest_dagrun_task = ShortCircuitOperator(
     task_id="skip_check",
     python_callable=is_latest_dagrun,
     depends_on_past=False,
     dag=dag,
 )
-start_task.doc = doc
+is_latest_dagrun_task.doc = doc
+
+wait_for_migrations = ExternalTaskSensor(
+    task_id="wait_for_migrations_to_complete",
+    external_dag_id="10_mongo_migrations_dag",  # The ID of the DAG you're waiting for
+    external_task_id=None,  # Set to None to wait for the entire DAG to complete
+    allowed_states=["success"],  # You might need to customize this part
+    dag=dag,
+)
 
 partners = [
     "shrimps",
@@ -110,96 +119,93 @@ for partner in partners:
         partner_ref=partner,
         dag=dag,
         pool="shopify_import_pool",
-        pool_slots=1,
-    )
-
-    previous_task_id = task_id
-    task_id = f"{partner}_has_records_to_process"
-    has_records_to_process = ShortCircuitOperator(
-        task_id=task_id,
-        python_callable=found_records_to_process,
-        op_kwargs={"parent_task_id": previous_task_id, "xcom_key": "documents_found"},
-    )
-
-    task_id = f"{partner}_refresh_transient_table_stats"
-    refresh_transient_table = RefreshPostgresTableStatisticsOperator(
-        task_id=task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        schema="transient_data",
-        table=destination_table,
-        dag=dag,
-    )
-
-    task_id = f"{partner}_ensure_datalake_table_exists"
-    ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
-        task_id=task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        source_schema="transient_data",
-        source_table=destination_table,
-        destination_schema="public",
-        destination_table=f"raw__{destination_table}",
-        dag=dag,
-    )
-
-    task_id = f"{partner}_refresh_datalake_table_stats"
-    refresh_datalake_table = RefreshPostgresTableStatisticsOperator(
-        task_id=task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        schema="public",
-        table=f"raw__{destination_table}",
-        dag=dag,
-    )
-
-    missing_columns_task_id = f"{partner}_ensure_public_columns_uptodate"
-    ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
-        task_id=missing_columns_task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        source_table=destination_table,
-        destination_table=f"raw__{destination_table}",
-        dag=dag,
-    )
-    task_id = f"{partner}_append_to_datalake"
-    append_transient_table_data = AppendTransientTableDataOperator(
-        task_id=task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        source_schema="transient_data",
-        source_table=destination_table,
-        destination_schema="public",
-        destination_table=f"raw__{destination_table}",
-        dag=dag,
-    )
-    task_id = f"{partner}_ensure_datalake_table_view"
-    ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
-        task_id=task_id,
-        postgres_conn_id="postgres_datalake_conn_id",
-        source_schema="public",
-        source_table=f"raw__{destination_table}",
-        destination_schema="public",
-        destination_table=destination_table,
-        prev_task_id=missing_columns_task_id,
-        append_fields=["createdat", "updatedat", "airflow_sync_ds"],
-        prepend_fields=["id"],
-        dag=dag,
-    )
-    (
-        shopify_task
-        >> has_records_to_process
-        >> refresh_transient_table
-        >> ensure_datalake_table
-        >> refresh_datalake_table
-        >> ensure_datalake_table_columns
-        >> append_transient_table_data
-        >> ensure_table_view_exists
-        >> base_tables_completed
     )
     # append_transient_table_data >> base_tables_completed
     migration_tasks.append(shopify_task)
 
+previous_task_id = task_id
+task_id = f"{destination_table}_has_records_to_process"
+has_records_to_process = ShortCircuitOperator(
+    task_id=task_id,
+    python_callable=found_records_to_process,
+    op_kwargs={"parent_task_id": previous_task_id, "xcom_key": "documents_found"},
+)
+
+task_id = f"{destination_table}_refresh_transient_table_stats"
+refresh_transient_table = RefreshPostgresTableStatisticsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    schema="transient_data",
+    table=destination_table,
+    dag=dag,
+)
+
+task_id = f"{destination_table}_ensure_datalake_table_exists"
+ensure_datalake_table = EnsurePostgresDatalakeTableExistsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="transient_data",
+    source_table=destination_table,
+    destination_schema="public",
+    destination_table=f"raw__{destination_table}",
+    dag=dag,
+)
+
+task_id = f"{destination_table}_refresh_datalake_table_stats"
+refresh_datalake_table = RefreshPostgresTableStatisticsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    schema="public",
+    table=f"raw__{destination_table}",
+    dag=dag,
+)
+
+missing_columns_task_id = f"{destination_table}_ensure_public_columns_uptodate"
+ensure_datalake_table_columns = EnsureMissingPostgresColumnsOperator(
+    task_id=missing_columns_task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_table=destination_table,
+    destination_table=f"raw__{destination_table}",
+    dag=dag,
+)
+task_id = f"{destination_table}_append_to_datalake"
+append_transient_table_data = AppendTransientTableDataOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="transient_data",
+    source_table=destination_table,
+    destination_schema="public",
+    destination_table=f"raw__{destination_table}",
+    dag=dag,
+)
+task_id = f"{destination_table}_ensure_datalake_table_view"
+ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
+    task_id=task_id,
+    postgres_conn_id="postgres_datalake_conn_id",
+    source_schema="public",
+    source_table=f"raw__{destination_table}",
+    destination_schema="public",
+    destination_table=destination_table,
+    prev_task_id=missing_columns_task_id,
+    append_fields=["createdat", "updatedat", "airflow_sync_ds"],
+    prepend_fields=["id"],
+    dag=dag,
+)
+
 (
-    start_task
+    wait_for_migrations
+    >> is_latest_dagrun_task
     >> transient_schema_exists
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
     >> drop_transient_table
     >> migration_tasks
+    >> has_records_to_process
+    >> refresh_transient_table
+    >> ensure_datalake_table
+    >> refresh_datalake_table
+    >> ensure_datalake_table_columns
+    >> append_transient_table_data
+    >> ensure_table_view_exists
+    >> base_tables_completed
 )
