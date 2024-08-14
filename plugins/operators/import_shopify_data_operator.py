@@ -6,7 +6,8 @@ import random
 import pandas as pd
 import shopify
 from pandas import DataFrame
-from tenacity import wait_exponential
+
+# from tenacity import wait_exponential
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
 from sqlalchemy.exc import OperationalError
@@ -19,6 +20,7 @@ from airflow.utils.session import provide_session
 from plugins.utils.render_template import render_template
 
 from plugins.operators.mixins.flatten_json import FlattenJsonDictMixin
+from plugins.operators.mixins.dag_run_task_comms_mixin import DagRunTaskCommsMixin
 
 required_columns = [
     "partner__name",
@@ -113,7 +115,7 @@ required_columns = [
 ]
 
 
-class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
+class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixin, BaseOperator):
 
     region_lookup = {"england": "ENG", "wales": "WLS", "scotland": "SCT", "northern ireland": "NIR"}
 
@@ -151,6 +153,7 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         self.partner_ref = partner_ref
         self.separator = "__"
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
+        self.last_successful_order_key = "last_successful_order_id"
         self.discard_fields = []
         self.preserve_fields = [
             ("company", "string"),
@@ -197,17 +200,10 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
 
         self.log.info("Initialised ImportShopifyPartnerDataOperator")
 
-    def custom_wait(self, retry_state):
+    """def custom_wait(self, retry_state):
         exp_wait = wait_exponential(multiplier=1, min=4, max=60).sleep(retry_state)
         rand_wait = random.uniform(0, 5)  # Add up to 5 seconds of random wait
-        return exp_wait + rand_wait
-
-    """ @retry(
-        stop=stop_after_attempt(10),
-        wait=custom_wait,
-        retry=retry_if_exception_type(OperationalError),
-        reraise=True,
-    )"""
+        return exp_wait + rand_wait"""
 
     def execute(self, context):
         hook = BaseHook.get_hook(self.postgres_conn_id)
@@ -216,56 +212,67 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
         run_id = context["run_id"]
         last_successful_dagrun_ts = self.get_last_successful_dagrun_ts(run_id=run_id)
 
-        extra_context = {
-            **context,
-            **self.context,
-            f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
-        }
-
-        self.delete_sql = render_template(self.delete_template, context=extra_context)
-
-        self.log.info(
-            f"Executing ImportShopifyPartnerDataOperator since last successful dagrun {last_successful_dagrun_ts}"  # noqa
-        )
-
-        engine = self.get_postgres_sqlalchemy_engine(hook)
-
         with engine.connect() as conn:
-            try:
-                partner_config = self._get_partner_config(conn, context)
-                self._setup_shopify_session(partner_config)
-                self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
-                conn.execute(self.delete_sql)
+            self.ensure_task_comms_table_exists(conn)
+            since_id = self.get_last_successful_order_id(conn, context)
+            self.log.info(f"since ID: {since_id}")
 
-            except OperationalError as e:
-                if "LockNotAvailable" in str(e):
-                    self.log.warning("Lock not available. Retrying...")
-                    # Add a small random delay before retrying to reduce contention
-                    time.sleep(random.uniform(0.1, 0.5))
-                    raise  # Re-raise the exception to trigger the retry
-                else:
-                    raise  # If it's a different OperationalError, re-raise without retry
+            if since_id is not None:
+                try:
+                    since_id = int(since_id)
+                except ValueError:
+                    self.log.error(f"Invalid since_id retrieved: {since_id}. Expected an integer.")
+                    since_id = None  # or raise an exception, depending on your needs
+
+            extra_context = {
+                **context,
+                **self.context,
+                f"{self.last_successful_dagrun_xcom_key}": last_successful_dagrun_ts,
+            }
+
+            self.log.info(
+                f"Executing ImportShopifyPartnerDataOperator since last successful dagrun {last_successful_dagrun_ts}"
+            )
+
+            if since_id:
+                self.log.info(f"Restarting task for this Dagrun from the last successful order_id {since_id}")
+            else:
+                try:
+                    self.log.info(f"Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}")
+                    self.log.info("Deleting previous Data from this Dagrun")
+                    self.delete_sql = render_template(self.delete_template, context=extra_context)
+                    self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+                    conn.execute(self.delete_sql)
+                except OperationalError as e:
+                    if "LockNotAvailable" in str(e):
+                        self.log.warning("Lock not available. Retrying...")
+                        # Add a small random delay before retrying to reduce contention
+                        time.sleep(random.uniform(0.1, 0.5))
+                        raise  # Re-raise the exception to trigger the retry
+                    else:
+                        raise  # If it's a different OperationalError, re-raise without retry
+
+            partner_config = self._get_partner_config(conn, context)
+            self._setup_shopify_session(partner_config)
 
             lte = context["data_interval_end"].to_iso8601_string()
             total_docs_processed = 0
 
+            allowed_regions = partner_config["allowed_region_for_harper"]
+
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
             start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00.000Z"
 
-            self.log.info(f"Fetching orders from {start_param} to {lte}")
+            # self.log.info(f"Fetching orders from {start_param} to {lte}")
 
-            # Fetch orders
-            orders = shopify.Order.find(
-                created_at_min=start_param, created_at_max=lte, limit=250, status="any"  # Shopify's max limit per page
-            )
+            # page_count = 0
 
-            page_count = 0
-            allowed_regions = partner_config["allowed_region_for_harper"]
-            self.log.info(f"Allowed regions for Harper: {allowed_regions}")
+            while True:
+                orders = self.fetch_orders(since_id, lte, start_param)
+                if not orders:
+                    break
 
-            while orders:
-                page_count += 1
-                self.log.info(f"Processing page {page_count} with {len(orders)} orders")
+                self.log.info(f"Processing batch with {len(orders)} orders")
 
                 records = [
                     order.to_dict() for order in orders if self._check_province_code(order.to_dict(), allowed_regions)
@@ -275,21 +282,11 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                 total_docs_processed += len(records)
 
                 if records:
-                    # self.process records
                     df = DataFrame(records)
                     df = self._preprocess_dataframe(df, ds)
                     df = self._process_additional_fields(df)
-                    self.log.debug("Type of DataFrame: %s", type(df).__name__)
+                    # self.log.debug("Type of DataFrame: %s", type(df).__name__)
                     df = self.align_to_schema(df)
-
-                    """# Handle NaT values if necessary (e.g., fill with a default date)
-                    df["created_at"].fillna(pd.Timestamp("0000-01-01"), inplace=True)
-
-                    # Log the datatype of the 'created_at' column
-                    self.log.info(f"created_at datatype = {df['created_at'].dtype}")
-
-                    # Add the new year_month field
-                    df["year_month"] = df["created_at"].dt.strftime("%Y-%m")"""
 
                     try:
                         df.to_sql(
@@ -303,12 +300,9 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                     except Exception as e:
                         self.log.error(f"Failed to write DataFrame to SQL: {e}")
                         raise
-
-                # Get the next page of orders
-                if orders.has_next_page():
-                    orders = orders.next_page()
-                else:
-                    break
+                # Update the since_id
+                since_id = orders[-1].id
+                self.set_last_successful_order_id(conn, context, since_id)
 
             self.log.info(f"Total orders processed: {total_docs_processed}")
 
@@ -317,14 +311,24 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                     f"CREATE UNIQUE INDEX IF NOT EXISTS {self.destination_table}_idx "
                     f"ON {self.destination_schema}.{self.destination_table} (id);"
                 )
+            self.clear_task_vars(conn, context)
 
-            context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
+            # context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
 
-        context["ti"].xcom_push(
-            key=self.last_successful_dagrun_xcom_key,
-            value=context["data_interval_end"].to_iso8601_string(),
-        )
+            # context["ti"].xcom_push(
+            # key=self.last_successful_dagrun_xcom_key,
+            # value=context["data_interval_end"].to_iso8601_string(),
+            # )
+
+        self.set_last_successful_dagrun_ts(context, context["data_interval_end"].int_timestamp)
+        context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
         self.log.info("Shopify Data Written to transient table successfully.")
+
+    def get_last_successful_order_id(self, conn, context):
+        return self.get_task_var(conn, context, self.last_successful_order_key)
+
+    def set_last_successful_order_id(self, conn, context, order_id):
+        return self.set_task_var(conn, context, self.last_successful_order_key, order_id)
 
     def parse_json_field(self, field):
         """Parse JSON-like string fields into lists of dictionaries."""
@@ -336,7 +340,6 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
                 field = []
         return field if isinstance(field, list) else []
 
-    # Assuming df is your DataFrame and it has columns with dict types
     def convert_dict_columns_to_strings(self, df):
         """
         Converts dictionary and list columns in the DataFrame to JSON strings.
@@ -406,6 +409,33 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             self.log.error("No partner details found.")
             raise AirflowException("No partner details found.")
 
+    def fetch_orders(self, since_id, lte, start_param):
+        if since_id is not None:
+            # Ensure since_id is an integer and convert it to string if necessary
+            try:
+                since_id = str(int(since_id))  # Convert to string if Shopify API requires it as a string
+            except ValueError:
+                raise ValueError("Invalid since_id. It should be a valid integer.")
+
+            # Fetch orders with since_id
+            query = {
+                "since_id": since_id,  # Include since_id in the query
+                "created_at_max": lte,
+                "limit": 250,
+                "status": "any",
+            }
+        else:
+            # Fetch orders without since_id
+            query = {
+                "created_at_min": start_param,  # Use start_param to fetch orders from a start date
+                "created_at_max": lte,
+                "limit": 250,
+                "status": "any",
+            }
+
+        # Make the API call with the constructed query parameters
+        return shopify.Order.find(**query)
+
     def _setup_shopify_session(self, partner_config):
         if partner_config is None:
             raise AirflowException("Partner configuration is missing or invalid")
@@ -443,6 +473,8 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
 
     @provide_session
     def get_last_successful_dagrun_ts(self, run_id, session=None):
+        run_id = run_id if isinstance(run_id, (str, int)) else str(run_id)
+
         query = XCom.get_many(
             include_prior_dates=True,
             dag_ids=self.dag_id,
@@ -458,6 +490,17 @@ class ImportShopifyPartnerDataOperator(FlattenJsonDictMixin, BaseOperator):
             return xcom.value
 
         return None
+
+    def set_last_successful_dagrun_ts(self, context, timestamp):
+        # Ensure timestamp is in a valid format (string or integer)
+        if not isinstance(timestamp, (str, int)):
+            self.log.error(f"Invalid timestamp type: {type(timestamp)}. Expected a string or integer.")
+            raise ValueError("Timestamp must be a string or integer.")
+
+        self.log.info(f"Setting last successful DAG run timestamp: {timestamp}")
+
+        # Use xcom_push to set the value
+        context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value={"timestamp": timestamp})
 
     def _preprocess_dataframe(self, df: pd.DataFrame, ds: str) -> pd.DataFrame:
         df.insert(0, "partner__name", self.partner_name)
