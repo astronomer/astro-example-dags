@@ -546,6 +546,39 @@
                 "string"
             ]
         },
+        "item_validation": {
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "is_qualified_item": {
+                    "type": "boolean",
+                    "bsonType": [
+                        "bool"
+                    ]
+                },
+                "is_preorder": {
+                    "type": "boolean",
+                    "bsonType": [
+                        "bool"
+                    ]
+                },
+                "is_accessory": {
+                    "type": "boolean",
+                    "bsonType": [
+                        "bool"
+                    ]
+                },
+                "is_blocked": {
+                    "type": "boolean",
+                    "bsonType": [
+                        "bool"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "__v": {
             "bsonType": [
                 "int"
