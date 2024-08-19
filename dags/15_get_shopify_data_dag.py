@@ -65,16 +65,17 @@ wait_for_migrations = ExternalTaskSensor(
 )
 
 partners = [
-    # "shrimps",
-    # "chinti_parker",
-    # "beckham",
-    # "jigsaw",
-    # "rixo",
-    # "cefinn",
-    # "temperley",
-    # "snicholson",
-    # "self-portrait",
-    "harper_production",
+    "shrimps",
+    "chinti_parker",
+    "beckham",
+    "jigsaw",
+    "rixo",
+    "cefinn",
+    "temperley",
+    "snicholson",
+    "self-portrait",
+    "lestrange",
+    # "harper_production",
 ]
 
 transient_schema_exists = EnsurePostgresSchemaExistsOperator(

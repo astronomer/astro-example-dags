@@ -1,7 +1,9 @@
 import re
 import json
-import time
-import random
+
+# import time
+# import random
+from datetime import datetime, timezone
 
 import pandas as pd
 import shopify
@@ -10,7 +12,8 @@ from pandas import DataFrame
 # from tenacity import wait_exponential
 from sqlalchemy import create_engine
 from airflow.models import XCom, BaseOperator
-from sqlalchemy.exc import OperationalError
+
+# from sqlalchemy.exc import OperationalError
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 
@@ -32,7 +35,6 @@ required_columns = [
     "closed_at",
     "confirmation_number",
     "confirmed",
-    "contact_email",
     "created_at",
     "currency",
     "current_subtotal_price",
@@ -59,7 +61,7 @@ required_columns = [
     "payment_gateway_names",
     "processed_at",
     "reference",
-    "referring_site",
+    # "referring_site",
     "source_name",
     # "source_url",
     "subtotal_price",
@@ -92,9 +94,9 @@ required_columns = [
     "customer__tags",
     "customer__currency",
     # "discount_applications",
-    "line_items",
+    # "line_items",
     # "payment_terms",
-    "refunds",
+    # "refunds",
     "shipping_address__city",
     "shipping_address__province",
     "shipping_address__country",
@@ -153,7 +155,7 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
         self.partner_ref = partner_ref
         self.separator = "__"
         self.last_successful_dagrun_xcom_key = "last_successful_dagrun_ts"
-        self.last_successful_order_key = "last_successful_order_id"
+        self.next_page_url_key = f"{partner_ref}_next_page_url"
         self.discard_fields = []
         self.preserve_fields = [
             ("company", "string"),
@@ -214,15 +216,7 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
 
         with engine.connect() as conn:
             self.ensure_task_comms_table_exists(conn)
-            since_id = self.get_last_successful_order_id(conn, context)
-            self.log.info(f"since ID: {since_id}")
-
-            if since_id is not None:
-                try:
-                    since_id = int(since_id)
-                except ValueError:
-                    self.log.error(f"Invalid since_id retrieved: {since_id}. Expected an integer.")
-                    since_id = None  # or raise an exception, depending on your needs
+            next_page_url = self.get_next_page_url(conn, context)
 
             extra_context = {
                 **context,
@@ -231,26 +225,19 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
             }
 
             self.log.info(
-                f"Executing ImportShopifyPartnerDataOperator since last successful dagrun {last_successful_dagrun_ts}"
+                f"Executing ImportShopifyPartnerDataOperator since last successful dagrun {last_successful_dagrun_ts} "
+                f"(type: {type(last_successful_dagrun_ts)}), next_page_url: {next_page_url}."
             )
 
-            if since_id:
-                self.log.info(f"Restarting task for this Dagrun from the last successful order_id {since_id}")
+            # if next page url then don't delete sql
+            if next_page_url:
+                self.log.info(f"Restarting task for this Dagrun from the next_page_url {next_page_url}")
             else:
-                try:
-                    self.log.info(f"Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}")
-                    self.log.info("Deleting previous Data from this Dagrun")
-                    self.delete_sql = render_template(self.delete_template, context=extra_context)
-                    self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
-                    conn.execute(self.delete_sql)
-                except OperationalError as e:
-                    if "LockNotAvailable" in str(e):
-                        self.log.warning("Lock not available. Retrying...")
-                        # Add a small random delay before retrying to reduce contention
-                        time.sleep(random.uniform(0.1, 0.5))
-                        raise  # Re-raise the exception to trigger the retry
-                    else:
-                        raise  # If it's a different OperationalError, re-raise without retry
+                self.log.info(f"Starting Task Fresh for this dagrun from {last_successful_dagrun_ts}")
+                self.log.info("Deleting previous Data from this Dagrun")
+                self.delete_sql = render_template(self.delete_template, context=extra_context)
+                self.log.info(f"Ensuring Transient Data is clean - {self.delete_sql}")
+                conn.execute(self.delete_sql)
 
             partner_config = self._get_partner_config(conn, context)
             self._setup_shopify_session(partner_config)
@@ -261,18 +248,27 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
             allowed_regions = partner_config["allowed_region_for_harper"]
 
             # Determine the 'start' parameter based on 'last_successful_dagrun_ts'
-            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-01-01T00:00:00.000Z"
+            start_param = last_successful_dagrun_ts if last_successful_dagrun_ts else "2024-05-01T00:00:00.000Z"
 
             # self.log.info(f"Fetching orders from {start_param} to {lte}")
 
             # page_count = 0
 
             while True:
-                orders = self.fetch_orders(since_id, lte, start_param)
-                if not orders:
-                    break
+                if next_page_url:
+                    orders = shopify.Order.find(from_=next_page_url)
+                else:
+                    query = {
+                        "created_at_min": start_param,  # Use start_param to fetch orders from a start date
+                        "created_at_max": lte,
+                        "limit": 250,
+                        "status": "any",
+                    }
 
-                self.log.info(f"Processing batch with {len(orders)} orders")
+                    # Make the API call with the constructed query parameters
+                    orders = shopify.Order.find(**query)
+
+                self.log.info(f"Processing batch with {len(orders)} orders, next page url: {next_page_url}")
 
                 records = [
                     order.to_dict() for order in orders if self._check_province_code(order.to_dict(), allowed_regions)
@@ -300,9 +296,11 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
                     except Exception as e:
                         self.log.error(f"Failed to write DataFrame to SQL: {e}")
                         raise
-                # Update the since_id
-                since_id = orders[-1].id
-                self.set_last_successful_order_id(conn, context, since_id)
+                # Update the next_page_url
+                next_page_url = orders.next_page_url
+                self.set_next_page_url(conn, context, next_page_url)
+                if not next_page_url:
+                    break
 
             self.log.info(f"Total orders processed: {total_docs_processed}")
 
@@ -324,11 +322,11 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
         context["ti"].xcom_push(key="documents_found", value=total_docs_processed)
         self.log.info("Shopify Data Written to transient table successfully.")
 
-    def get_last_successful_order_id(self, conn, context):
-        return self.get_task_var(conn, context, self.last_successful_order_key)
+    def get_next_page_url(self, conn, context):
+        return self.get_task_var(conn, context, self.next_page_url_key)
 
-    def set_last_successful_order_id(self, conn, context, order_id):
-        return self.set_task_var(conn, context, self.last_successful_order_key, order_id)
+    def set_next_page_url(self, conn, context, next_page_url):
+        return self.set_task_var(conn, context, self.next_page_url_key, next_page_url)
 
     def parse_json_field(self, field):
         """Parse JSON-like string fields into lists of dictionaries."""
@@ -409,33 +407,6 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
             self.log.error("No partner details found.")
             raise AirflowException("No partner details found.")
 
-    def fetch_orders(self, since_id, lte, start_param):
-        if since_id is not None:
-            # Ensure since_id is an integer and convert it to string if necessary
-            try:
-                since_id = str(int(since_id))  # Convert to string if Shopify API requires it as a string
-            except ValueError:
-                raise ValueError("Invalid since_id. It should be a valid integer.")
-
-            # Fetch orders with since_id
-            query = {
-                "since_id": since_id,  # Include since_id in the query
-                "created_at_max": lte,
-                "limit": 250,
-                "status": "any",
-            }
-        else:
-            # Fetch orders without since_id
-            query = {
-                "created_at_min": start_param,  # Use start_param to fetch orders from a start date
-                "created_at_max": lte,
-                "limit": 250,
-                "status": "any",
-            }
-
-        # Make the API call with the constructed query parameters
-        return shopify.Order.find(**query)
-
     def _setup_shopify_session(self, partner_config):
         if partner_config is None:
             raise AirflowException("Partner configuration is missing or invalid")
@@ -486,21 +457,48 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
         )
 
         xcom = query.first()
-        if xcom:
-            return xcom.value
+        self.log.info(f"xcom return: {xcom}, data type: {type(xcom)}")
 
+        if xcom:
+            value = xcom.value
+            print(f"Retrieved XCom value: {value}")
+            if isinstance(value, dict) and "timestamp" in value:
+                timestamp = value["timestamp"]
+                print(f"Timestamp retrieved from XCom: {timestamp} (Type: {type(timestamp)})")
+                # Convert integer timestamp to datetime object
+                if isinstance(timestamp, int):
+                    return self.convert_from_int(timestamp)
+                elif isinstance(timestamp, str):
+                    # Handle string timestamp if needed
+                    print(f"Handling string timestamp: {timestamp}")
+                    return self.convert_from_str(timestamp)
+            elif isinstance(value, int):
+                return self.convert_from_int(value)
+            elif isinstance(value, str):
+                return self.convert_from_str(value)
         return None
 
     def set_last_successful_dagrun_ts(self, context, timestamp):
-        # Ensure timestamp is in a valid format (string or integer)
-        if not isinstance(timestamp, (str, int)):
-            self.log.error(f"Invalid timestamp type: {type(timestamp)}. Expected a string or integer.")
-            raise ValueError("Timestamp must be a string or integer.")
+        if isinstance(timestamp, datetime):
+            timestamp_str = timestamp.isoformat()
+        elif isinstance(timestamp, int):
+            timestamp_str = self.convert_from_int(timestamp).isoformat()
+        elif isinstance(timestamp, str):
+            # Validate the string if needed
+            try:
+                self.convert_from_str(timestamp)
+                timestamp_str = timestamp
+            except ValueError:
+                print(f"Invalid timestamp string: {timestamp}")
+                raise ValueError("Timestamp must be a valid ISO 8601 string, integer, or datetime object.")
+        else:
+            print(f"Invalid timestamp type: {type(timestamp)}. Expected a string, integer, or datetime.")
+            raise ValueError("Timestamp must be a string, integer, or datetime object.")
 
-        self.log.info(f"Setting last successful DAG run timestamp: {timestamp}")
+        print(f"Setting last successful DAG run timestamp: {timestamp_str}")
 
-        # Use xcom_push to set the value
-        context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value={"timestamp": timestamp})
+        # Push the timestamp string to XCom
+        context["ti"].xcom_push(key=self.last_successful_dagrun_xcom_key, value={"timestamp": timestamp_str})
 
     def _preprocess_dataframe(self, df: pd.DataFrame, ds: str) -> pd.DataFrame:
         df.insert(0, "partner__name", self.partner_name)
@@ -573,3 +571,17 @@ class ImportShopifyPartnerDataOperator(DagRunTaskCommsMixin, FlattenJsonDictMixi
                 df[col] = None
         df = df[required_columns]
         return df
+
+    def convert_from_int(self, timestamp_int):
+        # Convert Unix timestamp integer to datetime object in UTC
+        print(f"Converting integer timestamp to datetime: {timestamp_int} (Type: {type(timestamp_int)})")
+        return datetime.fromtimestamp(timestamp_int, tz=timezone.utc)
+
+    def convert_from_str(self, timestamp_str):
+        # Convert ISO 8601 string to datetime object
+        print(f"Converting ISO 8601 timestamp string to datetime: {timestamp_str} (Type: {type(timestamp_str)})")
+        try:
+            return datetime.fromisoformat(timestamp_str).replace(tzinfo=timezone.utc)
+        except ValueError:
+            print(f"Invalid ISO 8601 timestamp string: {timestamp_str}")
+            raise ValueError(f"Invalid ISO 8601 timestamp string: {timestamp_str}")
