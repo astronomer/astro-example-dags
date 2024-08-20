@@ -2172,6 +2172,12 @@
                 "string"
             ]
         },
+        "partner_returns_portal_terms_url": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "allowed_card_brands": {
             "type": "array",
             "bsonType": [
