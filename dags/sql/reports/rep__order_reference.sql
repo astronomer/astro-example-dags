@@ -49,7 +49,7 @@ GROUP BY original_order_name, brand_name
 ORDER BY original_order_name;
 
 {% if is_modified %}
-CREATE UNIQUE INDEX IF NOT EXISTS rep__order_reference_idx ON {{ schema }}.rep__order_reference (id);
+--CREATE UNIQUE INDEX IF NOT EXISTS rep__order_reference_idx ON {{ schema }}.rep__order_reference (id);
 CREATE INDEX IF NOT EXISTS rep__order_reference_harper_order_name ON {{ schema }}.rep__order_reference (harper_order_name);
 CREATE INDEX IF NOT EXISTS rep__order_reference_partner_order_name ON {{ schema }}.rep__order_reference (partner_order_name);
 CREATE INDEX IF NOT EXISTS rep__order_reference_original_order_name ON {{ schema }}.rep__order_reference (original_order_name);
