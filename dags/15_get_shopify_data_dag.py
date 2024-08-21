@@ -129,7 +129,7 @@ for partner in partners:
         destination_table=destination_table,
         partner_ref=partner,
         dag=dag,
-        pool="shopify_import_pool",
+        # pool="shopify_import_pool",
     )
     # append_transient_table_data >> base_tables_completed
     migration_tasks.append(shopify_task)
