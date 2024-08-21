@@ -75,6 +75,16 @@ partners = [
     "snicholson",
     "self-portrait",
     "lestrange",
+    "ro-zo",
+    "kitri",
+    "live-unlimited",
+    "marykat",
+    # "donna_ida",
+    "Seren",
+    "iris",
+    "roksanda",
+    # "aw",
+    "needle-thread",
     # "harper_production",
 ]
 
