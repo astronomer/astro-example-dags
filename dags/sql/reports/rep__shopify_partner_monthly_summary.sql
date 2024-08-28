@@ -45,8 +45,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__shopify_partner_monthly
 WITH NO DATA;
 
 {% if is_modified %}
-CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_month_idx ON {{ schema }}.rep__shopify_partner_monthly_summary(month);
-CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_partner__name_idx ON {{ schema }}.rep__shopify_partner_monthly_summary (partner__name);
+CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_month ON {{ schema }}.rep__shopify_partner_monthly_summary(month);
 
 {% endif %}
 
