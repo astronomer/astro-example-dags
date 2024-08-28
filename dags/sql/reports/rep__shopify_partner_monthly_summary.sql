@@ -42,11 +42,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__shopify_partner_monthly
         source,harper_product_
     ;
 
-WITH NO DATA;
+--WITH NO DATA;
 
 {% if is_modified %}
 CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_month_idx ON {{ schema }}.rep__shopify_partner_monthly_summary(month);
 
 {% endif %}
 
-REFRESH MATERIALIZED VIEW {{ schema }}.rep__shopify_partner_monthly_summary;
+--REFRESH MATERIALIZED VIEW {{ schema }}.rep__shopify_partner_monthly_summary;
