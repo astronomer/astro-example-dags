@@ -8,12 +8,12 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__shopify_partner_monthly
         (SELECT
             po.*,
             CASE
-                WHEN tags LIKE '%harper%' OR payment_gateway_names LIKE '%Harper Payments%' THEN 'Harper'
+                WHEN tags LIKE '%%harper%%' OR payment_gateway_names LIKE '%%Harper Payments%%' THEN 'Harper'
                 WHEN source_name = 'web' THEN 'Web'
             END AS source,
             CASE
                 WHEN harper_product = 'harper_try' THEN 'Harper Try'
-                WHEN (tags LIKE '%harper%' OR payment_gateway_names LIKE '%Harper Payments%' ) AND harper_product IS NULL THEN 'Harper Concierge'
+                WHEN (tags LIKE '%%harper%%' OR payment_gateway_names LIKE '%%Harper Payments%%' ) AND harper_product IS NULL THEN 'Harper Concierge'
                 ELSE NULL
             END AS harper_product_
         FROM
@@ -45,7 +45,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__shopify_partner_monthly
 WITH NO DATA;
 
 {% if is_modified %}
-CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_month ON {{ schema }}.rep__shopify_partner_monthly_summary(month);
+CREATE INDEX IF NOT EXISTS rep__shopify_partner_monthly_summary_month_idx ON {{ schema }}.rep__shopify_partner_monthly_summary(month);
 
 {% endif %}
 
