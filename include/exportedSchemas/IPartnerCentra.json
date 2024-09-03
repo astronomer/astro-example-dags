@@ -167,12 +167,17 @@
                 "webhook_refund_secret": {
                     "type": "string",
                     "bsonType": "string"
+                },
+                "webhook_cancel_secret": {
+                    "type": "string",
+                    "bsonType": "string"
                 }
             },
             "additionalProperties": false,
             "required": [
                 "webhook_fulfillment_secret",
-                "webhook_refund_secret"
+                "webhook_refund_secret",
+                "webhook_cancel_secret"
             ]
         },
         "__v": {

@@ -3781,6 +3781,21 @@
                 "int"
             ]
         },
+        "ordered_items_calculated": {
+            "type": "object",
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "total_value_less_discount": {
+                    "type": "integer",
+                    "bsonType": [
+                        "int"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "number_of_items_ordered_original": {
             "type": "integer",
             "bsonType": [
