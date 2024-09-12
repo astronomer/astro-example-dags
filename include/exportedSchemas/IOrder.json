@@ -409,6 +409,46 @@
                         ],
                         "additionalProperties": false
                     },
+                    "ecommerce_gtm_override": {
+                        "title": "IEcommerceGtmOverrideSchema",
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "properties": {
+                            "item_id": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            },
+                            "is_sale": {
+                                "type": "boolean",
+                                "bsonType": [
+                                    "bool"
+                                ]
+                            },
+                            "__v": {
+                                "bsonType": [
+                                    "int"
+                                ],
+                                "type": "integer"
+                            },
+                            "createdAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            },
+                            "updatedAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false
+                    },
                     "delivery_message": {
                         "bsonType": [
                             "string"
@@ -1029,6 +1069,46 @@
                         ],
                         "additionalProperties": false
                     },
+                    "ecommerce_gtm_override": {
+                        "title": "IEcommerceGtmOverrideSchema",
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "properties": {
+                            "item_id": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            },
+                            "is_sale": {
+                                "type": "boolean",
+                                "bsonType": [
+                                    "bool"
+                                ]
+                            },
+                            "__v": {
+                                "bsonType": [
+                                    "int"
+                                ],
+                                "type": "integer"
+                            },
+                            "createdAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            },
+                            "updatedAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false
+                    },
                     "delivery_message": {
                         "bsonType": [
                             "string"
@@ -1641,6 +1721,46 @@
                             "commission_type",
                             "percentage"
                         ],
+                        "additionalProperties": false
+                    },
+                    "ecommerce_gtm_override": {
+                        "title": "IEcommerceGtmOverrideSchema",
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "properties": {
+                            "item_id": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            },
+                            "is_sale": {
+                                "type": "boolean",
+                                "bsonType": [
+                                    "bool"
+                                ]
+                            },
+                            "__v": {
+                                "bsonType": [
+                                    "int"
+                                ],
+                                "type": "integer"
+                            },
+                            "createdAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            },
+                            "updatedAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            }
+                        },
                         "additionalProperties": false
                     },
                     "delivery_message": {
@@ -2268,6 +2388,46 @@
                             "commission_type",
                             "percentage"
                         ],
+                        "additionalProperties": false
+                    },
+                    "ecommerce_gtm_override": {
+                        "title": "IEcommerceGtmOverrideSchema",
+                        "type": "object",
+                        "bsonType": [
+                            "object"
+                        ],
+                        "properties": {
+                            "item_id": {
+                                "type": "string",
+                                "bsonType": [
+                                    "string"
+                                ]
+                            },
+                            "is_sale": {
+                                "type": "boolean",
+                                "bsonType": [
+                                    "bool"
+                                ]
+                            },
+                            "__v": {
+                                "bsonType": [
+                                    "int"
+                                ],
+                                "type": "integer"
+                            },
+                            "createdAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            },
+                            "updatedAt": {
+                                "bsonType": [
+                                    "date"
+                                ],
+                                "type": "string"
+                            }
+                        },
                         "additionalProperties": false
                     },
                     "delivery_message": {

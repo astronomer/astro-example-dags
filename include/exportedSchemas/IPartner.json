@@ -2316,6 +2316,37 @@
             },
             "additionalProperties": false
         },
+        "feature_flags": {
+            "title": "Feature Flags",
+            "type": "object",
+            "additionalProperties": false,
+            "bsonType": [
+                "object"
+            ],
+            "properties": {
+                "custom_sku_function": {
+                    "type": "string",
+                    "bsonType": "string",
+                    "enum": [
+                        "paulsmithSizeAppendedSku"
+                    ]
+                },
+                "custom_item_viability_function": {
+                    "type": "string",
+                    "bsonType": "string",
+                    "enum": [
+                        "paulsmithIsItemMonogrammed"
+                    ]
+                },
+                "ecommerce_gtm_override_function": {
+                    "type": "string",
+                    "bsonType": "string",
+                    "enum": [
+                        "paulsmithEcommerceGtmOverride"
+                    ]
+                }
+            }
+        },
         "__v": {
             "bsonType": [
                 "int"

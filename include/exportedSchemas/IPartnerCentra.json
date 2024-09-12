@@ -67,12 +67,17 @@
                 "dtc_api_shared_secret": {
                     "bsonType": "string",
                     "type": "string"
+                },
+                "dtc_api_session_mode_token": {
+                    "bsonType": "string",
+                    "type": "string"
                 }
             },
             "additionalProperties": false,
             "required": [
                 "dtc_api_endpoint",
-                "dtc_api_shared_secret"
+                "dtc_api_shared_secret",
+                "dtc_api_session_mode_token"
             ]
         },
         "order_api": {
