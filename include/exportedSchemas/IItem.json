@@ -619,6 +619,12 @@
             },
             "additionalProperties": false
         },
+        "taxable": {
+            "type": "boolean",
+            "bsonType": [
+                "bool"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"

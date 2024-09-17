@@ -2347,6 +2347,12 @@
                 }
             }
         },
+        "tax_name": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "__v": {
             "bsonType": [
                 "int"

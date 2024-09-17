@@ -722,6 +722,12 @@
                         },
                         "additionalProperties": false
                     },
+                    "taxable": {
+                        "type": "boolean",
+                        "bsonType": [
+                            "bool"
+                        ]
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -1377,6 +1383,12 @@
                         },
                         "additionalProperties": false
                     },
+                    "taxable": {
+                        "type": "boolean",
+                        "bsonType": [
+                            "bool"
+                        ]
+                    },
                     "__v": {
                         "bsonType": [
                             "int"
@@ -2031,6 +2043,12 @@
                             }
                         },
                         "additionalProperties": false
+                    },
+                    "taxable": {
+                        "type": "boolean",
+                        "bsonType": [
+                            "bool"
+                        ]
                     },
                     "__v": {
                         "bsonType": [
