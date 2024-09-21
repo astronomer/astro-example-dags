@@ -113,6 +113,7 @@ drop_transient_table = DropPostgresTableOperator(
 )
 
 migration_tasks = []
+first_task = None
 for partner in partners:
     task_id = f"get_{partner}_shopify_data_task"
     shopify_task = ImportShopifyPartnerDataOperator(
@@ -126,7 +127,15 @@ for partner in partners:
         pool="shopify_import_pool",
     )
     # append_transient_table_data >> base_tables_completed
-    migration_tasks.append(shopify_task)
+    # Do this so that the first task can run and create the "transient_data.destination_table"
+    # and avoid a race condition whereby to df.to_sql try to create the table simultaneously.
+    # Doing one first, ensure the table is created with a race condition
+    # and subsequent df.to_sql will result in an append.
+
+    if first_task:
+        migration_tasks.append(shopify_task)
+    else:
+        first_task = shopify_task
 
 previous_task_id = task_id
 task_id = f"{destination_table}_has_records_to_process"
@@ -204,6 +213,7 @@ ensure_table_view_exists = EnsurePostgresDatalakeTableViewExistsOperator(
     >> public_schema_exists
     >> ensure_missing_columns_function_exists
     >> drop_transient_table
+    >> first_task
     >> migration_tasks
     >> has_records_to_process
     >> refresh_transient_table
