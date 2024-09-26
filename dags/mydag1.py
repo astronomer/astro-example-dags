@@ -2,22 +2,38 @@
 this is for testing
 """
 
-from airflow import Dataset
-from airflow.decorators import dag, task
-from pendulum import datetime
-import requests
+from airflow.models import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.utils.dates import days_ago
 
 #Define the basic parameters of the DAG, like schedule and start_date
-@dag(
-    dag_id="my_first_dag"
-    start_date=datetime(2024, 1, 1),
-    schedule="@daily",
-    catchup=False,
-    doc_md=__doc__,
-    default_args={"owner": "Astro", "retries": 3},
-    tags=["myfirstdag"],
-)
-start = print("I am in start")
-end = print("i am in end")
+default_args = {
+    "owner": "Astro",
+    "start_date": days_ago(1),
+    "retries": 3,
+}
 
-start >> end
+def start():
+    print("I am in start")
+    
+def end():
+    print("I am in end")
+
+with DAG(
+    dag_id="my_first_dag",
+    default_args=default_args,
+    schedule_interval="@daily",
+    catchup=False,
+    tags=["myfirstdag"],
+) as dag:
+    start_task = PythonOperator(
+        task_id='start',
+        python_callable=start,
+    )
+
+    end_task = PythonOperator(
+        task_id='end',
+        python_callable=end,
+    )
+
+start_task >> end_task
