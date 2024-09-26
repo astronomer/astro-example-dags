@@ -14,7 +14,7 @@ import requests
     catchup=False,
     doc_md=__doc__,
     default_args={"owner": "Astro", "retries": 3},
-    tags=["example"],
+    tags=["myfirstdag"],
 )
 start = print("I am in start")
 end = print("i am in end")
