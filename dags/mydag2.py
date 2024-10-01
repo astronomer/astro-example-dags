@@ -20,7 +20,7 @@ def end():
     print("I am in end")
 
 with DAG(
-    dag_id="my_first_dag",
+    dag_id="my_second_dag",
     default_args=default_args,
     schedule_interval="0 * * * *",  # Run hourly
     catchup=False,
