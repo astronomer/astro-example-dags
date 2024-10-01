@@ -22,7 +22,7 @@ def end():
 with DAG(
     dag_id="my_first_dag",
     default_args=default_args,
-    schedule_interval="@daily",
+    schedule_interval="0 * * * *",  # Run hourly
     catchup=False,
     tags=["myfirstdag"],
 ) as dag:
