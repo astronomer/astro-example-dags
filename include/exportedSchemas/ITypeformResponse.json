@@ -1,0 +1,62 @@
+{
+    "title": "ITypeformResponseSchema",
+    "bsonType": [
+        "object"
+    ],
+    "type": "object",
+    "properties": {
+        "_id": {
+            "bsonType": [
+                "objectId"
+            ],
+            "type": "string",
+            "tsType": "MongooseObjectId"
+        },
+        "form_id": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "form_name": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "event_id": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "event_type": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "form_response": {
+            "type": "object",
+            "bsonType": "object",
+            "additionalProperties": false
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
+    },
+    "required": [
+        "form_id",
+        "event_id",
+        "event_type",
+        "form_response"
+    ],
+    "additionalProperties": false
+}

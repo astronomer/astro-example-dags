@@ -1,0 +1,55 @@
+{
+    "title": "ITypeformQuestionSchema",
+    "bsonType": [
+        "object"
+    ],
+    "type": "object",
+    "properties": {
+        "question_id": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "form_id": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "title": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "ref": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "type": {
+            "type": "string",
+            "bsonType": "string"
+        },
+        "__v": {
+            "bsonType": [
+                "int"
+            ],
+            "type": "integer"
+        },
+        "createdAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        },
+        "updatedAt": {
+            "bsonType": [
+                "date"
+            ],
+            "type": "string"
+        }
+    },
+    "required": [
+        "id",
+        "form_id",
+        "title",
+        "ref",
+        "type"
+    ],
+    "additionalProperties": false
+}

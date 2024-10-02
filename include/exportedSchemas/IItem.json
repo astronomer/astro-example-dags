@@ -480,12 +480,6 @@
             ],
             "type": "boolean"
         },
-        "parcel_number": {
-            "type": "string",
-            "bsonType": [
-                "string"
-            ]
-        },
         "received_at": {
             "type": "string",
             "tsType": "Date",

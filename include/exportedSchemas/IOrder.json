@@ -577,12 +577,6 @@
                         ],
                         "type": "boolean"
                     },
-                    "parcel_number": {
-                        "type": "string",
-                        "bsonType": [
-                            "string"
-                        ]
-                    },
                     "received_at": {
                         "type": "string",
                         "tsType": "Date",
@@ -1243,12 +1237,6 @@
                         ],
                         "type": "boolean"
                     },
-                    "parcel_number": {
-                        "type": "string",
-                        "bsonType": [
-                            "string"
-                        ]
-                    },
                     "received_at": {
                         "type": "string",
                         "tsType": "Date",
@@ -1902,12 +1890,6 @@
                             "bool"
                         ],
                         "type": "boolean"
-                    },
-                    "parcel_number": {
-                        "type": "string",
-                        "bsonType": [
-                            "string"
-                        ]
                     },
                     "received_at": {
                         "type": "string",
@@ -2575,12 +2557,6 @@
                             "bool"
                         ],
                         "type": "boolean"
-                    },
-                    "parcel_number": {
-                        "type": "string",
-                        "bsonType": [
-                            "string"
-                        ]
                     },
                     "received_at": {
                         "type": "string",
@@ -4643,6 +4619,7 @@
                 "unfulfilled",
                 "partially_fulfilled",
                 "fulfilled",
+                "partially_received",
                 "received"
             ]
         },
@@ -4677,18 +4654,6 @@
             ]
         },
         "delivery_date": {
-            "type": "string",
-            "bsonType": [
-                "string"
-            ]
-        },
-        "parcel_number": {
-            "type": "string",
-            "bsonType": [
-                "string"
-            ]
-        },
-        "delivery_message": {
             "type": "string",
             "bsonType": [
                 "string"
