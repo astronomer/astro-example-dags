@@ -2287,6 +2287,12 @@
                 "bool"
             ]
         },
+        "brand_trustpilot_link": {
+            "type": "string",
+            "bsonType": [
+                "string"
+            ]
+        },
         "services": {
             "type": "object",
             "bsonType": "object",
@@ -2325,25 +2331,67 @@
             ],
             "properties": {
                 "custom_sku_function": {
-                    "type": "string",
-                    "bsonType": "string",
-                    "enum": [
-                        "paulsmithSizeAppendedSku"
-                    ]
+                    "type": "object",
+                    "additionalProperties": false,
+                    "bsonType": [
+                        "object"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "bsonType": "boolean",
+                            "default": false
+                        },
+                        "function": {
+                            "type": "string",
+                            "bsonType": "string",
+                            "enum": [
+                                "paulsmithSizeAppendedSku"
+                            ]
+                        }
+                    }
                 },
                 "custom_item_viability_function": {
-                    "type": "string",
-                    "bsonType": "string",
-                    "enum": [
-                        "paulsmithIsItemMonogrammed"
-                    ]
+                    "type": "object",
+                    "additionalProperties": false,
+                    "bsonType": [
+                        "object"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "bsonType": "boolean",
+                            "default": false
+                        },
+                        "function": {
+                            "type": "string",
+                            "bsonType": "string",
+                            "enum": [
+                                "paulsmithIsItemMonogrammed"
+                            ]
+                        }
+                    }
                 },
                 "ecommerce_gtm_override_function": {
-                    "type": "string",
-                    "bsonType": "string",
-                    "enum": [
-                        "paulsmithEcommerceGtmOverride"
-                    ]
+                    "type": "object",
+                    "additionalProperties": false,
+                    "bsonType": [
+                        "object"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "bsonType": "boolean",
+                            "default": false
+                        },
+                        "function": {
+                            "type": "string",
+                            "bsonType": "string",
+                            "enum": [
+                                "paulsmithEcommerceGtmOverride"
+                            ]
+                        }
+                    }
                 }
             }
         },
