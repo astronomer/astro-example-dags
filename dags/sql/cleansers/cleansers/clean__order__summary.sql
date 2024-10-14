@@ -17,6 +17,9 @@ CREATE VIEW {{ schema }}.clean__order__summary AS
             WHEN order_status = 'failed' THEN 'Failed'
             ELSE NULL
         END AS happened,
+        CASE
+        WHEN clean__ois.num_purchased > 0 THEN 1 ELSE 0
+        END AS success,
         get_halo_url(o.id, o.order_type) AS halo_link,
         get_stripe_customer_url(c.stripe_customer_id) AS stripe_customer_link,
         get_locate2u_url(o.appointment__locate2u_stop_id) AS locate2u_link,
