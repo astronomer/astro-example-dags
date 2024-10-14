@@ -8,7 +8,7 @@ CREATE VIEW {{ schema }}.clean__order__item__summary AS
         SUM(oi.fulfilled) AS num_items_fulfilled,
         SUM(oi.purchased) AS num_purchased,
         SUM(oi.returned) AS num_returned,
-        SUM(oi.received)  - SUM(oi.returned) AS num_purchased_net,
+        SUM(oi.purchased)  - SUM(oi.returned) AS num_purchased_net,
         SUM(oi.purchased) AS num_actually_purchased, -- duplicate
         SUM(oi.preorder) AS num_preorder,
         SUM(oi.received) AS num_received_by_harper_warehouse,
@@ -20,7 +20,7 @@ CREATE VIEW {{ schema }}.clean__order__item__summary AS
 		SUM(CASE WHEN oi.purchased = 1 THEN total_purchase_price ELSE 0 END) AS total_value_purchased,
 		SUM(CASE WHEN oi.returned = 1 THEN total_purchase_price ELSE 0 END) AS total_value_returned,
 		SUM(CASE WHEN oi.received = 1 THEN total_purchase_price ELSE 0 END) AS total_value_received,
-        (SUM(CASE WHEN oi.received = 1 THEN total_purchase_price ELSE 0 END)
+        (SUM(CASE WHEN oi.purchased = 1 THEN total_purchase_price ELSE 0 END)
         - SUM(CASE WHEN oi.returned = 1 THEN total_purchase_price ELSE 0 END)) AS total_value_purchased_net,
 		SUM(CASE WHEN oi.received_by_warehouse = 1 THEN total_purchase_price ELSE 0 END) AS total_value_received_by_warehouse,
 		-- item summary for initiated sale
