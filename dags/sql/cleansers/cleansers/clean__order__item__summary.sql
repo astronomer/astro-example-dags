@@ -39,7 +39,7 @@ CREATE VIEW {{ schema }}.clean__order__item__summary AS
 		SUM(CASE WHEN oi.is_initiated_sale = 1 AND oi.purchased = 1 THEN oi.calculated_item_value_pence ELSE 0 END) AS initiated_sale__total_value_purchased,
 		SUM(CASE WHEN oi.is_initiated_sale = 1 AND oi.returned = 1 THEN oi.calculated_item_value_pence ELSE 0 END) AS initiated_sale__total_value_returned,
 		SUM(CASE WHEN oi.is_initiated_sale = 1 AND oi.received = 1 THEN oi.calculated_item_value_pence ELSE 0 END) AS initiated_sale__total_value_received,
-		SUM(CASE WHEN oi.is_initiated_sale = 1 AND oi.received_by_warehouse = 1 THEN oi.calculated_item_value_pence ELSE 0 END) AS initiated__total_value_received_wh, --renamed since too long
+		SUM(CASE WHEN oi.is_initiated_sale = 1 AND oi.received_by_warehouse = 1 THEN oi.calculated_item_value_pence ELSE 0 END)/100 AS initiated__total_value_received_wh, --renamed since too long
         array_agg(DISTINCT(oi.tracking_url)) AS delivery_tracking_urls
     FROM
         {{ schema }}.orders o
