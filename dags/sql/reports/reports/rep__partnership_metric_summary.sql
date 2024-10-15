@@ -8,7 +8,7 @@ To add: first time harper use with brand*/
 DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CASCADE;
 {% endif %}
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summary AS
+--- from order view...
     WITH
 
     ship_directs AS (
@@ -19,15 +19,14 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
         {{ schema }}.rep__ship_direct_orders
     ),
 
-    order_items AS (
+    orders AS (
         SELECT
             o.*,
-            i.*,
+
             o.order_type AS order__type,
-            i.order_type AS item___order_type,
+
             o.order_name AS order__name,
-            i.order_name AS item__order_name,
-            i.createdat AS item__createdat,
+
             o.createdat AS order__createdat,
             o.createdat__dim_date AS order__createdat__dim_date,
             o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
@@ -38,22 +37,18 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
                 WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
                 ELSE o.id
             END AS id_merge,*/
-            i.is_initiated_sale AS item_is_initiated_sale,
-            i.is_inspire_me AS item_is_inspire_me,
+
             CASE
                 WHEN o.ship_direct = 1 AND (sd.previous_original_order_name IS NOT NULL AND sd.previous_original_order_name != '') THEN sd.previous_original_order_name
                 ELSE o.original_order_name
-            END AS original_order_name_merge, -- Parent order_name
-            i.item_value_pence AS item__item_value_pence
+            END AS original_order_name_merge -- Parent order_name
+
         FROM
-            {{ schema }}.rep__deduped_order_items i
-        LEFT JOIN
-            {{ schema }}.clean__order__summary o ON o.id = i.order_id
+            {{ schema }}.clean__order__summary o
         LEFT JOIN
             ship_directs sd ON o.id = sd.id
         WHERE
-            i.is_link_order_child_item = 0
-            AND o.link_order__is_child = 0
+        o.link_order__is_child = 0
     )
     SELECT
         appointment__date__dim_month,
@@ -61,23 +56,15 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
         order__createdat__dim_month,
         order__createdat__dim_year,
         brand_name,
-        order__type,
+        --order__type,
         happened,
         harper_product_type,
-        SUM(success),
+        COUNT(DISTINCT original_order_name_merge) AS num_merged_order_name,
+        COUNT(DISTINCT order__name) AS num_order_name,
+        COUNT( DISTINCT CASE WHEN success = 1 THEN original_order_name_merge ELSE NULL END ) AS num_success_orders,
+        COUNT( DISTINCT CASE WHEN itemsummary__total_value_purchased > 250 THEN original_order_name_merge ELSE NULL END ) AS num_orders_over_250,
+        COUNT( DISTINCT CASE WHEN itemsummary__total_value_purchased = 0 THEN original_order_name_merge ELSE NULL END ) AS num_no_sale_order,
         SUM(new_harper_customer) AS new_harper_customers,
-        SUM(CASE
-                WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
-            END) AS inspire_me_items_ordered,
-        ROUND(SUM(CASE
-                WHEN item_is_inspire_me = 1 THEN item__item_value_pence ELSE 0
-            END)/100,2) AS inspire_me_items_ordered_value,
-        SUM(CASE
-                WHEN item_is_inspire_me = 1 AND purchased = 1 THEN 1 ELSE 0
-            END) AS inspire_me_items_purchased,
-        ROUND(SUM(CASE
-                WHEN item_is_inspire_me = 1 AND purchased = 1 THEN item__item_value_pence ELSE 0
-            END)/100,2) AS inspire_me_items_purchased_value,
         SUM(time_in_appointment) AS total_time_in_appointment,
         SUM(time_to_appointment) AS total_time_to_appointment,
         SUM(itemsummary__num_items_ordered) AS num_items_ordered,
@@ -127,9 +114,10 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
         order__createdat__dim_month,
         order__createdat__dim_year,
         brand_name,
-        order__type,
+        --order__type,
         happened,
         harper_product_type
+
 
 WITH NO DATA;
 
