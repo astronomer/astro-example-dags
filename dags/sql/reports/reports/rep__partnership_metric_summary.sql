@@ -64,7 +64,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
         order__type,
         happened,
         harper_product_type,
-        SUM(success)
+        SUM(success),
         SUM(new_harper_customer) AS new_harper_customers,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
