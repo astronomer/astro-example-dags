@@ -1,14 +1,9 @@
-/*Partnership Dashboard Orders
-1) CTE for first order with Harper for each customer
-2) Item level report for the join of orders__items and orders
-3) Two reports from (2): one grouped by order (linked to original order)
-	and one grouped by item.order_type to analyze order makeup and split into parts (e.g., initiated sales)
-To add: first time harper use with brand*/
 {% if is_modified %}
 DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CASCADE;
 {% endif %}
 
---- from order view...
+CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summary AS
+
     WITH
 
     ship_directs AS (
@@ -32,11 +27,6 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CA
             o.createdat__dim_yearmonth AS order__createdat__dim_yearmonth,
             o.createdat__dim_month AS order__createdat__dim_month,
             o.createdat__dim_year AS order__createdat__dim_year,
-            --i.initiated_sale__user_role AS item__initiated_sale__user_role,
-            /*CASE
-                WHEN o.ship_direct = 1 THEN sd.initiated_sale__original_order_id
-                ELSE o.id
-            END AS id_merge,*/
 
             CASE
                 WHEN o.ship_direct = 1 AND (sd.previous_original_order_name IS NOT NULL AND sd.previous_original_order_name != '') THEN sd.previous_original_order_name
@@ -56,7 +46,7 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CA
         order__createdat__dim_month,
         order__createdat__dim_year,
         brand_name,
-        --order__type,
+        -- order__type,
         happened,
         harper_product_type,
         COUNT(DISTINCT original_order_name_merge) AS num_merged_order_name,
@@ -114,7 +104,7 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CA
         order__createdat__dim_month,
         order__createdat__dim_year,
         brand_name,
-        --order__type,
+        -- order__type,
         happened,
         harper_product_type
 
@@ -122,10 +112,12 @@ DROP MATERIALIZED VIEW IF EXISTS {{ schema }}.rep__partnership_metric_summary CA
 WITH NO DATA;
 
 {% if is_modified %}
---CREATE UNIQUE INDEX IF NOT EXISTS rep__partnership_metric_summary_idx ON {{ schema }}.rep__partnership_metric_summary (id_merge);
 CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_brand_name ON {{ schema }}.rep__partnership_metric_summary (brand_name);
-CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_order__type ON {{ schema }}.rep__partnership_metric_summary (order__type);
-
+-- CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_order__type ON {{ schema }}.rep__partnership_metric_summary (order__type);
+CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_appointment__date__dim_year ON {{ schema }}.rep__partnership_metric_summary (appointment__date__dim_year);
+CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_appointment__date__dim_month ON {{ schema }}.rep__partnership_metric_summary (appointment__date__dim_month);
+CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_order__createdat__dim_year ON {{ schema }}.rep__partnership_metric_summary (order__createdat__dim_year);
+CREATE INDEX IF NOT EXISTS rep__partnership_metric_summary_order__createdat__dim_month ON {{ schema }}.rep__partnership_metric_summary (order__createdat__dim_month);
 
 {% endif %}
 
