@@ -64,6 +64,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
         order__type,
         happened,
         harper_product_type,
+        SUM(success)
         SUM(new_harper_customer) AS new_harper_customers,
         SUM(CASE
                 WHEN item_is_inspire_me = 1 THEN 1 ELSE 0
@@ -121,7 +122,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS {{ schema }}.rep__partnership_metric_summ
     FROM
         order_items o
     GROUP BY
-    appointment__date__dim_month,
+        appointment__date__dim_month,
         appointment__date__dim_year,
         order__createdat__dim_month,
         order__createdat__dim_year,
