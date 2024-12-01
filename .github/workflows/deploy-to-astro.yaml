@@ -60,7 +60,6 @@ jobs:
           astro deploy
 
   prod-push:
-    if: github.event.action == 'closed' && github.event.pull_request.merged == true
     env:
       ## Sets PROD Deployment API key credentials as environment variables
       ASTRONOMER_KEY_ID: ${{ secrets.PROD_ASTRONOMER_KEY_ID }}
