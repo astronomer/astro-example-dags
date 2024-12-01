@@ -1,5 +1,16 @@
 name: Astronomer CI - Deploy code (Multiple Branches)
+
 on:
+  workflow_dispatch:
+    inputs:
+      deploymentId:
+        description: "Deployment ID"
+        required: true
+        type: string
+      apiToken:
+        description: "Astro API Token"
+        required: true
+        type: string
   push:
     branches: [main]
 
