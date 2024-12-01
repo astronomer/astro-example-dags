@@ -1,1 +1,2 @@
-# Astro Runtime includes the following pre-installed providers packages: https://docs.astronomer.io/astro/runtime-image-architecture#provider-packages
+astro-sdk-python[amazon,databricks,duckdb,google,postgres,snowflake]==1.5.3
+
