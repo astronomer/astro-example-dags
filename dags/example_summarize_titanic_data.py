@@ -31,7 +31,7 @@ def load_func():
     import pandas as pd
     
     # use pandas to load the titanic dataset from github
-    print("Testing")
+    print("Testing 2")
     return pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
 
 @aql.run_raw_sql(conn_id="duckdb_default", task_id="over_18", results_format="pandas_dataframe")
