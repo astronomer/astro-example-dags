@@ -1,4 +1,4 @@
-name: Astronomer CI - Deploy code
+name: Astronomer CI - Deploy Code
 
 on:
   workflow_dispatch:
@@ -23,5 +23,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Deploy to Astro
-      uses: astronomer/deploy-action@v0.4
+      # Ensure compatibility with Node.js 20
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Deploy to Astro
+      - name: Deploy to Astro
+        uses: astronomer/deploy-action@v0.4
+        env:
+          ASTRO_API_TOKEN: ${{ env.ASTRO_API_TOKEN }}
+          DEPLOYMENT_ID: ${{ env.DEPLOYMENT_ID }}
