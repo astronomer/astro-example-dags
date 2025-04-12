@@ -2,4 +2,4 @@ astro
 .git
 .env
 airflow_settings.yaml
-logs/
+dbt/logs/

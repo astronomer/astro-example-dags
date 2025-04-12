@@ -1,0 +1,12 @@
+haha:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: postgres
+      password: mysecretpassword
+      port: 55001
+      dbname: postgres
+      schema: dbt
+      threads: 4

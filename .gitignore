@@ -4,3 +4,6 @@
 airflow_settings.yaml
 __pycache__/
 astro
+
+dbt/logs
+dbt/target
